@@ -1,0 +1,28 @@
+#!/bin/tcsh -f
+
+# this gives a good romsize under linux, but it appears
+# mips elf has more than one data/bss/text/romdata section
+# and this doesn't sum them all up
+
+set OBJDUMP = "/opt/microchip/xc32/v1.34/bin/xc32-objdump"
+
+set ROM = "build/firmware.elf"
+set RODATA = `$OBJDUMP -h -j .rodata $ROM | tail -2 | head -1 | sed -e 'y/abcdef/ABCDEF/'`
+set DATA =   `$OBJDUMP -h -j .data $ROM   | tail -2 | head -1 | sed -e 'y/abcdef/ABCDEF/'`
+set BSS =    `$OBJDUMP -h -j .bss $ROM    | tail -2 | head -1 | sed -e 'y/abcdef/ABCDEF/'`
+set TEXT =   `$OBJDUMP -h -j .text $ROM   | tail -2 | head -1 | sed -e 'y/abcdef/ABCDEF/'`
+
+set RODATA = `echo "ibase=16; $RODATA[3]" | bc -l`
+set DATA = `echo "ibase=16; $DATA[3]" | bc -l`
+set BSS = `echo "ibase=16; $BSS[3]" | bc -l`
+set TEXT = `echo "ibase=16; $TEXT[3]" | bc -l`
+
+@ ROMSIZE = $RODATA + $DATA + $TEXT
+
+echo ROM: $ROM
+
+echo RODATA: $RODATA DATA: $DATA BSS: $BSS TEXT: $TEXT
+
+echo ROMSIZE: $ROMSIZE
+
+exit 0

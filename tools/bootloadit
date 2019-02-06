@@ -1,0 +1,5 @@
+#!/bin/tcsh -f
+
+ls -lt build/firmware.hex
+
+tools/pic32usb build/firmware.hex

@@ -1,0 +1,37 @@
+linux Timing code for testing how fast/slow it is
+units are microseconds- 1/1000000
+
+timer.c
+xc_timing.c
+
+gcc -m32 -o xc_timing xc_timing.c timer.c
+
+example on an old amd 8 core box:
+
+./xc_timing hello.c
+
+
+.
+.
+fibonacci(10) = 89
+diff 0 13330
+diff 0 840
+diff 0 869
+diff 0 811
+diff 0 872
+diff 0 837
+diff 0 859
+diff 0 824
+diff 0 905
+diff 0 816
+diff 0 855
+diff 0 830
+diff 0 852
+diff 0 818
+diff 0 842
+diff 0 864
+diff 0 860
+diff 0 812
+diff 0 873
+diff 0 822
+
