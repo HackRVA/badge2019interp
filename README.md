@@ -1,9 +1,17 @@
 # badge2019interp
 badge2019 hardware with the c interpreter woking
 
-paste one of the "main" examples from led.c into
+***NOTE***
+no microchip project file yet. use "make"
+
+
+Paste one of the "main" examples from led.c into
 a screen/terminal session and then type "run"
-EG:
+
+also see tools/sendbadge.py
+
+
+*example*
 
 start screen:
 screen /dev/ttyACM0
