@@ -1489,11 +1489,13 @@ int main()
 #else
 int interpreter_main(char *prog) 
 {
+   int r;
+
 #endif
    if (init_interpreter() < 0) return -1;
    src = prog;
    program();
-   run();
+   r = run();
 
-   return 1;
+   return r;
 }
