@@ -61,6 +61,7 @@ void myBadgeid_cb(struct menu_t *h) {
    selectedMenu->name[3] = hextab[((G_sysData.badgeId      ) & 0xF)];
    selectedMenu->name[4] = 0;
    //strcpy(dstMenu->name, selectedMenu->name);
+   closeMenuAndReturn();
 
 }
 
@@ -119,6 +120,8 @@ void backlight_cb(struct menu_t *h) {
    G_sysData.backlight = selectedMenu->attrib & 0x1FF;
    backlight(G_sysData.backlight);
    led(0, 100, 10);
+
+   closeMenuAndReturn();
 }
 
 const struct menu_t backlightList_m[] = {
@@ -163,6 +166,8 @@ void rotate_cb(struct menu_t *h) {
     }
 
     LCDReset();
+
+    closeMenuAndReturn();
 };
 
 const struct menu_t rotate_m[] = {
@@ -196,6 +201,8 @@ void LEDlight_cb(struct menu_t *h) {
     red(G_red_pwm);
     green(G_green_pwm);
     blue(G_blue_pwm);
+
+    closeMenuAndReturn();
 }
 
 
@@ -228,6 +235,8 @@ void buzzer_config_cb()
     strcpy(dstMenu->name, selectedMenu->name);
 
     G_mute = selectedMenu->attrib & 0x1;
+
+    closeMenuAndReturn();
 }
 
 struct menu_t buzzer_config_m[] = {

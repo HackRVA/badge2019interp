@@ -102,7 +102,6 @@ struct menu_t *display_menu(struct menu_t *menu,
 
         switch (style)
         {
-            //case MAIN_MENU_WITH_TIME_DATE_STYLE:
             case MAIN_MENU_STYLE:
 		FbBackgroundColor(MAIN_MENU_BKG_COLOR);
 		FbClear();
@@ -156,7 +155,6 @@ struct menu_t *display_menu(struct menu_t *menu,
                 // extra decorations for menu items
                 switch(style)
                 {
-                    //case MAIN_MENU_WITH_TIME_DATE_STYLE:
                     case MAIN_MENU_STYLE:
                         break;
                     case WHITE_ON_BLACK:
@@ -179,7 +177,6 @@ struct menu_t *display_menu(struct menu_t *menu,
                 // Determine selected item color
                 switch(style)
                 {
-                    //case MAIN_MENU_WITH_TIME_DATE_STYLE:
                     case MAIN_MENU_STYLE:
 			if (menu == selected)
 			{
@@ -272,13 +269,13 @@ void menus()
             switch (G_selectedMenu->type) {
 
             case MORE: /* jump to next page of menu */
-                    setNote(173, 2048); /* a */
+                    //setNote(173, 2048); /* a */
                     G_currMenu += PAGESIZE;
                     G_selectedMenu = G_currMenu;
                     break;
 
             case BACK: /* return from menu */
-		    setNote(154, 2048);
+		    //setNote(154, 2048);
 		    if (G_menuCnt == 0) return; /* stack is empty, error or main menu */
 		    G_menuCnt--;
 		    G_currMenu = G_menuStack[G_menuCnt].currMenu ;
@@ -287,11 +284,11 @@ void menus()
                     break;
 
             case TEXT: /* maybe highlight if clicked?? */
-                    setNote(145, 2048); /* c */
+                    //setNote(145, 2048); /* c */
                     break;
 
             case MENU: /* drills down into menu if clicked */
-                    setNote(129, 2048); /* d */
+                    //setNote(129, 2048); /* d */
                     G_menuStack[G_menuCnt].currMenu = G_currMenu; /* push onto stack  */
                     G_menuStack[G_menuCnt].selectedMenu = G_selectedMenu;
 		    G_menuCnt++;
@@ -302,7 +299,7 @@ void menus()
                     break;
 
             case FUNCTION: /* call the function pointer if clicked */
-                    setNote(115, 2048); /* e */
+                    //setNote(115, 2048); /* e */
                     runningApp = G_selectedMenu->data.func;
                     //(*selectedMenu->data.func)();
                     break;
@@ -315,7 +312,7 @@ void menus()
     }
     else if (UP_BTN_AND_CONSUME) /* handle slider/soft button clicks */
     {
-        setNote(109, 800); /* f */
+        //setNote(109, 800); /* f */
 
         /* make sure not on first menu item */
         if (G_selectedMenu > G_currMenu)
@@ -331,7 +328,7 @@ void menus()
     }
     else if (DOWN_BTN_AND_CONSUME)
     {
-        setNote(97, 1024); /* g */
+        //setNote(97, 1024); /* g */
 
 
         /* make sure not on last menu item */
@@ -378,13 +375,13 @@ void genericMenu(struct menu_t *L_menu, MENU_STYLE style)
             switch (L_selectedMenu->type) {
 
             case MORE: /* jump to next page of menu */
-                    setNote(173, 2048); /* a */
+                    //setNote(173, 2048); /* a */
                     L_currMenu += PAGESIZE;
                     L_selectedMenu = L_currMenu;
                     break;
 
             case BACK: /* return from menu */
-                    setNote(154, 2048); /* b */
+                    //setNote(154, 2048); /* b */
                     if (L_menuCnt == 0) return; /* stack is empty, error or main menu */
                     L_menuCnt--;
                     L_currMenu = L_menuStack[L_menuCnt] ;
@@ -393,11 +390,11 @@ void genericMenu(struct menu_t *L_menu, MENU_STYLE style)
                     break;
 
             case TEXT: /* maybe highlight if clicked?? */
-                    setNote(145, 2048); /* c */
+                    //setNote(145, 2048); /* c */
                     break;
 
             case MENU: /* drills down into menu if clicked */
-                    setNote(129, 2048); /* d */
+                    //setNote(129, 2048); /* d */
                     L_menuStack[L_menuCnt++] = L_currMenu; /* push onto stack  */
                     if (L_menuCnt == MAX_MENU_DEPTH) L_menuCnt--; /* too deep, undo */
                     L_currMenu = (struct menu_t *)L_selectedMenu->data.menu; /* go into this menu */
@@ -407,7 +404,7 @@ void genericMenu(struct menu_t *L_menu, MENU_STYLE style)
                     break;
 
             case FUNCTION: /* call the function pointer if clicked */
-                    setNote(115, 2048); /* e */
+                    //setNote(115, 2048); /* e */
                     (*L_selectedMenu->data.func)(L_selectedMenu);
 
 		    /* clean up for nex call back */
@@ -426,7 +423,7 @@ void genericMenu(struct menu_t *L_menu, MENU_STYLE style)
     }
     else if (UP_BTN_AND_CONSUME) /* handle slider/soft button clicks */
     {
-        setNote(109, 2048); /* f */
+        //setNote(109, 2048); /* f */
 
         /* make sure not on first menu item */
         if (L_selectedMenu > L_currMenu)
@@ -442,7 +439,7 @@ void genericMenu(struct menu_t *L_menu, MENU_STYLE style)
     }
     else if (DOWN_BTN_AND_CONSUME)
     {
-        setNote(97, 2048); /* g */
+        //setNote(97, 2048); /* g */
 
         /* make sure not on last menu item */
         if (!(L_selectedMenu->attrib & LAST_ITEM))
