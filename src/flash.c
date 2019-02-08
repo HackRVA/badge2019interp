@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include "flash.h"
 
 const unsigned short flashedBadgeId = 0xefbe; /* MAGIC value for script. It will be replaced by awk script in final flashing */
 
@@ -15,11 +14,13 @@ cc -g -O0 -o flash flash.c -DMAIN
 */
 
 #ifdef MAIN
+#include "../include/flash.h"
 unsigned char G_flashstart[2048] = {0xFF, 0xFF};
 void NVMWriteWord(unsigned int *addr, unsigned int word) ;
 void NVMErasePage(unsigned int *addr);
 #else
 #include "plib.h"
+#include "flash.h"
 const unsigned char G_flashstart[2048] = {0x00, 0x00};
 #endif
 /*

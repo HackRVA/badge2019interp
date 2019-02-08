@@ -1,3 +1,7 @@
+// this is actually setup in the bootloader
+// it is here because some system macros may need the PLL stuff
+// mainly the peripheral bus speed
+
 // Configuring the Device Configuration Registers
 #pragma config UPLLEN   = ON        // USB PLL Enabled
 #pragma config UPLLIDIV = DIV_1     // USB PLL Input Divider = Divide by 1 (board has 4 mhz crystal)
