@@ -121,9 +121,11 @@ void IRsend(int p)
 }
 
 
-void IRreceive(char *r)
+extern union IRpacket_u G_hack;
+void IRreceive(int *r)
 {
-   r = interpreter_IR;
+   //r = interpreter_IR;
+   *r = G_hack.v;
 }
 
 
@@ -1340,7 +1342,7 @@ int eval() {
         else if (op == FBMOVE) { FbMove((char)sp[1], (char)sp[0]); }
         else if (op == FBWRITE) { FbWrite((char *)sp[0]); }
         else if (op == BACKLIGHT) { backlight((char)sp[0]); }
-        else if (op == IRRECEIVE) { IRreceive((char *)sp[0]); }
+        else if (op == IRRECEIVE) { IRreceive((int *)sp[0]); }
         else if (op == IRSEND) { IRsend((char)sp[0]); }
         else {
             printf("unknown instruction:%d\n", op);
@@ -1354,10 +1356,11 @@ int eval() {
 
 static char ram[8192];
 char *ramptr;
-#define STACKSECTION 512 // 2k
-#define TEXTSECTION 512 // 2k
-#define DATASECTION 512 // 512
-#define SYMBOLSECTION 512 // 2k
+#define STACKSECTION 512 // * 4 == 2k
+#define TEXTSECTION 512 // * 4 == 2k
+#define DATASECTION 512 // * 1 == 512
+#define SYMBOLSECTION 512 // * 4 == 2k
+
 #endif
 
 int init_interpreter()

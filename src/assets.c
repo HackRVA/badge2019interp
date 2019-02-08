@@ -238,6 +238,7 @@ void haltPlayback(void)
 
 void setNote(unsigned short freq, unsigned short dur)
 {
+#ifdef NOTCOMPATIBLE
     G_wavehop[0] = (float) sizeof(wave_table) / (float) freq;
 
     G_samples_per_step = 4750;
@@ -247,6 +248,7 @@ void setNote(unsigned short freq, unsigned short dur)
     int i;
     for (i = 1; i < NUM_AUDIO_CHANNELS; i++)
         G_wavehop[i] = 0;
+#endif
 }
 
 void endNote(void)

@@ -195,8 +195,8 @@ void __ISR(_TIMER_2_VECTOR, IPL5SOFT) Timer2Handler(void)
 	    // 32 interrupts for each half of bit send
 	    // for 64 total per bit
 
-	    if (G_halfCount == 16) G_firstHalf = !PORTBbits.RB0; 
-	    if (G_halfCount == 48) G_lastHalf = !PORTBbits.RB0;
+	    if (G_halfCount == 16) G_firstHalf = !PORTBbits.RB15; 
+	    if (G_halfCount == 48) G_lastHalf = !PORTBbits.RB15;
 
 	    if (G_halfCount > 63) {
 		G_IRrecvVal <<= 1 ;
@@ -434,7 +434,7 @@ void __ISR( _EXTERNAL_1_VECTOR, IPL6SOFT) Int1Interrupt(void)
 }
 #else
 // external IR receive: interrupt level 6 highest
-// input changed on RPB15
+// input changed on RB15
 void __ISR( _EXTERNAL_4_VECTOR, IPL6SOFT) Int4Interrupt(void)
 { 
    // if not sending, signal in receive

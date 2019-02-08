@@ -1,4 +1,3 @@
-//#include <p32xxxx.h>
 #include <plib.h>
 #include "colors.h"
 #include "assetList.h"
@@ -14,6 +13,7 @@ extern char USB_Out_Buffer[];
 */
 struct sysData_t G_sysData;
 
+const char hextab[]={"0123456789ABCDEF"};
 
 // in used in S6B33 samsung controller
 extern unsigned char G_contrast1;
@@ -95,7 +95,9 @@ void UserInit(void)
     LATCbits.LATC9 = 1;      
        
     
-    /* main/left button init */
+    /* 
+	RB14 == main button
+    */
     TRISBbits.TRISB14 = 1; // 2019 button == input
     CNPUBbits.CNPUB14 = 1; // 2019 pullup == on
 
@@ -193,7 +195,7 @@ void echoUSB(char *str,int len) {
    int i;
 
    // can use USB_Out_Buffer since it may be locked in a host xfer
-   if ((lineOutBufPtr + len) > CDC_DATA_IN_EP_SIZE) return;
+   if ((lineOutBufPtr + len) > CDC_DATA_OUT_EP_SIZE) return;
 
    for (i=0; i<len; i++) {
 	if (str[i] == '\n')
@@ -209,6 +211,7 @@ static char progbuffer[1024]={0};
 // controls USB heartbeat blink
 static unsigned char debugBlink=1;
 
+void menus();
 void ProcessIO(void)
 {
     unsigned char nread=0;
@@ -217,11 +220,14 @@ void ProcessIO(void)
     static int doInterpreter = 0;
     int i;
 
-    //Blink the LEDs according to the USB device status
-    //very handy if you lock up when trying to run off of battery
-    //BlinkUSBStatus();
-
     if (mchipUSBnotReady()) return;
+
+    doButtons();
+    menus();
+    //FbSwapBuffers();
+    FbPushBuffer();
+    IRhandler(); /* do any pending IR callbacks */
+
 
     if (writeLOCK == 0) {
 	nread = getsUSBUSART(USB_In_Buffer, CDC_DATA_IN_EP_SIZE-1);
