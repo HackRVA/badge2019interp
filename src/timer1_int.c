@@ -1,6 +1,7 @@
 #include <plib.h>
 #include "flash.h"
 #include "ir.h"
+#include "adc.h"
 
 /*
     38khz IR timer code and interupt code
@@ -49,6 +50,8 @@ void timerInit(void)
 {
     // IR input pin input uses priority 4 
     // and flags receive timer2 to start
+
+    ADC_init(AN_MIC, HZ_150); // init to sampling mic very slowly
 
     // timer2 = IR send
     OpenTimer2(T2_ON | T2_SOURCE_INT, T2_TICK);

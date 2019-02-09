@@ -81,7 +81,7 @@ void UserInit(void)
     LCDReset();
     LATCbits.LATC1 = 1;      /* BLUE */
 
-    LCDBars();
+    //LCDBars();
 
     FbInit();
     FbClear();

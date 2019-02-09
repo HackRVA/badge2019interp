@@ -1,3 +1,8 @@
+/*
+   simple menu system
+   Author: Paul Bruggeman
+   paul@Killercats.com
+*/
 #include <plib.h>
 
 #include "LCDcolor.h"
@@ -9,13 +14,8 @@
 #include "buttons.h"
 #include "conductor.h"
 #include "blinkenlights.h"
+#include "adc.h"
 
-
-/*
-   simple menu system
-   Author: Paul Bruggeman
-   paul@Killercats.com
-*/
 
 #define MAIN_MENU_BKG_COLOR GREY2
 
@@ -273,13 +273,13 @@ void menus()
             switch (G_selectedMenu->type) {
 
             case MORE: /* jump to next page of menu */
-                    setNote(300, NOTEDUR); /* a */
+                    setNote(50, NOTEDUR); /* a */
                     G_currMenu += PAGESIZE;
                     G_selectedMenu = G_currMenu;
                     break;
 
             case BACK: /* return from menu */
-		    setNote(400, NOTEDUR);
+		    setNote(60, NOTEDUR);
 		    if (G_menuCnt == 0) return; /* stack is empty, error or main menu */
 		    G_menuCnt--;
 		    G_currMenu = G_menuStack[G_menuCnt].currMenu ;
@@ -288,11 +288,11 @@ void menus()
                     break;
 
             case TEXT: /* maybe highlight if clicked?? */
-                    setNote(500, NOTEDUR); /* c */
+                    setNote(70, NOTEDUR); /* c */
                     break;
 
             case MENU: /* drills down into menu if clicked */
-                    setNote(600, NOTEDUR); /* d */
+                    setNote(80, NOTEDUR); /* d */
                     G_menuStack[G_menuCnt].currMenu = G_currMenu; /* push onto stack  */
                     G_menuStack[G_menuCnt].selectedMenu = G_selectedMenu;
 		    G_menuCnt++;
@@ -303,7 +303,7 @@ void menus()
                     break;
 
             case FUNCTION: /* call the function pointer if clicked */
-                    setNote(200, NOTEDUR); /* e */
+                    setNote(90, NOTEDUR); /* e */
                     runningApp = G_selectedMenu->data.func;
                     //(*selectedMenu->data.func)();
                     break;
@@ -316,7 +316,7 @@ void menus()
     }
     else if (UP_BTN_AND_CONSUME) /* handle slider/soft button clicks */
     {
-        setNote(100, NOTEDUR); /* f */
+        setNote(70, NOTEDUR); /* f */
 
         /* make sure not on first menu item */
         if (G_selectedMenu > G_currMenu)
@@ -332,7 +332,7 @@ void menus()
     }
     else if (DOWN_BTN_AND_CONSUME)
     {
-        setNote(200, NOTEDUR); /* g */
+        setNote(100, NOTEDUR); /* g */
 
 
         /* make sure not on last menu item */
@@ -379,13 +379,13 @@ void genericMenu(struct menu_t *L_menu, MENU_STYLE style)
             switch (L_selectedMenu->type) {
 
             case MORE: /* jump to next page of menu */
-                    setNote(300, NOTEDUR); /* a */
+                    setNote(50, NOTEDUR); /* a */
                     L_currMenu += PAGESIZE;
                     L_selectedMenu = L_currMenu;
                     break;
 
             case BACK: /* return from menu */
-                    setNote(400, NOTEDUR); /* b */
+                    setNote(60, NOTEDUR); /* b */
                     if (L_menuCnt == 0) return; /* stack is empty, error or main menu */
                     L_menuCnt--;
                     L_currMenu = L_menuStack[L_menuCnt] ;
@@ -394,11 +394,11 @@ void genericMenu(struct menu_t *L_menu, MENU_STYLE style)
                     break;
 
             case TEXT: /* maybe highlight if clicked?? */
-                    setNote(500, NOTEDUR); /* c */
+                    setNote(70, NOTEDUR); /* c */
                     break;
 
             case MENU: /* drills down into menu if clicked */
-                    setNote(600, NOTEDUR); /* d */
+                    setNote(80, NOTEDUR); /* d */
                     L_menuStack[L_menuCnt++] = L_currMenu; /* push onto stack  */
                     if (L_menuCnt == MAX_MENU_DEPTH) L_menuCnt--; /* too deep, undo */
                     L_currMenu = (struct menu_t *)L_selectedMenu->data.menu; /* go into this menu */
@@ -408,7 +408,7 @@ void genericMenu(struct menu_t *L_menu, MENU_STYLE style)
                     break;
 
             case FUNCTION: /* call the function pointer if clicked */
-                    setNote(200, NOTEDUR); /* e */
+                    setNote(90, NOTEDUR); /* e */
                     (*L_selectedMenu->data.func)(L_selectedMenu);
 
 		    /* clean up for nex call back */
@@ -427,7 +427,7 @@ void genericMenu(struct menu_t *L_menu, MENU_STYLE style)
     }
     else if (UP_BTN_AND_CONSUME) /* handle slider/soft button clicks */
     {
-        setNote(100, NOTEDUR); /* f */
+        setNote(70, NOTEDUR); /* f */
 
         /* make sure not on first menu item */
         if (L_selectedMenu > L_currMenu)
@@ -443,7 +443,7 @@ void genericMenu(struct menu_t *L_menu, MENU_STYLE style)
     }
     else if (DOWN_BTN_AND_CONSUME)
     {
-        setNote(200, NOTEDUR); /* g */
+        setNote(100, NOTEDUR); /* g */
 
         /* make sure not on last menu item */
         if (!(L_selectedMenu->attrib & LAST_ITEM))
@@ -462,6 +462,7 @@ void genericMenu(struct menu_t *L_menu, MENU_STYLE style)
 const struct menu_t games_m[] = {
    {"Blinkenlights", VERT_ITEM|DEFAULT_ITEM, FUNCTION, {(struct menu_t *)blinkenlights_cb}}, // Set other badges LED
    {"Conductor", VERT_ITEM, FUNCTION, {(struct menu_t *)conductor_cb}}, // Tell other badges to play notes
+   {"Sensors", VERT_ITEM, FUNCTION, {(struct menu_t *)adc_cb} },
 
    {"back",	VERT_ITEM|LAST_ITEM, BACK, {NULL}},
 };

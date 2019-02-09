@@ -6,6 +6,8 @@
 // setup and do analog to digital conversion
 // peb 20180228
 
+// should be initialized by timer_int
+
 unsigned char calc_adcs(unsigned char chans,  int hz, unsigned char *samc_out) ;
 
 // see adc.h for MASK enums
@@ -238,15 +240,12 @@ void __ISR(_ADC_VECTOR, IPL4SOFT) ADC_handler(void)
 		break;
        }
 
-#define DERP
 #ifdef DERP
        CTMUCONbits.IDISSEN = 1;   // ground
        for(i=0; i < 5; i++); 
-       //vTaskDelay(1 / portTICK_PERIOD_MS);
        CTMUCONbits.IDISSEN = 0;
 
        CTMUCONbits.EDG1STAT = 1; // Begin charging the circuit
-       //vTaskDelay(1 / portTICK_PERIOD_MS);
        for(i=0; i < 20; i++); 
        //AD1CON1bits.SAMP = 0;     // Begin analog-to-digital conversion
        CTMUCONbits.EDG1STAT = 0; // Stop charging circuit

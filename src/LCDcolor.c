@@ -104,7 +104,11 @@ void LCDblue()
 }
 
 
-#define BARS
+/* 
+    takes about 1k in rom
+*/
+
+//#define BARS
 #ifdef BARS
 void LCDBars()
 {

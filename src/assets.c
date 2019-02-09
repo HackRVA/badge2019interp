@@ -1,7 +1,5 @@
 #include <plib.h>
-//#include "app.h"
 #include "assets.h"
-//#include "S6B33.h"
 #include "assetList.h"
 #include "timer1_int.h"
 #include "audio.h" // pin defs

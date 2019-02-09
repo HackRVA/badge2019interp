@@ -1357,7 +1357,7 @@ int eval() {
 
 #ifdef NEWIMPROVED
 
-static char ram[8192];
+char ram[8192];
 char *ramptr;
 #define STACKSECTION 512 // * 4 == 2k
 #define TEXTSECTION 512 // * 4 == 2k

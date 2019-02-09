@@ -73,6 +73,11 @@ enum SAMPLE_HZ {
    HZ_LAST
 };
 
+// enum {HZ_500 ... (HZ_LAST-1)}
+void ADC_init(unsigned char analog_src_num, unsigned char hz_num);
+void ADC_stop();
+void adc_cb();
+
 extern const struct sample_info_t samples_info[];
 extern const struct analog_src_t analog_info[] ;
 
