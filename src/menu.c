@@ -7,6 +7,8 @@
 #include "ir.h"
 #include "assetList.h"
 #include "buttons.h"
+#include "conductor.h"
+#include "blinkenlights.h"
 
 
 /*
@@ -23,6 +25,8 @@ void splash_cb();
 const struct menu_t games_m[];
 struct menu_t main_m[] ;
 struct menu_t settings_m[];
+
+#define NOTEDUR 4000
 
 //#define QC
 
@@ -269,13 +273,13 @@ void menus()
             switch (G_selectedMenu->type) {
 
             case MORE: /* jump to next page of menu */
-                    //setNote(173, 2048); /* a */
+                    setNote(300, NOTEDUR); /* a */
                     G_currMenu += PAGESIZE;
                     G_selectedMenu = G_currMenu;
                     break;
 
             case BACK: /* return from menu */
-		    //setNote(154, 2048);
+		    setNote(400, NOTEDUR);
 		    if (G_menuCnt == 0) return; /* stack is empty, error or main menu */
 		    G_menuCnt--;
 		    G_currMenu = G_menuStack[G_menuCnt].currMenu ;
@@ -284,11 +288,11 @@ void menus()
                     break;
 
             case TEXT: /* maybe highlight if clicked?? */
-                    //setNote(145, 2048); /* c */
+                    setNote(500, NOTEDUR); /* c */
                     break;
 
             case MENU: /* drills down into menu if clicked */
-                    //setNote(129, 2048); /* d */
+                    setNote(600, NOTEDUR); /* d */
                     G_menuStack[G_menuCnt].currMenu = G_currMenu; /* push onto stack  */
                     G_menuStack[G_menuCnt].selectedMenu = G_selectedMenu;
 		    G_menuCnt++;
@@ -299,7 +303,7 @@ void menus()
                     break;
 
             case FUNCTION: /* call the function pointer if clicked */
-                    //setNote(115, 2048); /* e */
+                    setNote(200, NOTEDUR); /* e */
                     runningApp = G_selectedMenu->data.func;
                     //(*selectedMenu->data.func)();
                     break;
@@ -312,7 +316,7 @@ void menus()
     }
     else if (UP_BTN_AND_CONSUME) /* handle slider/soft button clicks */
     {
-        //setNote(109, 800); /* f */
+        setNote(100, NOTEDUR); /* f */
 
         /* make sure not on first menu item */
         if (G_selectedMenu > G_currMenu)
@@ -328,7 +332,7 @@ void menus()
     }
     else if (DOWN_BTN_AND_CONSUME)
     {
-        //setNote(97, 1024); /* g */
+        setNote(200, NOTEDUR); /* g */
 
 
         /* make sure not on last menu item */
@@ -375,13 +379,13 @@ void genericMenu(struct menu_t *L_menu, MENU_STYLE style)
             switch (L_selectedMenu->type) {
 
             case MORE: /* jump to next page of menu */
-                    //setNote(173, 2048); /* a */
+                    setNote(300, NOTEDUR); /* a */
                     L_currMenu += PAGESIZE;
                     L_selectedMenu = L_currMenu;
                     break;
 
             case BACK: /* return from menu */
-                    //setNote(154, 2048); /* b */
+                    setNote(400, NOTEDUR); /* b */
                     if (L_menuCnt == 0) return; /* stack is empty, error or main menu */
                     L_menuCnt--;
                     L_currMenu = L_menuStack[L_menuCnt] ;
@@ -390,11 +394,11 @@ void genericMenu(struct menu_t *L_menu, MENU_STYLE style)
                     break;
 
             case TEXT: /* maybe highlight if clicked?? */
-                    //setNote(145, 2048); /* c */
+                    setNote(500, NOTEDUR); /* c */
                     break;
 
             case MENU: /* drills down into menu if clicked */
-                    //setNote(129, 2048); /* d */
+                    setNote(600, NOTEDUR); /* d */
                     L_menuStack[L_menuCnt++] = L_currMenu; /* push onto stack  */
                     if (L_menuCnt == MAX_MENU_DEPTH) L_menuCnt--; /* too deep, undo */
                     L_currMenu = (struct menu_t *)L_selectedMenu->data.menu; /* go into this menu */
@@ -404,7 +408,7 @@ void genericMenu(struct menu_t *L_menu, MENU_STYLE style)
                     break;
 
             case FUNCTION: /* call the function pointer if clicked */
-                    //setNote(115, 2048); /* e */
+                    setNote(200, NOTEDUR); /* e */
                     (*L_selectedMenu->data.func)(L_selectedMenu);
 
 		    /* clean up for nex call back */
@@ -423,7 +427,7 @@ void genericMenu(struct menu_t *L_menu, MENU_STYLE style)
     }
     else if (UP_BTN_AND_CONSUME) /* handle slider/soft button clicks */
     {
-        //setNote(109, 2048); /* f */
+        setNote(100, NOTEDUR); /* f */
 
         /* make sure not on first menu item */
         if (L_selectedMenu > L_currMenu)
@@ -439,7 +443,7 @@ void genericMenu(struct menu_t *L_menu, MENU_STYLE style)
     }
     else if (DOWN_BTN_AND_CONSUME)
     {
-        //setNote(97, 2048); /* g */
+        setNote(200, NOTEDUR); /* g */
 
         /* make sure not on last menu item */
         if (!(L_selectedMenu->attrib & LAST_ITEM))
@@ -456,8 +460,8 @@ void genericMenu(struct menu_t *L_menu, MENU_STYLE style)
 }
 
 const struct menu_t games_m[] = {
-//   {"Blinkenlights", VERT_ITEM|DEFAULT_ITEM, FUNCTION, {(struct menu_t *)blinkenlights_cb}}, // Set other badges LED
-//   {"Conductor", VERT_ITEM, FUNCTION, {(struct menu_t *)audio_conductor_cb}}, // Tell other badges to play notes
+   {"Blinkenlights", VERT_ITEM|DEFAULT_ITEM, FUNCTION, {(struct menu_t *)blinkenlights_cb}}, // Set other badges LED
+   {"Conductor", VERT_ITEM, FUNCTION, {(struct menu_t *)conductor_cb}}, // Tell other badges to play notes
 
    {"back",	VERT_ITEM|LAST_ITEM, BACK, {NULL}},
 };
@@ -469,7 +473,7 @@ struct menu_t settings_m[] = {
 //   {"time n date",VERT_ITEM|DEFAULT_ITEM, MENU, {(struct menu_t *)timedate_m}},
    {"rotate",VERT_ITEM, MENU, {(struct menu_t *)rotate_m}},
    {"backlight",VERT_ITEM, MENU, {(struct menu_t *)backlight_m}},
-//   {"led",	VERT_ITEM, MENU, {(struct menu_t *)LEDlight_m}},  /* coerce/cast to a menu_t data pointer */
+   {"led",	VERT_ITEM, MENU, {(struct menu_t *)LEDlight_m}},  /* coerce/cast to a menu_t data pointer */
    {"buzzer",	VERT_ITEM, MENU, {(struct menu_t *)buzzer_m}},
    {"Back",	VERT_ITEM|LAST_ITEM, BACK, {NULL}},
 };
@@ -498,7 +502,6 @@ void splash_cb()
     if (wait == 1400) green(100);
     if (wait == 2100) blue(100);
 
-    //if (wait % 200 == 1) setNote((3000 - wait) >> 2, 2048);
 
     if (wait == 3000) {
         red(0);

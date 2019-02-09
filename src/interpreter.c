@@ -1335,9 +1335,12 @@ int eval() {
 
         else if (op == EXIT) { printf("exit(%d)", *sp); return *sp;}
         else if (op == PRTF) { tmp = sp + pc[1]; ax = printf((char *)tmp[-1], tmp[-2], tmp[-3], tmp[-4], tmp[-5], tmp[-6]); }
-        else if (op == MALC) { ax = (int)malloc(*sp);}
-        else if (op == MSET) { ax = (int)memset((char *)sp[2], sp[1], *sp);}
-        else if (op == MCMP) { ax = memcmp((char *)sp[2], (char *)sp[1], *sp);}
+        //else if (op == MALC) { ax = (int)malloc(*sp);}
+        else if (op == MALC) { }
+        //else if (op == MSET) { ax = (int)memset((char *)sp[2], sp[1], *sp);}
+        else if (op == MSET) { }
+        //else if (op == MCMP) { ax = memcmp((char *)sp[2], (char *)sp[1], *sp);}
+        else if (op == MCMP) { }
         else if (op == LED) { led((char)sp[2], (char)sp[1], (char)sp[0]); }
         else if (op == FBMOVE) { FbMove((char)sp[1], (char)sp[0]); }
         else if (op == FBWRITE) { FbWrite((char *)sp[0]); }

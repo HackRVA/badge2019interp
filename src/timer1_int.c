@@ -39,14 +39,8 @@
 #define LED_TOGGLES		38000
 #define T3_TICK       		(SYS_FREQ/LED_TOGGLES)
 
-/* 
-	PEB this slows the badge down incredibly
-
-#define AUDIO_TOGGLES		38000
-*/
-
 /* audio timer4*/
-#define AUDIO_TOGGLES		600
+#define AUDIO_TOGGLES		38000
 #define T4_TICK       		(SYS_FREQ/AUDIO_TOGGLES)
 
 void doLED_PWM();
@@ -454,9 +448,7 @@ void __ISR( _EXTERNAL_4_VECTOR, IPL6SOFT) Int4Interrupt(void)
 // audio higher than LED
 void __ISR(_TIMER_4_VECTOR, IPL3SOFT) Timer4Handler(void)
 {
-#ifdef NOTCOMPATIBLE
    doAudio();
-#endif
    mT4ClearIntFlag(); // clear the interrupt flag
 }
 

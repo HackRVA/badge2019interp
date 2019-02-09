@@ -119,7 +119,6 @@ void backlight_cb(struct menu_t *h) {
 
    G_sysData.backlight = selectedMenu->attrib & 0x1FF;
    backlight(G_sysData.backlight);
-   led(0, 100, 10);
 
    closeMenuAndReturn();
 }
@@ -239,7 +238,7 @@ void buzzer_config_cb()
     closeMenuAndReturn();
 }
 
-struct menu_t buzzer_config_m[] = {
+const struct menu_t buzzer_config_m[] = {
     {"Buzzer: On",   0|VERT_ITEM,     FUNCTION, {(struct menu_t *)buzzer_config_cb} },
     {"Buzzer: Off",  1|VERT_ITEM,     FUNCTION, {(struct menu_t *)buzzer_config_cb} },
     {"Back", VERT_ITEM|LAST_ITEM| DEFAULT_ITEM, BACK, {NULL} },

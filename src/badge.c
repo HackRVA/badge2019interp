@@ -224,7 +224,6 @@ void ProcessIO(void)
 
     doButtons();
     menus();
-    //FbSwapBuffers();
     FbPushBuffer();
     IRhandler(); /* do any pending IR callbacks */
 

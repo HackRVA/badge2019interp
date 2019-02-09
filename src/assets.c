@@ -5,7 +5,7 @@
 #include "assetList.h"
 #include "timer1_int.h"
 #include "audio.h" // pin defs
-#include "wavetable.h"
+//#include "wavetable.h"
 
 /**
     simple asset management and display lib
@@ -189,6 +189,7 @@ void drawLCD8(unsigned char assetId, int frame)
    }
 }
 
+#ifdef LOCKING_UP
 volatile unsigned char G_audioAssetId = 255;
 /* whether to even bother playing anything */
 volatile char G_playing = 0;
@@ -238,7 +239,6 @@ void haltPlayback(void)
 
 void setNote(unsigned short freq, unsigned short dur)
 {
-#ifdef NOTCOMPATIBLE
     G_wavehop[0] = (float) sizeof(wave_table) / (float) freq;
 
     G_samples_per_step = 4750;
@@ -248,7 +248,6 @@ void setNote(unsigned short freq, unsigned short dur)
     int i;
     for (i = 1; i < NUM_AUDIO_CHANNELS; i++)
         G_wavehop[i] = 0;
-#endif
 }
 
 void endNote(void)
@@ -300,10 +299,113 @@ void doAudio(void)
         }
     }
 }
+#else
+
+unsigned char G_audioAssetId = 255;
+unsigned int G_audioFrame = 0; /* persistant current "frame" of audio, like a "frame" of video */
+unsigned short G_currentNote=0;
+unsigned short G_duration = 0;
+unsigned short G_duration_cnt = 0;
+unsigned short G_freq_cnt = 0;
+unsigned short G_freq = 0;
+
+unsigned short G_mute = 0;
+unsigned short G_audio_phase = 0;
+/* whether to even bother playing anything */
+volatile char G_playing = 0;
+
+
+/* how many notes we've gone in the note table */
+volatile short G_note_num = 0;
+
+/* number of samples for each audio step; a function of tempo */
+volatile int G_samples_per_step = 0;
+
+/* amount of the wave that will be skipped by each channel per cycle; a function of note frequency. 0 = silence */
+//volatile float G_wavehop[NUM_AUDIO_CHANNELS] = {0.0, 0.0};
+
+/* duration through the wave that each channel has gone */
+//volatile float G_wavepos[NUM_AUDIO_CHANNELS] = {0.0, 0.0};
+
+
+void playAsset(unsigned char assetId) 
+{
+    G_audioAssetId = assetId;
+    assetList[assetId].datacb(assetId, 0); /* install asset frame=0 */
+}
+
+void setNote(unsigned short freq, unsigned short dur) {
+    if (G_mute) return;
+
+   if (dur <= freq) dur = (freq << 1); /* to short to be play with PWM, so double it */
+
+   G_freq = freq;
+   G_duration = dur;
+
+   G_freq_cnt = 0;
+   G_duration_cnt = 0;
+}
+
+// RA9
+void doAudio()
+{
+   if (G_duration == 0) return;
+
+   G_freq_cnt++; /* current note freq counter */
+   G_duration_cnt++;
+
+   if (G_duration_cnt != G_duration) {
+       if (G_freq_cnt == G_freq)  {
+          G_freq_cnt = 0;
+	  switch (G_audio_phase) {
+	  case 0:
+	     AUDIO_PHASE1 = 1;
+	     AUDIO_PHASE2 = 0;
+	     break;
+	  
+	  case 1:
+	     AUDIO_PHASE1 = 0;
+	     AUDIO_PHASE2 = 0;
+	     break;
+
+	  case 2:
+	     AUDIO_PHASE1 = 0;
+	     AUDIO_PHASE2 = 1;
+	     break;
+
+	  case 3:
+	     AUDIO_PHASE1 = 0;
+	     AUDIO_PHASE2 = 0;
+	     break;
+	  }
+	  G_audio_phase++;
+	  G_audio_phase %= 4;
+       }
+       else {
+	  AUDIO_PHASE1 = 0;
+	  AUDIO_PHASE2 = 0;
+	  G_audio_phase = 0;
+       }
+   }
+   else {
+	G_duration = 0;
+
+	AUDIO_PHASE1 = 0;
+	AUDIO_PHASE2 = 0;
+	G_audio_phase = 0;
+	if (G_audioAssetId != 255) assetList[G_audioAssetId].datacb(G_audioAssetId, G_audioFrame) ; /* callback routine */
+   }
+   G_audioFrame++;
+}
+
+#endif
+
 
 /* callback to feed next note to the audio function */
 void nextNote(void)
 {
+
+#ifdef PEBXXX
     /* if the pattern is over */
     if (G_note_num >= assetList[G_audioAssetId].seqNum) {
 
@@ -339,4 +441,5 @@ void nextNote(void)
     G_note_num++;
 
     G_samples_per_step = assetList[G_audioAssetId].x;
+#endif
 }

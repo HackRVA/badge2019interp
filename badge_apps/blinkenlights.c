@@ -1,28 +1,8 @@
-//#include "badge16.h"
 #include "colors.h"
-#include "badge_menu.h"
+#include "menu.h"
 #include "ir.h"
-//#include "touchCTMU.h"
+#include "blinkenlights.h"
 #include "buttons.h"
-//#include "blinkenlights.h"
-
-//DECLARE
-#define BL_INCR_AMNT 2
-void set_red();
-void set_blue();
-void set_green();
-
-void bl_clear_colors();
-
-void set_bl_mode();
-void set_bl_go();
-void set_bl_exit();
-
-void set_local_leds();
-void bl_populate_menu();
-
-void blinkenlights_task(void *args);
-
 
 // If ordering changed, make sure indices still work
 // in the populate function
@@ -30,15 +10,13 @@ struct menu_t blinkenlights_config_m[] = {
     {"Red: ", VERT_ITEM, FUNCTION, {(struct menu_t *)set_red}},
     {"Blue: ", VERT_ITEM, FUNCTION, {(struct menu_t *)set_blue}},
     {"Green: ", VERT_ITEM, FUNCTION, {(struct menu_t *)set_green}},
-    {"--CLEAR--", VERT_ITEM, FUNCTION, {(struct menu_t *)bl_clear_colors}},
+    {"--CLEAR--", VERT_ITEM, FUNCTION, {(struct menu_t *)bl_clear_colors} },
     {"", VERT_ITEM|SKIP_ITEM, TEXT, 0},
-    {"Mode: ", VERT_ITEM, FUNCTION, {(struct menu_t *)set_bl_mode}},
-    {"Go!!", VERT_ITEM|DEFAULT_ITEM, FUNCTION, {(struct menu_t *)set_bl_go}},
+    {"Mode: ", VERT_ITEM, FUNCTION, {(struct menu_t *)set_bl_mode} },
+    {"Go!!", VERT_ITEM|DEFAULT_ITEM, FUNCTION, {(struct menu_t *)set_bl_go} },
     {"Exit", VERT_ITEM|LAST_ITEM, FUNCTION, {(struct menu_t *) set_bl_exit}},
 };
 unsigned char bl_red = 50, bl_green = 40, bl_blue = 0;
-
-char image = 0;
 
 enum
 {
@@ -164,107 +142,108 @@ void bl_populate_menu()
 
 void set_local_leds()
 {
-    led(bl_red,bl_green,bl_blue);
+    red(bl_red);
+    green(bl_green);
+    blue(bl_blue);
 }
 
-void blinkenlights_task(void *args)
+void blinkenlights_cb()
 {
-    for(;;){
-        switch(bl_state)
-        {
-            case INIT:
+    switch(bl_state)
+    {
+        case INIT:
+            bl_populate_menu();
+            bl_state++;
+            break;
+        case SHOW_MENU:
+            genericMenu((struct menu_t *)blinkenlights_config_m, MAIN_MENU_STYLE);
+            break;
+        case CONFIG_RED:
+            if(BUTTON_PRESSED_AND_CONSUME)
+            {
+                red(0);
+                green(0);
+                blue(0);
+                bl_state = SHOW_MENU;
+            }
+            else if(UP_BTN_AND_CONSUME)
+            {
+                bl_red += BL_INCR_AMNT;
+                if(bl_red > 100)
+                    bl_red = 100;
+                
+                set_local_leds();
                 bl_populate_menu();
-                bl_state++;
-                break;
-            case SHOW_MENU:
-                genericMenu((struct menu_t *)blinkenlights_config_m, MAIN_MENU_STYLE);
-                FbSwapBuffers();
-                break;
-            case CONFIG_RED:
-                if(BUTTON_PRESSED_AND_CONSUME)
-                {
-                    led(0,0,0);
-                    bl_state = SHOW_MENU;
-                }
-                else if(UP_BTN_AND_CONSUME)
-                {
-                    bl_red += BL_INCR_AMNT;
-                    if(bl_red > 100)
-                        bl_red = 100;
+                
+            }
+            else if(DOWN_BTN_AND_CONSUME)
+            {
+                if(bl_red  > BL_INCR_AMNT)
+                    bl_red -= BL_INCR_AMNT;
+                else
+                    bl_red = 0;
 
-                    set_local_leds();
-                    bl_populate_menu();
+                set_local_leds();
+                bl_populate_menu();
+            }
+            break;
+        case CONFIG_GREEN:
+            if(BUTTON_PRESSED_AND_CONSUME)
+            {
+                red(0);
+                green(0);
+                blue(0);
+                bl_state = SHOW_MENU;
+            }
+            else if(UP_BTN_AND_CONSUME)
+            {
+                bl_green += BL_INCR_AMNT;
+                if(bl_green > 100)
+                    bl_green = 100;
 
-                }
-                else if(DOWN_BTN_AND_CONSUME)
-                {
-                    if(bl_red  > BL_INCR_AMNT)
-                        bl_red -= BL_INCR_AMNT;
-                    else
-                        bl_red = 0;
+                set_local_leds();
+                bl_populate_menu();
 
-                    set_local_leds();
-                    bl_populate_menu();
-                }
-                break;
-            case CONFIG_GREEN:
-                if(BUTTON_PRESSED_AND_CONSUME)
-                {
-                    red(0);
-                    green(0);
-                    blue(0);
-                    bl_state = SHOW_MENU;
-                }
-                else if(UP_BTN_AND_CONSUME)
-                {
-                    bl_green += BL_INCR_AMNT;
-                    if(bl_green > 100)
-                        bl_green = 100;
+            }
+            else if(DOWN_BTN_AND_CONSUME)
+            {
+                if(bl_green > BL_INCR_AMNT)
+                    bl_green -= BL_INCR_AMNT;
+                else
+                    bl_green = 0;
 
-                    set_local_leds();
-                    bl_populate_menu();
+                set_local_leds();
+                bl_populate_menu();
+            }
+            break;
+        case CONFIG_BLUE:
+            if(BUTTON_PRESSED_AND_CONSUME)
+            {
+                red(0);
+                green(0);
+                blue(0);
+                bl_state = SHOW_MENU;
+            }
+            else if(UP_BTN_AND_CONSUME)
+            {
+                bl_blue += BL_INCR_AMNT;
+                if(bl_blue > 100)
+                    bl_blue = 100;
 
-                }
-                else if(DOWN_BTN_AND_CONSUME)
-                {
-                    if(bl_green > BL_INCR_AMNT)
-                        bl_green -= BL_INCR_AMNT;
-                    else
-                        bl_green = 0;
+                set_local_leds();
+                bl_populate_menu();
 
-                    set_local_leds();
-                    bl_populate_menu();
-                }
-                break;
-            case CONFIG_BLUE:
-                if(BUTTON_PRESSED_AND_CONSUME)
-                {
-                    red(0);
-                    green(0);
-                    blue(0);
-                    bl_state = SHOW_MENU;
-                }
-                else if(UP_BTN_AND_CONSUME)
-                {
-                    bl_blue += BL_INCR_AMNT;
-                    if(bl_blue > 100)
-                        bl_blue = 100;
+            }
+            else if(DOWN_BTN_AND_CONSUME)
+            {
+                if(bl_blue  > BL_INCR_AMNT)
+                    bl_blue -= BL_INCR_AMNT;
+                else
+                    bl_blue = 0;
 
-                    set_local_leds();
-                    bl_populate_menu();
-
-                }
-                else if(DOWN_BTN_AND_CONSUME)
-                {
-                    if(bl_blue  > BL_INCR_AMNT)
-                        bl_blue -= BL_INCR_AMNT;
-                    else
-                        bl_blue = 0;
-
-                    set_local_leds();
-                    bl_populate_menu();
-                }            
-                break;
-        }
+                set_local_leds();
+                bl_populate_menu();
+            }            
+            break;
     }
 }
