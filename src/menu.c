@@ -238,7 +238,7 @@ void closeMenuAndReturn()
 void returnToMenus()
 {
     if (G_currMenu == NULL) {
-        G_currMenu = main_m;
+        G_currMenu = (struct menu_t *)main_m;
         G_selectedMenu = NULL;
         G_menuStack[G_menuCnt].currMenu = G_currMenu;
         G_menuStack[G_menuCnt].selectedMenu = G_selectedMenu;
@@ -256,9 +256,9 @@ void menus()
     }
 
     if (G_currMenu == NULL) {
-            G_menuStack[G_menuCnt].currMenu = main_m;
+            G_menuStack[G_menuCnt].currMenu = (struct menu_t *)main_m;
             G_menuStack[G_menuCnt].selectedMenu = NULL;
-            G_currMenu = main_m;
+            G_currMenu = (struct menu_t *)main_m;
             //selectedMenu = G_currMenu;
             G_selectedMenu = NULL;
             G_selectedMenu = display_menu(G_currMenu, G_selectedMenu, MAIN_MENU_STYLE);
@@ -470,6 +470,7 @@ const struct menu_t settings_m[] = {
 //   {"my badgeId",	VERT_ITEM, MENU, {(struct menu_t *)myBadgeid_m}},
 //   {"peer badgeId",	VERT_ITEM, MENU, {(struct menu_t *)peerBadgeid_m}},
 //   {"time n date",VERT_ITEM|DEFAULT_ITEM, MENU, {(struct menu_t *)timedate_m}},
+   {"Ping",VERT_ITEM, MENU, {(struct menu_t *)ping_m}},
    {"Backlight",VERT_ITEM, MENU, {(struct menu_t *)backlight_m}},
    {"Led",	VERT_ITEM, MENU, {(struct menu_t *)LEDlight_m}},  /* coerce/cast to a menu_t data pointer */
    {"Buzzer",	VERT_ITEM|DEFAULT_ITEM, MENU, {(struct menu_t *)buzzer_m}},

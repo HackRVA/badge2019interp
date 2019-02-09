@@ -12,6 +12,7 @@ extern unsigned short ping_responded;
 
 void ping_cb(){
     static unsigned char num_pinged = 0;
+
     if(!num_pinged){
         FbClear();
         FbSwapBuffers();
@@ -40,11 +41,14 @@ void ping_cb(){
         ping_responded = 0;
     }
 
-    if(BUTTON_PRESSED_AND_CONSUME){
-        blue(0);
-        num_pinged = 0;
-    }
+    returnToMenus();
 }
+
+const struct menu_t ping_m[] = {
+    {"Ping",   VERT_ITEM, FUNCTION, {(struct menu_t *)ping_cb} },
+    {"Back", VERT_ITEM|LAST_ITEM|DEFAULT_ITEM, BACK, {NULL} },
+};
+
 
 /*
     set badge Id
@@ -62,8 +66,7 @@ void myBadgeid_cb(struct menu_t *h) {
    selectedMenu->name[3] = hextab[((G_sysData.badgeId      ) & 0xF)];
    selectedMenu->name[4] = 0;
    //strcpy(dstMenu->name, selectedMenu->name);
-   closeMenuAndReturn();
-
+   returnToMenus();
 }
 
 const struct menu_t myBadgeid_m[] = {
@@ -121,7 +124,7 @@ void backlight_cb(struct menu_t *h) {
    G_sysData.backlight = selectedMenu->attrib & 0x1FF;
    backlight(G_sysData.backlight);
 
-   closeMenuAndReturn();
+   returnToMenus();
 }
 
 const struct menu_t backlightList_m[] = {
@@ -167,7 +170,7 @@ void rotate_cb(struct menu_t *h) {
 
     LCDReset();
 
-    closeMenuAndReturn();
+    returnToMenus();
 };
 
 const struct menu_t rotate_m[] = {
@@ -202,7 +205,7 @@ void LEDlight_cb(struct menu_t *h) {
     green(G_green_pwm);
     blue(G_blue_pwm);
 
-    closeMenuAndReturn();
+    returnToMenus();
 }
 
 
@@ -236,7 +239,7 @@ void buzzer_config_cb()
 
     G_mute = selectedMenu->attrib & 0x1; /* low order bits of attrib can store values */
 
-    closeMenuAndReturn();
+    returnToMenus();
 }
 
 const struct menu_t buzzer_config_m[] = {

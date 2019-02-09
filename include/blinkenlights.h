@@ -8,7 +8,7 @@
 #ifndef BLINKENLIGHTS_H
 #define	BLINKENLIGHTS_H
 
-#define BL_INCR_AMNT 2
+#define BL_INCR_AMNT 5
 void set_red();
 void set_blue();
 void set_green();
