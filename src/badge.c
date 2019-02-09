@@ -2,6 +2,7 @@
 #include "colors.h"
 #include "assetList.h"
 #include "flash.h"
+#include "adc.h"
 
 #include "USB/usb_config.h" // for buffer size/CDC_DATA_IN_EP_SIZE
 
@@ -164,6 +165,7 @@ void UserInit(void)
     FbPushBuffer();
 
     timerInit();
+    ADC_init(AN_MIC, HZ_150); // init to sampling mic very slowly
 }
 
 void LCDprint(char *str,int len) {
@@ -222,10 +224,15 @@ void ProcessIO(void)
 
     if (mchipUSBnotReady()) return;
 
+    /*
+	this ProcessIO() is the badge main loop
+	buttons are serviced only when the app finishes
+	same with IR events and USB input/output
+    */
     doButtons();
+    IRhandler(); /* do any pending IR callbacks */
     menus();
     FbPushBuffer();
-    IRhandler(); /* do any pending IR callbacks */
 
 
     if (writeLOCK == 0) {

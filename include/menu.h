@@ -5,6 +5,10 @@
 #define GREEN_BG 0
 #define BLUE_BG 0
 
+/*
+   low order bits of attrib can be used to store
+   a number from 0..255 
+*/
 enum attrib_bits {
     VERT_BIT=9, /* max 16 bits in unsigned short */
     HORIZ_BIT,

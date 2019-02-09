@@ -80,4 +80,10 @@ int main() {
    led(0, 0, 0);
 }
 
+int main() {
+   int r;
+   IRreceive(&r);
+   return r;
+}
+
 

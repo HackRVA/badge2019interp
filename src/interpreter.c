@@ -1357,7 +1357,7 @@ int eval() {
 
 #ifdef NEWIMPROVED
 
-char ram[8192];
+char interp_ram[8192];
 char *ramptr;
 #define STACKSECTION 512 // * 4 == 2k
 #define TEXTSECTION 512 // * 4 == 2k
@@ -1371,7 +1371,7 @@ int init_interpreter()
     int i, fd;
 
 #ifdef NEWIMPROVED
-    ramptr = ram;
+    ramptr = interp_ram;
 
     text = (int *)ramptr;
     ramptr += TEXTSECTION * sizeof(int);

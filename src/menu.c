@@ -23,8 +23,8 @@
 void splash_cb();
 
 const struct menu_t games_m[];
-struct menu_t main_m[] ;
-struct menu_t settings_m[];
+const struct menu_t main_m[] ;
+const struct menu_t settings_m[];
 
 #define NOTEDUR 4000
 
@@ -461,29 +461,27 @@ void genericMenu(struct menu_t *L_menu, MENU_STYLE style)
 
 const struct menu_t games_m[] = {
    {"Blinkenlights", VERT_ITEM|DEFAULT_ITEM, FUNCTION, {(struct menu_t *)blinkenlights_cb}}, // Set other badges LED
-   {"Conductor", VERT_ITEM, FUNCTION, {(struct menu_t *)conductor_cb}}, // Tell other badges to play notes
-   {"Sensors", VERT_ITEM, FUNCTION, {(struct menu_t *)adc_cb} },
-
-   {"back",	VERT_ITEM|LAST_ITEM, BACK, {NULL}},
+   {"Conductor",     VERT_ITEM, FUNCTION, {(struct menu_t *)conductor_cb}}, // Tell other badges to play notes
+   {"Sensors",       VERT_ITEM, FUNCTION, {(struct menu_t *)adc_cb} },
+   {"Back",	     VERT_ITEM|LAST_ITEM, BACK, {NULL}},
 };
 
-/* not const because modifyable */
-struct menu_t settings_m[] = {
+const struct menu_t settings_m[] = {
 //   {"my badgeId",	VERT_ITEM, MENU, {(struct menu_t *)myBadgeid_m}},
 //   {"peer badgeId",	VERT_ITEM, MENU, {(struct menu_t *)peerBadgeid_m}},
 //   {"time n date",VERT_ITEM|DEFAULT_ITEM, MENU, {(struct menu_t *)timedate_m}},
-   {"rotate",VERT_ITEM, MENU, {(struct menu_t *)rotate_m}},
-   {"backlight",VERT_ITEM, MENU, {(struct menu_t *)backlight_m}},
-   {"led",	VERT_ITEM, MENU, {(struct menu_t *)LEDlight_m}},  /* coerce/cast to a menu_t data pointer */
-   {"buzzer",	VERT_ITEM, MENU, {(struct menu_t *)buzzer_m}},
+   {"Backlight",VERT_ITEM, MENU, {(struct menu_t *)backlight_m}},
+   {"Led",	VERT_ITEM, MENU, {(struct menu_t *)LEDlight_m}},  /* coerce/cast to a menu_t data pointer */
+   {"Buzzer",	VERT_ITEM|DEFAULT_ITEM, MENU, {(struct menu_t *)buzzer_m}},
+   {"Rotate",   VERT_ITEM, MENU, {(struct menu_t *)rotate_m}},
    {"Back",	VERT_ITEM|LAST_ITEM, BACK, {NULL}},
 };
 
 
-struct menu_t main_m[] = {
+const struct menu_t main_m[] = {
 //   {"Schedule",    VERT_ITEM, MENU, {schedule_m}},
    {"Games",       VERT_ITEM|DEFAULT_ITEM, MENU, {games_m}},
-   {"Settings",    VERT_ITEM, MENU, {settings_m}},
+   {"Settings",    VERT_ITEM|LAST_ITEM, MENU, {settings_m}},
 } ;
 
 

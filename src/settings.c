@@ -9,6 +9,7 @@
 
 extern unsigned short pinged;
 extern unsigned short ping_responded;
+
 void ping_cb(){
     static unsigned char num_pinged = 0;
     if(!num_pinged){
@@ -65,7 +66,7 @@ void myBadgeid_cb(struct menu_t *h) {
 
 }
 
-struct menu_t myBadgeid_m[] = {
+const struct menu_t myBadgeid_m[] = {
     {"check",   VERT_ITEM, FUNCTION, {(struct menu_t *)myBadgeid_cb} },
     {"Back", VERT_ITEM|LAST_ITEM|DEFAULT_ITEM, BACK, {NULL} },
 };
@@ -170,9 +171,9 @@ void rotate_cb(struct menu_t *h) {
 };
 
 const struct menu_t rotate_m[] = {
-    {" default",   0|VERT_ITEM, FUNCTION, {(struct menu_t *)rotate_cb} },
-    {" rotated",   1|VERT_ITEM, FUNCTION, {(struct menu_t *)rotate_cb} },
-    {"Back", VERT_ITEM|LAST_ITEM|DEFAULT_ITEM, BACK, {NULL} },
+    {"Default",   0|VERT_ITEM, FUNCTION, {(struct menu_t *)rotate_cb} },
+    {"Rotated",   1|VERT_ITEM, FUNCTION, {(struct menu_t *)rotate_cb} },
+    {"Back",      VERT_ITEM|LAST_ITEM|DEFAULT_ITEM, BACK, {NULL} },
 };
 
 
@@ -206,7 +207,7 @@ void LEDlight_cb(struct menu_t *h) {
 
 
 const struct menu_t LEDlightList_m[] = {
-    {"       ", 7|VERT_ITEM, FUNCTION, {(struct menu_t *)LEDlight_cb} },
+//    {"       ", 7|VERT_ITEM, FUNCTION, {(struct menu_t *)LEDlight_cb} },
     {"      -", 6|VERT_ITEM, FUNCTION, {(struct menu_t *)LEDlight_cb} },
     {"     --", 5|VERT_ITEM, FUNCTION, {(struct menu_t *)LEDlight_cb} },
     {"    ---", 4|VERT_ITEM, FUNCTION, {(struct menu_t *)LEDlight_cb} },
@@ -228,12 +229,12 @@ void buzzer_config_cb()
     struct menu_t *dstMenu, *selectedMenu;
     extern unsigned char G_red_pwm, G_green_pwm, G_blue_pwm;
 
-    dstMenu = getSelectedMenuStack(1);
+    dstMenu = getSelectedMenuStack(1); /* parent menu */
     selectedMenu = getSelectedMenu();
 
     strcpy(dstMenu->name, selectedMenu->name);
 
-    G_mute = selectedMenu->attrib & 0x1;
+    G_mute = selectedMenu->attrib & 0x1; /* low order bits of attrib can store values */
 
     closeMenuAndReturn();
 }
@@ -244,6 +245,9 @@ const struct menu_t buzzer_config_m[] = {
     {"Back", VERT_ITEM|LAST_ITEM| DEFAULT_ITEM, BACK, {NULL} },
 };
 
+/*
+  not const menu_t ...  because the config status is stored in buzzer_m[0].name[]
+*/
 struct menu_t buzzer_m[] = {
     {"Buzzer: On",   VERT_ITEM,     MENU, {buzzer_config_m} },
     {"Back", VERT_ITEM|LAST_ITEM|DEFAULT_ITEM, BACK, {NULL} },
