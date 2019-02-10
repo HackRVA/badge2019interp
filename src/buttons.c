@@ -36,6 +36,8 @@ void doButtons()
 	RB0 == LEFT
     */
 
+    timestamp++;
+
     // Standalone/main button
     if(!(PORTBbits.RB14 != 0)){
 	if(G_button_cnt < 255)
