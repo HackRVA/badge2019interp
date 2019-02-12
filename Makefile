@@ -30,7 +30,7 @@ SRC_BADGE_C = src/LCDcolor.c src/S6B33.c src/badge.c src/fb.c \
 	src/buttons.c src/settings.c src/menu.c src/adc_int.c
 
 SRC_APPS_C = badge_apps/blinkenlights.c badge_apps/conductor.c \
-	badge_apps/adc.c
+	badge_apps/adc.c badge_apps/maze.c badge_apps/xorshift.c
 
 SRC_USB_C = USB/usb_device.c  USB/usb_function_cdc.c USB/usb_descriptors.c
 
