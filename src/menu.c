@@ -15,6 +15,7 @@
 #include "conductor.h"
 #include "blinkenlights.h"
 #include "adc.h"
+#include "maze.h"
 
 
 #define MAIN_MENU_BKG_COLOR GREY2
@@ -463,6 +464,7 @@ const struct menu_t games_m[] = {
    {"Blinkenlights", VERT_ITEM|DEFAULT_ITEM, FUNCTION, {(struct menu_t *)blinkenlights_cb}}, // Set other badges LED
    {"Conductor",     VERT_ITEM, FUNCTION, {(struct menu_t *)conductor_cb}}, // Tell other badges to play notes
    {"Sensors",       VERT_ITEM, FUNCTION, {(struct menu_t *)adc_cb} },
+   {"Maze",          VERT_ITEM, FUNCTION, {(struct menu_t *)maze_cb} },
    {"Back",	     VERT_ITEM|LAST_ITEM, BACK, {NULL}},
 };
 
