@@ -72,3 +72,7 @@ romsyms:	build/firmware.elf
 
 # more fine grain symbols filtering. see man nm
 #	nm -S build/firmware.elf | sed -e '/ W /d' -e ' r /d' -e '/ D /d' -e '/ R /d' -e '/ T /d' -e '/ [Aa] /d' -e '/ N /d' -e '/ t /d' -e '/^    /d' | sort -r -t\  -k2
+
+clean:
+	find build -type f -exec rm -f \{\} \;
+
