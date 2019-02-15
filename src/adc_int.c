@@ -12,11 +12,7 @@ unsigned char calc_adcs(unsigned char chans,  int hz, unsigned char *samc_out) ;
 
 // see adc.h for MASK enums
 const struct analog_src_t analog_info[] = {
-   {"mic/touch/RF/Vss", AN_MIC_MASK|AN_TOUCH_MASK|AN_RF_MASK|AN_VSS_MASK, 4}, // needs to be multiples of 1/2/4
-   {"mic/touch", AN_MIC_MASK|AN_TOUCH_MASK, 2}, // needs to be multiples of 1/2/4
    {"mic", AN_MIC_MASK, 1},
-   {"touch", AN_TOUCH_MASK, 1},
-   {"RF", AN_RF_MASK, 1},
    {"R/G/B/Vss", AN_RED_MASK|AN_GREEN_MASK|AN_BLUE_MASK|AN_VSS_MASK, 4}, // needs to be multiples of 1/2/4
    {"red led", AN_RED_MASK, 1},
    {"green led", AN_GREEN_MASK, 1},
@@ -216,7 +212,7 @@ void __ISR(_ADC_VECTOR, IPL4SOFT) ADC_handler(void)
    }
 
    // is touch being sampled?
-   if ( (analog_info[G_analog_src_num].ANmask & AN_TOUCH_MASK) != 0) {
+//   if ( (analog_info[G_analog_src_num].ANmask & AN_TOUCH_MASK) != 0) {
        int i;
        G_adc_sum = 0;
 
@@ -228,13 +224,13 @@ void __ISR(_ADC_VECTOR, IPL4SOFT) ADC_handler(void)
 
 	   case 2:
 		// if RF is on it is the first sample, otherwise touch is first
-		if ( (analog_info[G_analog_src_num].ANmask & AN_RF_MASK) != 0) ADCbufferCntStart++;
+		//if ( (analog_info[G_analog_src_num].ANmask & AN_RF_MASK) != 0) ADCbufferCntStart++;
 		for (i=ADCbufferCntStart; i<ADCbufferCnt; i+=2) G_adc_sum = G_adc_sum + ADCbuffer[i];
 		G_adc_samps = 4;
 		break;
 	   case 4:
 		// if RF is on it is the first sample, otherwise touch is first
-		if ( (analog_info[G_analog_src_num].ANmask & AN_RF_MASK) != 0) ADCbufferCntStart++;
+		//if ( (analog_info[G_analog_src_num].ANmask & AN_RF_MASK) != 0) ADCbufferCntStart++;
 		for (i=ADCbufferCntStart; i<ADCbufferCnt; i+=4) G_adc_sum = G_adc_sum + ADCbuffer[i];
 		G_adc_samps = 2;
 		break;
@@ -251,11 +247,11 @@ void __ISR(_ADC_VECTOR, IPL4SOFT) ADC_handler(void)
        CTMUCONbits.EDG1STAT = 0; // Stop charging circuit
 #endif
 
-   }
-   else {
-	G_adc_samps = 2;
-	G_adc_sum = 0;
-   }
+//   }
+//   else {
+//	G_adc_samps = 2;
+//	G_adc_sum = 0;
+//   }
    G_adc_sum_done = 1;
 
    IFS0bits.AD1IF = 0; // clear int

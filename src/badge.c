@@ -152,12 +152,44 @@ void UserInit(void)
     CNPDCbits.CNPDC3 = 0; // pulldown off
 
     /*
-	leds normal
+	flareleds
+
+      LATC5 red
+      LATC4 green
+      LATA4 blue
+
+      LATA9 ground/open drain
+    */
+#ifdef PAULSHACKEDBADGE
+    TRISCbits.TRISC5 = 0; // output
+    CNPUCbits.CNPUC5 = 0; // pullup off
+    CNPDCbits.CNPDC5 = 0; // pulldown off
+    LATCbits.LATC5 = 0;   // off initially
+
+    TRISCbits.TRISC4 = 0; // output
+    CNPUCbits.CNPUC4 = 0; // pullup off
+    CNPDCbits.CNPDC4 = 0; // pulldown off
+    LATCbits.LATC4 = 0;   // off initially
+
+    TRISAbits.TRISA4 = 0; // output
+    CNPUAbits.CNPUA4 = 0; // pullup off
+    CNPDAbits.CNPDA4 = 0; // pulldown off
+    LATAbits.LATA4 = 0;   // off initially
+
+    TRISAbits.TRISA9 = 0; // output
+    CNPUAbits.CNPUA9 = 0; // pullup off
+    CNPDAbits.CNPDA9 = 0; // pulldown off
+    ODCAbits.ODCA9 = 1;   // open drain ON makes this effectively a ground pin
+    LATAbits.LATA9 = 0;   // draining
+#endif
+
+
+    /*
+	leds all off/normal
     */
     LATCbits.LATC0 = 0;      /* RED */
     LATCbits.LATC1 = 0;      /* BLUE */
     LATBbits.LATB3 = 0;      /* GREEN */
-
 
     FbMove(10,10);
     FbWriteLine("testing");

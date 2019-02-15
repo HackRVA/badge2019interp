@@ -9,6 +9,9 @@
 /* when compiling and testing under linux */
 //#define MAINAPP
 #ifdef MAINAPP
+void flareled(unsigned char r, unsigned char g, unsigned char b) {
+}
+
 void led(unsigned char r, unsigned char g, unsigned char b) {
 }
 
@@ -36,14 +39,14 @@ int token; // current token
 enum { LEA ,IMM ,JMP ,CALL,JZ  ,JNZ ,ENT ,ADJ ,LEV ,LI  ,LC  ,SI  ,SC  ,PUSH,
        OR  ,XOR ,AND ,EQ  ,NE  ,LT  ,GT  ,LE  ,GE  ,SHL ,SHR ,ADD ,SUB ,MUL ,DIV ,MOD ,
        PRTF,MALC,MSET,MCMP,
-	LED,FBMOVE,FBWRITE,BACKLIGHT,
+	FLARELED,LED,FBMOVE,FBWRITE,BACKLIGHT,
 	IRRECEIVE,IRSEND,
 	EXIT };
 
 /* these map to above
     src = "char else enum if int return sizeof while "
           "printf malloc memset memcmp "
-	  "led FbMove FbWrite backlight "
+	  "flareled led FbMove FbWrite backlight "
 	  "IRreceive IRsend "
 	  "exit void main";
 */
@@ -1341,6 +1344,7 @@ int eval() {
         else if (op == MSET) { }
         //else if (op == MCMP) { ax = memcmp((char *)sp[2], (char *)sp[1], *sp);}
         else if (op == MCMP) { }
+        else if (op == FLARELED) { flareled((char)sp[2], (char)sp[1], (char)sp[0]); }
         else if (op == LED) { led((char)sp[2], (char)sp[1], (char)sp[0]); }
         else if (op == FBMOVE) { FbMove((char)sp[1], (char)sp[0]); }
         else if (op == FBWRITE) { FbWrite((char *)sp[0]); }
@@ -1426,7 +1430,7 @@ int init_interpreter()
 
     src = "char else enum if int return sizeof while "
           "printf malloc memset memcmp "
-	  "led FbMove FbWrite backlight "
+	  "flareled led FbMove FbWrite backlight "
 	  "IRreceive IRsend "
 	  "exit void main";
 

@@ -45,6 +45,7 @@
 #define T4_TICK       		(SYS_FREQ/AUDIO_TOGGLES)
 
 void doLED_PWM();
+void flarePWM();
 
 void timerInit(void)
 {
@@ -469,8 +470,14 @@ unsigned char G_green_pwm=0;
 unsigned char G_blue_cnt=0;
 unsigned char G_blue_pwm=0;
 
-unsigned char G_flare_cnt=0;
-unsigned char G_flare_pwm=0;
+unsigned char G_flare_red_cnt=0;
+unsigned char G_flare_red_pwm=0;
+
+unsigned char G_flare_green_cnt=0;
+unsigned char G_flare_green_pwm=0;
+
+unsigned char G_flare_blue_cnt=0;
+unsigned char G_flare_blue_pwm=0;
 
 unsigned char G_bright=0;
 
@@ -504,12 +511,6 @@ void blue(unsigned char onPWM) {
     onPWM >>= G_bright;
     G_blue_pwm = onPWM; 
     G_blue_cnt = 0;
-}
-
-void flare_leds(unsigned char onPWM) {
-    onPWM >>= G_bright;
-    G_flare_pwm = onPWM; 
-    G_flare_cnt = 0;
 }
 
 void doLED_PWM()
@@ -547,8 +548,7 @@ void doLED_PWM()
     else
         LATCbits.LATC1 = 0;
 
-    // just let it wrap around if (G_blue_cnt == 255) G_blue_cnt = 0;
-
+    flarePWM();
 }
 
 void backlight(unsigned char bright) {
@@ -556,8 +556,62 @@ void backlight(unsigned char bright) {
     G_backlight_cnt = 0;
 }
 
-void led(unsigned char r, unsigned char g, unsigned char b){
+void led(unsigned char r, unsigned char g, unsigned char b)
+{
     red(r);
     green(g);
     blue(b);
+}
+
+void flareled(unsigned char r_pwm, unsigned char g_pwm, unsigned char b_pwm)
+{
+    G_flare_red_pwm = r_pwm;
+    G_flare_green_pwm = g_pwm;
+    G_flare_blue_pwm = b_pwm;
+
+    G_flare_red_cnt = 0;
+    G_flare_green_cnt = 0;
+    G_flare_blue_cnt = 0;
+}
+
+void flarePWM()
+{
+    static int onled=0;
+
+#ifdef PAULSHACKEDBADGE
+    LATCbits.LATC5 = 0;
+    LATCbits.LATC4 = 0;
+    LATAbits.LATA4 = 0;
+
+    /*
+	only one led can be on at a time
+    */
+    switch (onled) {
+	case 0:
+	    G_flare_red_cnt++;
+	    if (G_flare_red_cnt < G_flare_red_pwm)
+		LATCbits.LATC5 = 1;
+	    else
+		LATCbits.LATC5 = 0;
+	    break;
+
+	case 1:
+	    G_flare_green_cnt++;
+	    if (G_flare_green_cnt < G_flare_green_pwm)
+		LATCbits.LATC4 = 1;
+	    else
+		LATCbits.LATC4 = 0;
+	    break;
+
+	case 2:
+	    G_flare_blue_cnt++;
+	    if (G_flare_blue_cnt < G_flare_blue_pwm)
+		LATAbits.LATA4 = 1;
+	    else
+		LATAbits.LATA4 = 0;
+	    break;
+    }
+    onled++;
+    onled %= 3;
+#endif
 }
