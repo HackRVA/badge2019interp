@@ -7,11 +7,7 @@
 #define	ADC_H
 
 enum ANALOG_SOURCES {
-   AN_MIC_TOUCH_RF,
-   AN_MIC_TOUCH,
    AN_MIC,
-   AN_TOUCH,
-   AN_RF,
    AN_RED_GREEN_BLUE,
    AN_RED,
    AN_GREEN,

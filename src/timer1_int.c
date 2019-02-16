@@ -37,7 +37,8 @@
 #define IR_TOGGLES		38000
 #define T2_TICK       		(SYS_FREQ/IR_TOGGLES)
 
-#define LED_TOGGLES		38000
+//#define LED_TOGGLES		38000
+#define LED_TOGGLES		40000
 #define T3_TICK       		(SYS_FREQ/LED_TOGGLES)
 
 /* audio timer4*/
@@ -548,7 +549,7 @@ void doLED_PWM()
     else
         LATCbits.LATC1 = 0;
 
-    flarePWM();
+//    flarePWM();
 }
 
 void backlight(unsigned char bright) {
@@ -579,15 +580,14 @@ void flarePWM()
     static int onled=0;
 
 #ifdef PAULSHACKEDBADGE
-    LATCbits.LATC5 = 0;
-    LATCbits.LATC4 = 0;
-    LATAbits.LATA4 = 0;
-
     /*
 	only one led can be on at a time
     */
     switch (onled) {
 	case 0:
+	    LATCbits.LATC4 = 0;
+	    LATAbits.LATA4 = 0;
+
 	    G_flare_red_cnt++;
 	    if (G_flare_red_cnt < G_flare_red_pwm)
 		LATCbits.LATC5 = 1;
@@ -596,6 +596,9 @@ void flarePWM()
 	    break;
 
 	case 1:
+	    LATCbits.LATC5 = 0;
+	    LATAbits.LATA4 = 0;
+
 	    G_flare_green_cnt++;
 	    if (G_flare_green_cnt < G_flare_green_pwm)
 		LATCbits.LATC4 = 1;
@@ -604,6 +607,9 @@ void flarePWM()
 	    break;
 
 	case 2:
+	    LATCbits.LATC4 = 0;
+	    LATCbits.LATC5 = 0;
+
 	    G_flare_blue_cnt++;
 	    if (G_flare_blue_cnt < G_flare_blue_pwm)
 		LATAbits.LATA4 = 1;

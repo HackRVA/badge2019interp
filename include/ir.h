@@ -60,12 +60,9 @@ enum {
 
 	/* load/save settings */
 	IR_LED,	/* led brightness */
-
 	IR_TIME,	/* time */
-
 	IR_DATEYYMM,	/* date */
 	IR_DATEDDAMPM,	/* date */
-
 	IR_SCREENSAVER,	/* dunno brightness */
 	IR_BACKLIGHT,	/* backlight brightness */
 
@@ -85,7 +82,7 @@ enum {
 	         handled by apps
 	   ================================
 	*/
-	IR_UDRAW,
+//	IR_UDRAW,
 	IR_APP0,
 	IR_APP1,
 	IR_APP2,

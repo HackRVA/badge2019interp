@@ -11,12 +11,14 @@ INC += -I./USB
 INC += -I$(TOP)
 INC += -I./$(BUILD)
 INC += -D_SUPPRESS_PLIB_WARNING -D_DISABLE_OPENADC10_CONFIGPORT_WARNING -fno-schedule-insns -D_XC -D__XC
-INC += -DPAULSHACKEDBADGE
+#INC += -DPAULSHACKEDBADGE
 
 # for assembler. assembler nop's after instructions
 #INC += -fno-schedule-insns 
 
-BADGE_CFLAGS = $(INC) -x c -c -mprocessor=32MX270F256D -Os
+#BADGE_CFLAGS = $(INC) -x c -c -mprocessor=32MX270F256D -Os
+#BADGE_CFLAGS = $(INC) -S -c -mprocessor=32MX270F256D -O0 -g
+BADGE_CFLAGS = $(INC) -c -mprocessor=32MX270F256D -O0 -g
 
 LIBS = /opt/microchip/xc32/v1.34/pic32mx/lib/libmchp_peripheral_32MX270F256D.a
 

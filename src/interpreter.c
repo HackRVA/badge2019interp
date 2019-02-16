@@ -1,14 +1,34 @@
 #include <stdio.h>
 #include <stdlib.h>
-//#include <memory.h>
 #include <string.h>
+#include <setjmp.h>
 
 #include "ir.h"
 
+static jmp_buf error_exit;
 
-/* when compiling and testing under linux */
-//#define MAINAPP
+/* for compiling and testing under linux */
 #ifdef MAINAPP
+
+/*
+
+   cc -m32 -I../include -o inter -DMAINAPP interpreter.c 
+
+*/
+
+void backlight(char b)
+{
+}
+
+union IRpacket_u G_hack;
+
+void echoUSB(char *str) {
+}
+
+void IRqueueSend(union IRpacket_u pkt)
+{
+}
+
 void flareled(unsigned char r, unsigned char g, unsigned char b) {
 }
 
@@ -23,6 +43,9 @@ void FbPushBuffer() {
 
 void FbMove(unsigned char x, unsigned char y) {
 }
+#else
+
+
 #endif
 /* **************** */
 
@@ -107,11 +130,11 @@ void FbWrite(unsigned char *string)
 void FbMove(unsigned char x, unsigned char y);
 
 void backlight(char b);
-
+void led(unsigned char r, unsigned char g, unsigned char b);
+void flareled(unsigned char r, unsigned char g, unsigned char b);
 
 void IRqueueSend(union IRpacket_u pkt);
 
-int interpreter_IR=0; /* also used in ir.c app1 callback */
 void IRsend(int p)
 {
     union IRpacket_u pkt;
@@ -123,11 +146,9 @@ void IRsend(int p)
     IRqueueSend(pkt);
 }
 
-
 extern union IRpacket_u G_hack;
 void IRreceive(int *r)
 {
-   //r = interpreter_IR;
    *r = G_hack.v;
 }
 
@@ -380,8 +401,11 @@ void match(int tk) {
     if (token == tk) {
         next();
     } else {
-        printf("%d: expected token: %d\n", line, tk);
-        exit(-1);
+        echoUSB("expected token: line, token\n");
+        //echoUSB(line);
+        //echoUSB(" ");
+        //echoUSB(tk);
+	longjmp(error_exit, 1);
     }
 }
 
@@ -406,8 +430,9 @@ void expression(int level) {
     int *addr;
     {
         if (!token) {
-            printf("%d: unexpected token EOF of expression\n", line);
-            exit(-1);
+            echoUSB("unexpected token EOF of expression\n");
+            //echoUSB(line);
+	    longjmp(error_exit, 1);
         }
         if (token == Num) {
             match(Num);
@@ -501,8 +526,9 @@ void expression(int level) {
                     *++text = id[Value];
                 }
                 else {
-                    printf("%d: bad function call\n", line);
-                    exit(-1);
+                    echoUSB("bad function call\n");
+                    //echoUSB(line);
+		    longjmp(error_exit, 1);
                 }
 
                 // clean the stack for arguments
@@ -529,8 +555,9 @@ void expression(int level) {
                     *++text = id[Value];
                 }
                 else {
-                    printf("%d: undefined variable\n", line);
-                    exit(-1);
+                    echoUSB("undefined variable\n");
+                    //echoUSB(line);
+		    longjmp(error_exit, 1);
                 }
 
                 // emit code, default behaviour is to load the value of the
@@ -569,8 +596,9 @@ void expression(int level) {
             if (expr_type >= PTR) {
                 expr_type = expr_type - PTR;
             } else {
-                printf("%d: bad dereference\n", line);
-                exit(-1);
+                echoUSB("bad dereference\n");
+                //echoUSB(line);
+		longjmp(error_exit, 1);
             }
 
             *++text = (expr_type == CHAR) ? LC : LI;
@@ -582,8 +610,9 @@ void expression(int level) {
             if (*text == LC || *text == LI) {
                 text --;
             } else {
-                printf("%d: bad address of\n", line);
-                exit(-1);
+                echoUSB("bad address of\n");
+                //echoUSB(line);
+		longjmp(error_exit, 1);
             }
 
             expr_type = expr_type + PTR;
@@ -651,8 +680,9 @@ void expression(int level) {
                 *text = PUSH;
                 *++text = LI;
             } else {
-                printf("%d: bad lvalue of pre-increment\n", line);
-                exit(-1);
+                echoUSB("bad lvalue of pre-increment\n");
+                //echoUSB(line);
+		longjmp(error_exit, 1);
             }
             *++text = PUSH;
             *++text = IMM;
@@ -661,8 +691,9 @@ void expression(int level) {
             *++text = (expr_type == CHAR) ? SC : SI;
         }
         else {
-            printf("%d: bad expression\n", line);
-            exit(-1);
+            echoUSB("bad expression\n");
+            //echoUSB(line);
+	    longjmp(error_exit, 1);
         }
     }
 
@@ -677,8 +708,9 @@ void expression(int level) {
                 if (*text == LC || *text == LI) {
                     *text = PUSH; // save the lvalue's pointer
                 } else {
-                    printf("%d: bad lvalue in assignment\n", line);
-                    exit(-1);
+                    echoUSB("bad lvalue in assignment\n");
+                    //echoUSB(line);
+		    longjmp(error_exit, 1);
                 }
                 expression(Assign);
 
@@ -694,8 +726,9 @@ void expression(int level) {
                 if (token == ':') {
                     match(':');
                 } else {
-                    printf("%d: missing colon in conditional\n", line);
-                    exit(-1);
+                    echoUSB("missing colon in conditional\n");
+                    //echoUSB(line);
+		    longjmp(error_exit, 1);
                 }
                 *addr = (int)(text + 3);
                 *++text = JMP;
@@ -889,8 +922,9 @@ void expression(int level) {
                     *++text = LC;
                 }
                 else {
-                    printf("%d: bad value in increment\n", line);
-                    exit(-1);
+                    echoUSB("bad value in increment\n");
+                    //echoUSB(line);
+		    longjmp(error_exit, 1);
                 }
 
                 *++text = PUSH;
@@ -919,16 +953,20 @@ void expression(int level) {
                     *++text = MUL;
                 }
                 else if (tmp < PTR) {
-                    printf("%d: pointer type expected\n", line);
-                    exit(-1);
+                    echoUSB("pointer type expected\n");
+                    //echoUSB(line);
+		    longjmp(error_exit, 1);
                 }
                 expr_type = tmp - PTR;
                 *++text = ADD;
                 *++text = (expr_type == CHAR) ? LC : LI;
             }
             else {
-                printf("%d: compiler error, token = %d\n", line, token);
-                exit(-1);
+                echoUSB("compiler error, line, token\n");
+                //echoUSB(line);
+                //echoUSB(" ");
+                //echoUSB(token);
+		longjmp(error_exit, 1);
             }
         }
     }
@@ -1045,16 +1083,20 @@ void enum_declaration() {
     i = 0;
     while (token != '}') {
         if (token != Id) {
-            printf("%d: bad enum identifier %d\n", line, token);
-            exit(-1);
+            echoUSB("bad enum identifier line, token\n");
+            //echoUSB(line);
+            //echoUSB(" ");
+            //echoUSB(token);
+	    longjmp(error_exit, 1);
         }
         next();
         if (token == Assign) {
             // like {a=10}
             next();
             if (token != Num) {
-                printf("%d: bad enum initializer\n", line);
-                exit(-1);
+                echoUSB("bad enum initializer\n");
+                //echoUSB(line);
+	        longjmp(error_exit, 1);
             }
             i = token_val;
             next();
@@ -1092,12 +1134,14 @@ void function_parameter() {
 
         // parameter name
         if (token != Id) {
-            printf("%d: bad parameter declaration\n", line);
-            exit(-1);
+            echoUSB("bad parameter declaration\n");
+            //echoUSB(line);
+	    longjmp(error_exit, 1);
         }
         if (current_id[Class] == Loc) {
-            printf("%d: duplicate parameter declaration\n", line);
-            exit(-1);
+            echoUSB("duplicate parameter declaration\n");
+            //echoUSB(line);
+	    longjmp(error_exit, 1);
         }
 
         match(Id);
@@ -1140,13 +1184,15 @@ void function_body() {
 
             if (token != Id) {
                 // invalid declaration
-                printf("%d: bad local declaration\n", line);
-                exit(-1);
+                echoUSB("bad local declaration\n");
+                //echoUSB(line);
+	        longjmp(error_exit, 1);
             }
             if (current_id[Class] == Loc) {
                 // identifier exists
-                printf("%d: duplicate local declaration\n", line);
-                exit(-1);
+                echoUSB("duplicate local declaration\n");
+                //echoUSB(line);
+	        longjmp(error_exit, 1);
             }
             match(Id);
 
@@ -1245,13 +1291,15 @@ void global_declaration() {
 
         if (token != Id) {
             // invalid declaration
-            printf("%d: bad global declaration\n", line);
-            exit(-1);
+            echoUSB("bad global declaration\n");
+            //echoUSB(line);
+	    longjmp(error_exit, 1);
         }
         if (current_id[Class]) {
             // identifier exists
-            printf("%d: duplicate global declaration\n", line);
-            exit(-1);
+            echoUSB("duplicate global declaration\n");
+            //echoUSB(line);
+	    longjmp(error_exit, 1);
         }
         match(Id);
         current_id[Type] = type;
@@ -1293,6 +1341,7 @@ int eval() {
         op = *pc++; // get next operation code
 
         // print debug info
+#ifdef NOPE
         if (debug) {
             printf("%d> %.4s", cycle,
                    & "LEA ,IMM ,JMP ,CALL,JZ  ,JNZ ,ENT ,ADJ ,LEV ,LI  ,LC  ,SI  ,SC  ,PUSH,"
@@ -1303,6 +1352,7 @@ int eval() {
             else
                 printf("\n");
         }
+#endif
         if (op == IMM)       {ax = *pc++;}                                     // load immediate value to ax
         else if (op == LC)   {ax = *(char *)ax;}                               // load character to ax, address in ax
         else if (op == LI)   {ax = *(int *)ax;}                                // load integer to ax, address in ax
@@ -1336,8 +1386,14 @@ int eval() {
         else if (op == DIV) ax = *sp++ / ax;
         else if (op == MOD) ax = *sp++ % ax;
 
-        else if (op == EXIT) { printf("exit(%d)", *sp); return *sp;}
-        else if (op == PRTF) { tmp = sp + pc[1]; ax = printf((char *)tmp[-1], tmp[-2], tmp[-3], tmp[-4], tmp[-5], tmp[-6]); }
+        else if (op == EXIT) { 
+		//printf("exit(%d)", *sp); 
+		return *sp;
+	}
+        else if (op == PRTF) { 
+		tmp = sp + pc[1]; 
+		//ax = printf((char *)tmp[-1], tmp[-2], tmp[-3], tmp[-4], tmp[-5], tmp[-6]);
+	}
         //else if (op == MALC) { ax = (int)malloc(*sp);}
         else if (op == MALC) { }
         //else if (op == MSET) { ax = (int)memset((char *)sp[2], sp[1], *sp);}
@@ -1352,7 +1408,7 @@ int eval() {
         else if (op == IRRECEIVE) { IRreceive((int *)sp[0]); }
         else if (op == IRSEND) { IRsend((char)sp[0]); }
         else {
-            printf("unknown instruction:%d\n", op);
+            //printf("unknown instruction:%d\n", op);
             return -1;
         }
     }
@@ -1465,7 +1521,7 @@ int run()
     char *argv[]={""};
 
     if (!(pc = (int *)idmain[Value])) {
-        printf("main() not defined\n");
+        //printf("main() not defined\n");
         return -1;
     }
 
@@ -1484,7 +1540,6 @@ int run()
     return eval();
 }
 
-
 #ifdef MAINAPP
 char progsrc[] = "\
 int main() {\n\
@@ -1499,13 +1554,22 @@ int main()
 #else
 int interpreter_main(char *prog) 
 {
+#endif
    int r;
 
-#endif
-   if (init_interpreter() < 0) return -1;
-   src = prog;
-   program();
-   r = run();
+   /* in case of error */
+   if (setjmp(error_exit)) {
+	r=666;
+	led(200,0,0);
+	return 123;
+   }
+   else {
+	led(0,200,0);
+	if (init_interpreter() < 0) return -1;
+	src = prog;
+	program();
+	r = run();
+   }
 
-   return r;
+   return 111;
 }

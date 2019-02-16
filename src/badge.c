@@ -198,6 +198,9 @@ void UserInit(void)
 
     timerInit();
     ADC_init(AN_MIC, HZ_150); // init to sampling mic very slowly
+
+    led(100,0,100);
+
 }
 
 void LCDprint(char *str,int len) {
@@ -225,9 +228,10 @@ static unsigned char lineOutBuffer[64], lineOutBufPtr=0;
 /*
   callback to echo string from py stdout to USB
 */
-void echoUSB(char *str,int len) {
-   int i;
+void echoUSB(char *str) {
+   int i,len;
 
+   len = strlen(str);
    // can use USB_Out_Buffer since it may be locked in a host xfer
    if ((lineOutBufPtr + len) > CDC_DATA_OUT_EP_SIZE) return;
 

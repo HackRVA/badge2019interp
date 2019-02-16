@@ -60,12 +60,25 @@ int main() {
 }
 
 int main() {
-    FbMove(0, 40);
+    FbMove(50, 40);
     FbWrite("yo");
 }
 
 int main() {
    led(100, 0, 0);
+}
+
+int main() {
+   flareled(100, 100, 200);
+}
+
+int main() {
+   flareled(200, 200, 200);
+}
+
+
+int main() {
+   flareled(10, 10, 20);
 }
 
 int main() {

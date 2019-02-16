@@ -97,8 +97,8 @@ void ADC_init(unsigned char analog_src_num, unsigned char hz_num) // enum {HZ_50
    // special case for LEDS. normally are outputs, reconfig as inputs for led hack
    // RB3=green, RC0 == red, RC1= blue
    if (analog_src_mask & AN_RED_MASK) {
-	ANSELCbits.ANSC0 = 1;
-	TRISCbits.TRISC0 = 1; 
+	ANSELCbits.ANSC0 = 1; // set analog
+	TRISCbits.TRISC0 = 1; // set input
    } else {
 	ANSELCbits.ANSC0 = 0;
 	TRISCbits.TRISC0 = 0; 

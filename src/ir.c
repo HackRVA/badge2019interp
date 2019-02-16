@@ -49,7 +49,7 @@ struct IRcallback_t IRcallbacks[] = {
 	{ ir_livetext },	/* stream text screen */
 	{ ir_liveled },	/* stream rgb to LED */
 
-//    { ir_udraw},
+//	{ ir_udraw},
 	{ ir_app0 },
 	{ ir_app1 },
 	{ ir_app2 },
@@ -61,7 +61,6 @@ struct IRcallback_t IRcallbacks[] = {
 	{ ir_app7 },
 
 	{ ir_error },
-
 	{ ir_lastaddress },
 };
 
@@ -297,10 +296,8 @@ void ir_app0(struct IRpacket_t p)
     QC_IR = (unsigned char) p.data;
 }
 
-extern int interpreter_IR;
 void ir_app1(struct IRpacket_t p)
 {
-    interpreter_IR = (unsigned char) p.data;
 }
 
 void ir_app2(struct IRpacket_t p)
