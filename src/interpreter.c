@@ -5,6 +5,7 @@
 
 #include "badge.h"
 #include "ir.h"
+#include "assets.h"
 
 static jmp_buf error_exit;
 
@@ -64,15 +65,15 @@ enum { LEA, IMM, JMP, CALL, JZ, JNZ, ENT, ADJ, LEV, LI, LC, SI, SC, PUSH,
        OR, XOR, AND, EQ, NE, LT, GT, LE, GE, SHL, SHR, ADD, SUB, MUL, DIV, MOD, 
        PRTF, MALC, MSET, MCMP,
        FLARELED, LED, FBMOVE, FBWRITE, BACKLIGHT,
-       IRRECEIVE, IRSEND,
+       IRRECEIVE, IRSEND, SETNOTE,
        EXIT
 };
 
 /* these map to above
     src = "char else enum if int return sizeof while "
-          "printf malloc memset memcmp "
-	  "flareled led FbMove FbWrite backlight "
-	  "IRreceive IRsend "
+      .
+      .
+      .
 	  "exit void main";
 */
 
@@ -406,9 +407,6 @@ void match(int tk) {
         next();
     } else {
         echoUSB("expected token: line, token\n");
-        //echoUSB(line);
-        //echoUSB(" ");
-        //echoUSB(tk);
 	longjmp(error_exit, line);
     }
 }
@@ -435,7 +433,6 @@ void expression(int level) {
     {
         if (!token) {
             echoUSB("unexpected token EOF of expression\n");
-            //echoUSB(line);
 	    longjmp(error_exit, line);
         }
         if (token == Num) {
@@ -531,7 +528,6 @@ void expression(int level) {
                 }
                 else {
                     echoUSB("bad function call\n");
-                    //echoUSB(line);
 		    longjmp(error_exit, line);
                 }
 
@@ -560,7 +556,6 @@ void expression(int level) {
                 }
                 else {
                     echoUSB("undefined variable\n");
-                    //echoUSB(line);
 		    longjmp(error_exit, line);
                 }
 
@@ -601,7 +596,6 @@ void expression(int level) {
                 expr_type = expr_type - PTR;
             } else {
                 echoUSB("bad dereference\n");
-                //echoUSB(line);
 		longjmp(error_exit, line);
             }
 
@@ -615,7 +609,6 @@ void expression(int level) {
                 text --;
             } else {
                 echoUSB("bad address of\n");
-                //echoUSB(line);
 		longjmp(error_exit, line);
             }
 
@@ -685,7 +678,6 @@ void expression(int level) {
                 *++text = LI;
             } else {
                 echoUSB("bad lvalue of pre-increment\n");
-                //echoUSB(line);
 		longjmp(error_exit, line);
             }
             *++text = PUSH;
@@ -696,7 +688,6 @@ void expression(int level) {
         }
         else {
             echoUSB("bad expression\n");
-            //echoUSB(line);
 	    longjmp(error_exit, line);
         }
     }
@@ -713,7 +704,6 @@ void expression(int level) {
                     *text = PUSH; // save the lvalue's pointer
                 } else {
                     echoUSB("bad lvalue in assignment\n");
-                    //echoUSB(line);
 		    longjmp(error_exit, line);
                 }
                 expression(Assign);
@@ -731,7 +721,6 @@ void expression(int level) {
                     match(':');
                 } else {
                     echoUSB("missing colon in conditional\n");
-                    //echoUSB(line);
 		    longjmp(error_exit, line);
                 }
                 *addr = (int)(text + 3);
@@ -927,7 +916,6 @@ void expression(int level) {
                 }
                 else {
                     echoUSB("bad value in increment\n");
-                    //echoUSB(line);
 		    longjmp(error_exit, line);
                 }
 
@@ -958,7 +946,6 @@ void expression(int level) {
                 }
                 else if (tmp < PTR) {
                     echoUSB("pointer type expected\n");
-                    //echoUSB(line);
 		    longjmp(error_exit, line);
                 }
                 expr_type = tmp - PTR;
@@ -967,9 +954,6 @@ void expression(int level) {
             }
             else {
                 echoUSB("compiler error, line, token\n");
-                //echoUSB(line);
-                //echoUSB(" ");
-                //echoUSB(token);
 		longjmp(error_exit, line);
             }
         }
@@ -1088,9 +1072,6 @@ void enum_declaration() {
     while (token != '}') {
         if (token != Id) {
             echoUSB("bad enum identifier line, token\n");
-            //echoUSB(line);
-            //echoUSB(" ");
-            //echoUSB(token);
 	    longjmp(error_exit, line);
         }
         next();
@@ -1099,7 +1080,6 @@ void enum_declaration() {
             next();
             if (token != Num) {
                 echoUSB("bad enum initializer\n");
-                //echoUSB(line);
 	        longjmp(error_exit, line);
             }
             i = token_val;
@@ -1139,12 +1119,10 @@ void function_parameter() {
         // parameter name
         if (token != Id) {
             echoUSB("bad parameter declaration\n");
-            //echoUSB(line);
 	    longjmp(error_exit, line);
         }
         if (current_id[Class] == Loc) {
             echoUSB("duplicate parameter declaration\n");
-            //echoUSB(line);
 	    longjmp(error_exit, line);
         }
 
@@ -1189,13 +1167,11 @@ void function_body() {
             if (token != Id) {
                 // invalid declaration
                 echoUSB("bad local declaration\n");
-                //echoUSB(line);
 	        longjmp(error_exit, line);
             }
             if (current_id[Class] == Loc) {
                 // identifier exists
                 echoUSB("duplicate local declaration\n");
-                //echoUSB(line);
 	        longjmp(error_exit, line);
             }
             match(Id);
@@ -1296,13 +1272,11 @@ void global_declaration() {
         if (token != Id) {
             // invalid declaration
             echoUSB("bad global declaration\n");
-            //echoUSB(line);
 	    longjmp(error_exit, line);
         }
         if (current_id[Class]) {
             // identifier exists
             echoUSB("duplicate global declaration\n");
-            //echoUSB(line);
 	    longjmp(error_exit, line);
         }
         match(Id);
@@ -1345,19 +1319,6 @@ int eval() {
         cycle ++;
         op = *pc++; // get next operation code
 
-        // print debug info
-#ifdef NOPE
-        if (debug) {
-            printf("%d> %.4s", cycle,
-                   & "LEA ,IMM ,JMP ,CALL,JZ  ,JNZ ,ENT ,ADJ ,LEV ,LI  ,LC  ,SI  ,SC  ,PUSH,"
-                   "OR  ,XOR ,AND ,EQ  ,NE  ,LT  ,GT  ,LE  ,GE  ,SHL ,SHR ,ADD ,SUB ,MUL ,DIV ,MOD ,"
-                   "PRTF,MALC,MSET,MCMP,LED,FBMOVE,FBWRITE,BACKLIGHT,EXIT"[op * 5]);
-            if (op <= ADJ)
-                printf(" %d\n", *pc);
-            else
-                printf("\n");
-        }
-#endif
         if (op == IMM)       {ax = *pc++;}                                     // load immediate value to ax
         else if (op == LC)   {ax = *(char *)ax;}                               // load character to ax, address in ax
         else if (op == LI)   {ax = *(int *)ax;}                                // load integer to ax, address in ax
@@ -1412,10 +1373,10 @@ int eval() {
         else if (op == BACKLIGHT) { backlight((char)sp[0]); }
         else if (op == IRRECEIVE) { IRreceive((int *)sp[0]); }
         else if (op == IRSEND) { IRsend((int)sp[0]); }
+        else if (op == SETNOTE) { setNote((int)sp[1], (int)sp[0]); }
         else {
-            //echoUSB("unknown instruction:%d\n", op);
             echoUSB("unknown instruction\n");
-            return -1;
+	    longjmp(error_exit, op);
         }
     }
 }
@@ -1445,7 +1406,7 @@ char *ramptr;
 const char Csrc[] = "char else enum if int return sizeof while "
           "printf malloc memset memcmp "
 	  "flareled led FbMove FbWrite backlight "
-	  "IRreceive IRsend "
+	  "IRreceive IRsend setNote "
 	  "exit void main";
 
 void init_interpreter()

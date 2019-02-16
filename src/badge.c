@@ -234,12 +234,17 @@ static unsigned char lineOutBuffer[64], lineOutBufPtr=0;
 /*
   callback to echo string from py stdout to USB
 */
+
+void flushUSB();
+
 void echoUSB(char *str) {
    int i,len;
 
    len = strlen(str);
    // can use USB_Out_Buffer since it may be locked in a host xfer
-   if ((lineOutBufPtr + len) > CDC_DATA_OUT_EP_SIZE) return;
+   if ((lineOutBufPtr + len) > CDC_DATA_OUT_EP_SIZE) {
+	flushUSB();
+   }
 
    /* separate output strings */
    //lineOutBuffer[lineOutBufPtr++] = '\r';
@@ -274,6 +279,10 @@ void doLine()
     if (strncmp(textBuffer,"run",3) == 0) {
 	unsigned int r;
 
+	/* prep for error ret */
+	strcpy(&(lineOutBuffer[lineOutBufPtr]), "\r\n"); 
+	lineOutBufPtr += 2;
+
 	r = interpreter_main(sourceBuffer); 
 
 	strcpy(&(lineOutBuffer[lineOutBufPtr]), "\r\nR ");
@@ -296,10 +305,10 @@ void doLine()
     textBufPtr=0;
 }
 
+static unsigned char writeLOCK=0;
 void ProcessIO(void)
 {
     unsigned char nread=0;
-    static unsigned char writeLOCK=0;
     static int doInterpreter = 0;
     int i;
 
@@ -377,7 +386,39 @@ void ProcessIO(void)
 	nread = 0;
     }
 
+#define FLUSHUSB
+#ifdef FLUSHUSB
+    flushUSB();
+#else
+    if (USBtransferReady()) {
+	int nextWrite;
 
+	if (writeLOCK) {
+	   USB_Out_Buffer[0] = 0;
+	   writeLOCK = 0;
+	} 
+
+	// jam interpreter line buffer into buffer since usb is done
+	if (lineOutBufPtr != 0) {
+	   strncpy(USB_Out_Buffer, lineOutBuffer, lineOutBufPtr);
+	   USB_Out_Buffer[lineOutBufPtr] = 0;
+	   lineOutBufPtr = 0;
+	   lineOutBuffer[lineOutBufPtr] = 0;
+	}
+
+	nextWrite = strlen(USB_Out_Buffer);
+	if (nextWrite != 0) {
+	   putUSBUSART(USB_Out_Buffer, nextWrite);
+	   writeLOCK = 1; // dont touch until USB done
+	}
+    }
+    CDCTxService();
+#endif
+}
+
+#ifdef FLUSHUSB
+void flushUSB()
+{
     if (USBtransferReady()) {
 	int nextWrite;
 
@@ -402,3 +443,4 @@ void ProcessIO(void)
     }
     CDCTxService();
 }
+#endif

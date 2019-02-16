@@ -13,6 +13,37 @@ int main()
 
 int main()
 {
+    setNote(100, 4096);
+}
+
+
+
+void beep()
+{
+    int i;
+    i=0;
+    while (i <= 255) {
+	setNote(i, 4096);
+        i = i + 5;
+    }
+}
+
+int main()
+{
+    int i;
+
+    i=0;
+    while (i <= 255) {
+	beep();
+        i = i + 5;
+    }
+}
+
+
+
+
+int main()
+{
     int i;
 
     i=0;
