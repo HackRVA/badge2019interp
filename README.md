@@ -92,3 +92,20 @@ run
         tools/sendbadge.py
                 send standard input to badge c interpreter via USB using /dev/ttyACM0
                 cat file.c | python tools/sendbadge.py
+
+
+** interpreter stats **
+
+    R XXXXXX  - return or exit() code from interpreter main()
+    T XXXXXX  - program size
+    D XXXXXX  - program data size
+    S XXXXXX  - stack size
+    Y XXXXXX  - symbol table
+
+current ram allocation:
+
+   #define TEXTSECTION 128 // * 4 
+   #define DATASECTION 128 // * 1 
+   #define STACKSECTION 128 // * 4 
+   #define SYMBOLSECTION 512 // * 4 
+
