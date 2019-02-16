@@ -216,12 +216,14 @@ void decDump(unsigned int value, char *out) {
 	out[i] = value % 10 + 48; 
 	value /= 10; 
     }
+    out[8]=0;
 }
 
-void hexDump(int value, char *out) {
+void hexDump(unsigned int value, char *out) {
     int i;
     for (i=7; i>=0; i--) 
        out[i] = htab[(value >> (i*4)) & 0xF]; 
+    out[8]=0;
 }
 
 /*
@@ -240,8 +242,9 @@ void echoUSB(char *str) {
    if ((lineOutBufPtr + len) > CDC_DATA_OUT_EP_SIZE) return;
 
    /* separate output strings */
-   lineOutBuffer[lineOutBufPtr++] = '\r';
-   lineOutBuffer[lineOutBufPtr++] = '\n';
+   //lineOutBuffer[lineOutBufPtr++] = '\r';
+   //lineOutBuffer[lineOutBufPtr++] = '\n';
+   //lineOutBuffer[lineOutBufPtr++] = ' ';
 
    for (i=0; i<len; i++) {
 	lineOutBuffer[lineOutBufPtr++] = str[i];
@@ -252,14 +255,16 @@ void echoUSB(char *str) {
 /*
    on line of text from input
 */
-static unsigned char textBuffer[128], textBufPtr=0;
+#define TEXTBUFFERSIZE 128
+static unsigned char textBuffer[TEXTBUFFERSIZE], textBufPtr=0;
 
 /*
    source code buffer
 */
-#define SOURCEBUFFERSIZE 1024
+#define SOURCEBUFFERSIZE 2048
 char sourceBuffer[SOURCEBUFFERSIZE];
 
+void interp_stats();
 /*
   process one line of input
 */
@@ -267,25 +272,27 @@ void doLine()
 {
     // call interpreter 
     if (strncmp(textBuffer,"run",3) == 0) {
-	int r;
+	unsigned int r;
 
 	r = interpreter_main(sourceBuffer); 
 
-	strcpy(&(lineOutBuffer[lineOutBufPtr]), "\r\ninterp return ");
-	lineOutBufPtr += 16;
+	strcpy(&(lineOutBuffer[lineOutBufPtr]), "\r\nR ");
+	lineOutBufPtr += 4;
 
 	decDump(r, &(lineOutBuffer[lineOutBufPtr]));
 	lineOutBufPtr += 8; /* always converts 8 digits */
-	lineOutBuffer[lineOutBufPtr++]=13;
-	lineOutBuffer[lineOutBufPtr++]=10;
-	lineOutBuffer[lineOutBufPtr++]=0;
+//	lineOutBuffer[lineOutBufPtr++]=13;
+//	lineOutBuffer[lineOutBufPtr++]=10;
+//	lineOutBuffer[lineOutBufPtr]=0;
+
+        interp_stats();
 
 	memset(sourceBuffer, 0, SOURCEBUFFERSIZE);
     }
     else {
 	strcat(sourceBuffer, textBuffer);
     }
-    memset(textBuffer, 0, 128);
+    memset(textBuffer, 0, TEXTBUFFERSIZE);
     textBufPtr=0;
 }
 

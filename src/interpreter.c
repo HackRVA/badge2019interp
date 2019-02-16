@@ -3,6 +3,7 @@
 #include <string.h>
 #include <setjmp.h>
 
+#include "badge.h"
 #include "ir.h"
 
 static jmp_buf error_exit;
@@ -59,12 +60,13 @@ int token; // current token
  the instructions need to sync with the functions in init_interpreter
 */
 
-enum { LEA ,IMM ,JMP ,CALL,JZ  ,JNZ ,ENT ,ADJ ,LEV ,LI  ,LC  ,SI  ,SC  ,PUSH,
-       OR  ,XOR ,AND ,EQ  ,NE  ,LT  ,GT  ,LE  ,GE  ,SHL ,SHR ,ADD ,SUB ,MUL ,DIV ,MOD ,
-       PRTF,MALC,MSET,MCMP,
-	FLARELED,LED,FBMOVE,FBWRITE,BACKLIGHT,
-	IRRECEIVE,IRSEND,
-	EXIT };
+enum { LEA, IMM, JMP, CALL, JZ, JNZ, ENT, ADJ, LEV, LI, LC, SI, SC, PUSH,
+       OR, XOR, AND, EQ, NE, LT, GT, LE, GE, SHL, SHR, ADD, SUB, MUL, DIV, MOD, 
+       PRTF, MALC, MSET, MCMP,
+       FLARELED, LED, FBMOVE, FBWRITE, BACKLIGHT,
+       IRRECEIVE, IRSEND,
+       EXIT
+};
 
 /* these map to above
     src = "char else enum if int return sizeof while "
@@ -92,9 +94,9 @@ enum { CHAR, INT, PTR };
 // type of declaration.
 enum {Global, Local};
 
-int *text, // text segment
-    *stack;// stack
-char *data; // data segment
+int *text, *textbase, // text segment
+    *stack, *stackbase, *stacklow;// stack
+char *data, *database; // data segment
 int *idmain;
 
 char *src=0;  // pointer to source code string;
@@ -106,7 +108,7 @@ int poolsize; // default size of text/data/stack
 int *pc, *bp, *sp, ax, cycle; // virtual machine registers
 
 int *current_id, // current parsed ID
-    *symbols,    // symbol table
+    *symbols, *symbolbase,    // symbol table
     line,        // line number of source code
     token_val;   // value of current token (mainly for number)
 
@@ -114,10 +116,12 @@ int basetype;    // the type of a declaration, make it global for convenience
 int expr_type;   // the type of an expression
 
 /*
+   howto extend interpreter
+
    add INST to /enum { LEA ,IMM/
    add keyword to /"PRTF,MALC/
    add keyword to /src = "char else/
-   add opcode check /else if (op == MCMP)/
+   add opcode check eg: /else if (op == MCMP)/
    add function call below
 */
 
@@ -1336,6 +1340,7 @@ int eval() {
     cycle = 0;
 
     while (1) {
+	if (stacklow > sp) stacklow = sp; /* stack low water mark */
 	
         cycle ++;
         op = *pc++; // get next operation code
@@ -1409,7 +1414,7 @@ int eval() {
         else if (op == IRSEND) { IRsend((int)sp[0]); }
         else {
             //echoUSB("unknown instruction:%d\n", op);
-            echoUSB("unknown instruction:%d\n");
+            echoUSB("unknown instruction\n");
             return -1;
         }
     }
@@ -1418,42 +1423,68 @@ int eval() {
 
 #ifdef NEWIMPROVED
 
+char *ramptr=0;
+#define TEXTSECTION 128 // * 4 
+#define DATASECTION 128 // * 1 
+#define STACKSECTION 128 // * 4 
+#define SYMBOLSECTION 512 // * 4 
+#define RAMSIZE (STACKSECTION*4 + TEXTSECTION*4 + DATASECTION + SYMBOLSECTION*4)
+char interp_ram[RAMSIZE];
+
+/*
 char interp_ram[8192];
 char *ramptr;
 #define STACKSECTION 512 // * 4 == 2k
 #define TEXTSECTION 512 // * 4 == 2k
 #define DATASECTION 512 // * 1 == 512
 #define SYMBOLSECTION 512 // * 4 == 2k
+*/
 
 #endif
 
-int init_interpreter()
+const char Csrc[] = "char else enum if int return sizeof while "
+          "printf malloc memset memcmp "
+	  "flareled led FbMove FbWrite backlight "
+	  "IRreceive IRsend "
+	  "exit void main";
+
+void init_interpreter()
 {
     int i, fd;
 
 #ifdef NEWIMPROVED
     ramptr = interp_ram;
+    memset(interp_ram, 0, RAMSIZE);
 
-    text = (int *)ramptr;
+    textbase = text = (int *)ramptr;
     ramptr += TEXTSECTION * sizeof(int);
-    memset(text, 0, TEXTSECTION * sizeof(int));
 
-    data = ramptr;
+    database = data = ramptr;
     ramptr += DATASECTION * sizeof(char);
-    memset(data, 0, DATASECTION * sizeof(char));
 
-    stack = (int *)ramptr;
+    stackbase = stack = (int *)ramptr;
     ramptr += STACKSECTION * sizeof(int);
-    memset(stack, 0, STACKSECTION * sizeof(int));
 
-    symbols = (int *)ramptr;
+    symbolbase = symbols = (int *)ramptr;
     ramptr += SYMBOLSECTION * sizeof(int);
-    memset(symbols, 0, SYMBOLSECTION * sizeof(int));
 
 
     idmain = 0;
     src=0;
+
+    pc=0;
+    bp=0;
+    sp=0;
+    ax=0;
+    cycle=0;
     current_id=0;
+    token_val=0;
+    token=0;
+    basetype=0;
+    expr_type=0;
+    index_of_bp = 0;
+    line = 1;
+
     token_val=0;
 
     line = 1;
@@ -1485,11 +1516,7 @@ int init_interpreter()
     memset(symbols, 0, poolsize);
 #endif
 
-    src = "char else enum if int return sizeof while "
-          "printf malloc memset memcmp "
-	  "flareled led FbMove FbWrite backlight "
-	  "IRreceive IRsend "
-	  "exit void main";
+    src = Csrc;
 
      // add keywords to symbol table
     i = Char;
@@ -1509,8 +1536,6 @@ int init_interpreter()
 
     next(); current_id[Token] = Char; // handle void type
     next(); idmain = current_id; // keep track of main
-
-    return 0;
 }
 
 
@@ -1528,7 +1553,7 @@ int run()
 
     // setup stack
 #ifdef NEWIMPROVED
-    sp = (int *)((int)stack + STACKSECTION * sizeof(int));
+    stacklow = sp = (int *)((int)stack + STACKSECTION * sizeof(int));
 #else
     sp = (int *)((int)stack + poolsize);
 #endif
@@ -1539,6 +1564,46 @@ int run()
     *--sp = (int)tmp;
 
     return eval();
+}
+
+
+void interp_stats()
+{
+    unsigned int textsz, datasz, stacksz, symbolsz;
+    char textbuf[9]; /* 1 for null */
+
+    textsz = text - textbase;
+
+    datasz = data - database;
+
+    /* top of stack - stacklow point */
+    stacksz =  ((unsigned int)stackbase + STACKSECTION * sizeof(int)) - (unsigned int)stacklow;
+
+    current_id = symbols;
+    while (current_id[Token]) {
+        current_id = current_id + IdSize;
+    }
+    symbolsz = current_id - symbols ;
+
+    //echoUSB("TX,DA,ST,SY");
+
+    decDump(textsz, textbuf);
+    echoUSB("\r\nT ");
+    echoUSB(textbuf);
+
+    decDump(datasz, textbuf);
+    echoUSB("\r\nD ");
+    echoUSB(textbuf);
+
+    decDump(stacksz, textbuf);
+    echoUSB("\r\nS ");
+    echoUSB(textbuf);
+
+    decDump(symbolsz, textbuf);
+    echoUSB("\r\nY ");
+    echoUSB(textbuf);
+
+    echoUSB("\r\n");
 }
 
 #ifdef MAINAPP
@@ -1556,14 +1621,14 @@ int main()
 int interpreter_main(char *prog) 
 {
 #endif
-   int r;
+   int r=0;
 
    /* in case of error */
    if (r=setjmp(error_exit)) {
-	r += 100000;
+	r += 100000; /* indicate error with offset */
    }
    else {
-	if (init_interpreter() < 0) return -1;
+	init_interpreter();
 	src = prog;
 	program();
 	r = run();

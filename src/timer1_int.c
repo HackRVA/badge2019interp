@@ -577,9 +577,8 @@ void flareled(unsigned char r_pwm, unsigned char g_pwm, unsigned char b_pwm)
 
 void flarePWM()
 {
-    static int onled=0;
-
 #ifdef PAULSHACKEDBADGE
+    static int onled=0;
     /*
 	only one led can be on at a time
     */
