@@ -142,7 +142,7 @@ void IRsend(int p)
     pkt.p.command = IR_WRITE;
     pkt.p.address = IR_PING;
     pkt.p.badgeId = 0; // all
-    pkt.p.data = 1;
+    pkt.p.data = 255;
     IRqueueSend(pkt);
 }
 
@@ -405,7 +405,7 @@ void match(int tk) {
         //echoUSB(line);
         //echoUSB(" ");
         //echoUSB(tk);
-	longjmp(error_exit, 1);
+	longjmp(error_exit, line);
     }
 }
 
@@ -432,7 +432,7 @@ void expression(int level) {
         if (!token) {
             echoUSB("unexpected token EOF of expression\n");
             //echoUSB(line);
-	    longjmp(error_exit, 1);
+	    longjmp(error_exit, line);
         }
         if (token == Num) {
             match(Num);
@@ -528,7 +528,7 @@ void expression(int level) {
                 else {
                     echoUSB("bad function call\n");
                     //echoUSB(line);
-		    longjmp(error_exit, 1);
+		    longjmp(error_exit, line);
                 }
 
                 // clean the stack for arguments
@@ -557,7 +557,7 @@ void expression(int level) {
                 else {
                     echoUSB("undefined variable\n");
                     //echoUSB(line);
-		    longjmp(error_exit, 1);
+		    longjmp(error_exit, line);
                 }
 
                 // emit code, default behaviour is to load the value of the
@@ -598,7 +598,7 @@ void expression(int level) {
             } else {
                 echoUSB("bad dereference\n");
                 //echoUSB(line);
-		longjmp(error_exit, 1);
+		longjmp(error_exit, line);
             }
 
             *++text = (expr_type == CHAR) ? LC : LI;
@@ -612,7 +612,7 @@ void expression(int level) {
             } else {
                 echoUSB("bad address of\n");
                 //echoUSB(line);
-		longjmp(error_exit, 1);
+		longjmp(error_exit, line);
             }
 
             expr_type = expr_type + PTR;
@@ -682,7 +682,7 @@ void expression(int level) {
             } else {
                 echoUSB("bad lvalue of pre-increment\n");
                 //echoUSB(line);
-		longjmp(error_exit, 1);
+		longjmp(error_exit, line);
             }
             *++text = PUSH;
             *++text = IMM;
@@ -693,7 +693,7 @@ void expression(int level) {
         else {
             echoUSB("bad expression\n");
             //echoUSB(line);
-	    longjmp(error_exit, 1);
+	    longjmp(error_exit, line);
         }
     }
 
@@ -710,7 +710,7 @@ void expression(int level) {
                 } else {
                     echoUSB("bad lvalue in assignment\n");
                     //echoUSB(line);
-		    longjmp(error_exit, 1);
+		    longjmp(error_exit, line);
                 }
                 expression(Assign);
 
@@ -728,7 +728,7 @@ void expression(int level) {
                 } else {
                     echoUSB("missing colon in conditional\n");
                     //echoUSB(line);
-		    longjmp(error_exit, 1);
+		    longjmp(error_exit, line);
                 }
                 *addr = (int)(text + 3);
                 *++text = JMP;
@@ -924,7 +924,7 @@ void expression(int level) {
                 else {
                     echoUSB("bad value in increment\n");
                     //echoUSB(line);
-		    longjmp(error_exit, 1);
+		    longjmp(error_exit, line);
                 }
 
                 *++text = PUSH;
@@ -955,7 +955,7 @@ void expression(int level) {
                 else if (tmp < PTR) {
                     echoUSB("pointer type expected\n");
                     //echoUSB(line);
-		    longjmp(error_exit, 1);
+		    longjmp(error_exit, line);
                 }
                 expr_type = tmp - PTR;
                 *++text = ADD;
@@ -966,7 +966,7 @@ void expression(int level) {
                 //echoUSB(line);
                 //echoUSB(" ");
                 //echoUSB(token);
-		longjmp(error_exit, 1);
+		longjmp(error_exit, line);
             }
         }
     }
@@ -1087,7 +1087,7 @@ void enum_declaration() {
             //echoUSB(line);
             //echoUSB(" ");
             //echoUSB(token);
-	    longjmp(error_exit, 1);
+	    longjmp(error_exit, line);
         }
         next();
         if (token == Assign) {
@@ -1096,7 +1096,7 @@ void enum_declaration() {
             if (token != Num) {
                 echoUSB("bad enum initializer\n");
                 //echoUSB(line);
-	        longjmp(error_exit, 1);
+	        longjmp(error_exit, line);
             }
             i = token_val;
             next();
@@ -1136,12 +1136,12 @@ void function_parameter() {
         if (token != Id) {
             echoUSB("bad parameter declaration\n");
             //echoUSB(line);
-	    longjmp(error_exit, 1);
+	    longjmp(error_exit, line);
         }
         if (current_id[Class] == Loc) {
             echoUSB("duplicate parameter declaration\n");
             //echoUSB(line);
-	    longjmp(error_exit, 1);
+	    longjmp(error_exit, line);
         }
 
         match(Id);
@@ -1186,13 +1186,13 @@ void function_body() {
                 // invalid declaration
                 echoUSB("bad local declaration\n");
                 //echoUSB(line);
-	        longjmp(error_exit, 1);
+	        longjmp(error_exit, line);
             }
             if (current_id[Class] == Loc) {
                 // identifier exists
                 echoUSB("duplicate local declaration\n");
                 //echoUSB(line);
-	        longjmp(error_exit, 1);
+	        longjmp(error_exit, line);
             }
             match(Id);
 
@@ -1293,13 +1293,13 @@ void global_declaration() {
             // invalid declaration
             echoUSB("bad global declaration\n");
             //echoUSB(line);
-	    longjmp(error_exit, 1);
+	    longjmp(error_exit, line);
         }
         if (current_id[Class]) {
             // identifier exists
             echoUSB("duplicate global declaration\n");
             //echoUSB(line);
-	    longjmp(error_exit, 1);
+	    longjmp(error_exit, line);
         }
         match(Id);
         current_id[Type] = type;
@@ -1406,9 +1406,10 @@ int eval() {
         else if (op == FBWRITE) { FbWrite((char *)sp[0]); }
         else if (op == BACKLIGHT) { backlight((char)sp[0]); }
         else if (op == IRRECEIVE) { IRreceive((int *)sp[0]); }
-        else if (op == IRSEND) { IRsend((char)sp[0]); }
+        else if (op == IRSEND) { IRsend((int)sp[0]); }
         else {
-            //printf("unknown instruction:%d\n", op);
+            //echoUSB("unknown instruction:%d\n", op);
+            echoUSB("unknown instruction:%d\n");
             return -1;
         }
     }
@@ -1558,18 +1559,15 @@ int interpreter_main(char *prog)
    int r;
 
    /* in case of error */
-   if (setjmp(error_exit)) {
-	r=666;
-	led(200,0,0);
-	return 123;
+   if (r=setjmp(error_exit)) {
+	r += 100000;
    }
    else {
-	led(0,200,0);
 	if (init_interpreter() < 0) return -1;
 	src = prog;
 	program();
 	r = run();
    }
 
-   return 111;
+   return r;
 }

@@ -549,7 +549,7 @@ void doLED_PWM()
     else
         LATCbits.LATC1 = 0;
 
-//    flarePWM();
+    flarePWM();
 }
 
 void backlight(unsigned char bright) {

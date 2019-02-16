@@ -11,7 +11,7 @@ INC += -I./USB
 INC += -I$(TOP)
 INC += -I./$(BUILD)
 INC += -D_SUPPRESS_PLIB_WARNING -D_DISABLE_OPENADC10_CONFIGPORT_WARNING -fno-schedule-insns -D_XC -D__XC
-#INC += -DPAULSHACKEDBADGE
+INC += -DPAULSHACKEDBADGE
 
 # for assembler. assembler nop's after instructions
 #INC += -fno-schedule-insns 

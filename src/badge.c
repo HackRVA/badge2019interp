@@ -3,6 +3,7 @@
 #include "assetList.h"
 #include "flash.h"
 #include "adc.h"
+#include "menu.h"
 
 #include "USB/usb_config.h" // for buffer size/CDC_DATA_IN_EP_SIZE
 
@@ -14,7 +15,7 @@ extern char USB_Out_Buffer[];
 */
 struct sysData_t G_sysData;
 
-const char hextab[]={"0123456789ABCDEF"};
+const char hextab[16]={"0123456789ABCDEF"};
 
 // in used in S6B33 samsung controller
 extern unsigned char G_contrast1;
@@ -209,15 +210,18 @@ void LCDprint(char *str,int len) {
 
 const char htab[]={"0123456789ABCDEF"};
 
+void decDump(unsigned int value, char *out) {
+    int i;
+    for (i=7; i>=0; i--) {
+	out[i] = value % 10 + 48; 
+	value /= 10; 
+    }
+}
+
 void hexDump(int value, char *out) {
-    *out = htab[(value >>  28) & 0xF]; out++;
-    *out = htab[(value >>  24) & 0xF]; out++;
-    *out = htab[(value >>  20) & 0xF]; out++;
-    *out = htab[(value >>  16) & 0xF]; out++;
-    *out = htab[(value >>  12) & 0xF]; out++;
-    *out = htab[(value >>   8) & 0xF]; out++;
-    *out = htab[(value >>   4) & 0xF]; out++;
-    *out = htab[(value       ) & 0xF]; out++;
+    int i;
+    for (i=7; i>=0; i--) 
+       out[i] = htab[(value >> (i*4)) & 0xF]; 
 }
 
 /*
@@ -235,26 +239,60 @@ void echoUSB(char *str) {
    // can use USB_Out_Buffer since it may be locked in a host xfer
    if ((lineOutBufPtr + len) > CDC_DATA_OUT_EP_SIZE) return;
 
-   for (i=0; i<len; i++) {
-	if (str[i] == '\n')
-	   lineOutBuffer[lineOutBufPtr++] = '\r';
+   /* separate output strings */
+   lineOutBuffer[lineOutBufPtr++] = '\r';
+   lineOutBuffer[lineOutBufPtr++] = '\n';
 
+   for (i=0; i<len; i++) {
 	lineOutBuffer[lineOutBufPtr++] = str[i];
    }
    lineOutBuffer[lineOutBufPtr] = 0;
 }
 
-static char progbuffer[1024]={0}; 
+/*
+   on line of text from input
+*/
+static unsigned char textBuffer[128], textBufPtr=0;
 
-// controls USB heartbeat blink
-static unsigned char debugBlink=1;
+/*
+   source code buffer
+*/
+#define SOURCEBUFFERSIZE 1024
+char sourceBuffer[SOURCEBUFFERSIZE];
 
-void menus();
+/*
+  process one line of input
+*/
+void doLine()
+{
+    // call interpreter 
+    if (strncmp(textBuffer,"run",3) == 0) {
+	int r;
+
+	r = interpreter_main(sourceBuffer); 
+
+	strcpy(&(lineOutBuffer[lineOutBufPtr]), "\r\ninterp return ");
+	lineOutBufPtr += 16;
+
+	decDump(r, &(lineOutBuffer[lineOutBufPtr]));
+	lineOutBufPtr += 8; /* always converts 8 digits */
+	lineOutBuffer[lineOutBufPtr++]=13;
+	lineOutBuffer[lineOutBufPtr++]=10;
+	lineOutBuffer[lineOutBufPtr++]=0;
+
+	memset(sourceBuffer, 0, SOURCEBUFFERSIZE);
+    }
+    else {
+	strcat(sourceBuffer, textBuffer);
+    }
+    memset(textBuffer, 0, 128);
+    textBufPtr=0;
+}
+
 void ProcessIO(void)
 {
     unsigned char nread=0;
     static unsigned char writeLOCK=0;
-    static unsigned char textBuffer[128], textBufPtr=0;
     static int doInterpreter = 0;
     int i;
 
@@ -272,7 +310,7 @@ void ProcessIO(void)
 
 
     if (writeLOCK == 0) {
-	nread = getsUSBUSART(USB_In_Buffer, CDC_DATA_IN_EP_SIZE-1);
+	nread = getsUSBUSART(USB_In_Buffer, CDC_DATA_IN_EP_SIZE);
     }
 
     if(nread > 0) {
@@ -293,37 +331,42 @@ void ProcessIO(void)
 	   int i, outp=0;
 
 	   for (i=0; i < nread; i++) {
+		if (USB_In_Buffer[i] == 13) USB_In_Buffer[i] = 10;
+
 		if ((USB_In_Buffer[i] == '') | (USB_In_Buffer[i] == '')) {
 		   if (textBufPtr > 0) textBufPtr--;
 
 		   USB_Out_Buffer[outp++] = '';
+		   if (outp==CDC_DATA_OUT_EP_SIZE) outp--;
 		   USB_Out_Buffer[outp++] = ' ';
+		   if (outp==CDC_DATA_OUT_EP_SIZE) outp--;
 		   USB_Out_Buffer[outp++] = '';
+		   if (outp==CDC_DATA_OUT_EP_SIZE) outp--;
 		}
 		else {
 		   textBuffer[textBufPtr++] = USB_In_Buffer[i]; // used for python
 		   textBuffer[textBufPtr] = 0; 
 
-		   if ((USB_In_Buffer[i] == 10) | (USB_In_Buffer[i] == 13)) {
-			USB_Out_Buffer[outp++] = 10; // insert before the char
+		   //if ((USB_In_Buffer[i] == 10) | (USB_In_Buffer[i] == 13)) {
+		   if (USB_In_Buffer[i] == 10) {
 			USB_Out_Buffer[outp++] = 13; // insert before the char
+		        if (outp==CDC_DATA_OUT_EP_SIZE) outp--;
+			USB_Out_Buffer[outp++] = 10; // insert before the char
+		        if (outp==CDC_DATA_OUT_EP_SIZE) outp--;
 		        USB_Out_Buffer[outp] = 0;
 
-			doInterpreter = 1;
-			continue;
+			doLine();
 		   }
 		   else {
 		      USB_Out_Buffer[outp++] = USB_In_Buffer[i];
+		      if (outp==CDC_DATA_OUT_EP_SIZE) outp--;
 		      USB_Out_Buffer[outp] = 0;
 		   }
 		}
 	   }
-
 	   USB_Out_Buffer[outp] = 0; // null in case
-	   USB_In_Buffer[0] = 0;
-	   memset(USB_In_Buffer, 0, CDC_DATA_IN_EP_SIZE);
+	   //USB_In_Buffer[0] = 0;
 	}
-
 	nread = 0;
     }
 
@@ -336,7 +379,7 @@ void ProcessIO(void)
 	   writeLOCK = 0;
 	} 
 
-	// jam python line buffer into buffer since usb is done
+	// jam interpreter line buffer into buffer since usb is done
 	if (lineOutBufPtr != 0) {
 	   strncpy(USB_Out_Buffer, lineOutBuffer, lineOutBufPtr);
 	   USB_Out_Buffer[lineOutBufPtr] = 0;
@@ -350,128 +393,5 @@ void ProcessIO(void)
 	   writeLOCK = 1; // dont touch until USB done
 	}
     }
-
-    // do this after USB input, output processed
-    if (doInterpreter) {
-	// call interpreter 
-	if (strncmp(textBuffer,"run",3) == 0) {
-	   int r;
-
-	   r = interpreter_main(progbuffer); 
-
-	   strcpy(&(lineOutBuffer[lineOutBufPtr]), "interp return ");
-	   lineOutBufPtr += 14;
-
-	   hexDump(r, &(lineOutBuffer[lineOutBufPtr]));
-	   lineOutBufPtr += 8;
-	   lineOutBuffer[lineOutBufPtr++]=10;
-	   lineOutBuffer[lineOutBufPtr++]=13;
-	   lineOutBuffer[lineOutBufPtr++]=0;
-
-	   memset(progbuffer, 0, 1024);
-	}
-	else {
-	   strcat(progbuffer, textBuffer);
-	}
-	memset(textBuffer, 0, 128);
-	textBufPtr=0;
-
-	doInterpreter = 0;
-    }
-
     CDCTxService();
 }
-
-
-/*
-   USB status leds colors
-*/
-#define mInitAllLEDs()      LATB &= 0x0; TRISB &= 0x0;
-
-#define mLED_1              LATCbits.LATC0 /* red */
-#define mLED_2              LATCbits.LATC1  /* blue */
-#define mLED_3              LATBbits.LATB3 /* green */
-    
-#define mGetLED_1()         mLED_1
-#define mGetLED_2()         mLED_2
-#define mGetLED_3()         mLED_3
-
-#define mLED_1_On()         mLED_1 = 1;
-#define mLED_2_On()         mLED_2 = 1;
-#define mLED_3_On()         mLED_3 = 1;
-    
-#define mLED_1_Off()        mLED_1 = 0;
-#define mLED_2_Off()        mLED_2 = 0;
-#define mLED_3_Off()        mLED_3 = 0;
-    
-#define mLED_1_Toggle()     mLED_1 = !mLED_1;
- 
-void BlinkUSBStatus(void)
-{
-    static int led_count=0;
-
-    if(led_count == 0) led_count = 100000U;
-    led_count--;
-
-    #define mLED_Both_Off()         {mLED_1_Off();mLED_2_Off();}
-    #define mLED_Both_On()          {mLED_1_On();mLED_2_On();}
-    #define mLED_Only_1_On()        {mLED_1_On();mLED_2_Off();}
-    #define mLED_Only_2_On()        {mLED_1_Off();mLED_2_On();}
-
-    if(getUSBSuspendControl() == 1) {
-        if(led_count==0) {
-            mLED_1_On();
-            mLED_2_On();
-        }
-    }
-    else {
-	if (USBDeviceStateDETACHED())
-        {
-            mLED_Both_Off();
-        }
-        else if (USBDeviceStateATTACHED())
-        {
-            mLED_Both_On();
-        }
-        else if (USBDeviceStatePOWERED())
-        {
-            mLED_Only_1_On();
-        }
-        else if (USBDeviceStateDEFAULT())
-        {
-            mLED_Only_2_On();
-        }
-        else if (USBDeviceStateADDRESS())
-        {
-            if(led_count == 0) {
-                mLED_1_Toggle();
-                mLED_2_Off();
-            }
-        }
-        else if (USBDeviceStateCONFIGURED()) {
-            if(debugBlink && (led_count==0)) {
-                if (mGetLED_1()) {
-			mLED_1_Off();
-		}
-		else {
-			mLED_1_On();
-		}
-
-                if (mGetLED_2()) {
-			mLED_2_Off();
-		}
-		else {
-			mLED_2_On();
-		}
-
-                if (mGetLED_3())  {
-			mLED_3_Off();
-		}
-		else {
-			mLED_3_On();
-		}
-            }
-        }
-    }
-}
-

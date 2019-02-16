@@ -64,21 +64,21 @@ int main() {
     FbWrite("yo");
 }
 
+
 int main() {
-   led(100, 0, 0);
+ FbWrite("hello world");
+ flareled(100, 10, 200);
+ led(0, 0, 100);
+ return 123;
 }
 
-int main() {
-   flareled(100, 100, 200);
-}
-
-int main() {
-   flareled(200, 200, 200);
-}
-
-
-int main() {
-   flareled(10, 10, 20);
+int main(){
+ int r;
+ IRsend(123);
+ IRreceive(&r);
+ FbWrite("IR done");
+ led(100, 0, 0);
+ exit(r);
 }
 
 int main() {
@@ -91,6 +91,8 @@ int main() {
    FbWrite("IR done");
 
    led(0, 0, 0);
+
+   exit(0);
 }
 
 int main() {

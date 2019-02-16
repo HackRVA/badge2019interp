@@ -9,14 +9,14 @@
 #include "assets.h"
 #include "colors.h"
 
-#define HACKRVA4BIT_LORES
-#include "hackrva4bit.h"
+//#define HACKRVA4BIT_LORES
+//#include "hackrva4bit.h"
 
 //#define RVASEC2016BITS_LORES
 //#include "rvasec2016.h"
 
-#define DRBOB_LORES
-#include "drbob.h"
+//#define DRBOB_LORES
+//#include "drbob.h"
                      
 //#include "font_2.xbm" // for size reasons just A-Z and a couple others
 #include "font8x8.xbm" // full font
@@ -41,10 +41,10 @@ const static char BW_cmap[2][3] = {
 
 */
 const struct asset assetList[] = {
-    { DRBOB, DRBOB_BITS, 1, DRBOB_WIDTH, DRBOB_HEIGHT, (const char *)DRBOB_CMAP, (const char *)DRBOB_DATA, (drawLCD8) },
-    { HACKRVA4, HACKRVA4_BITS, 1, HACKRVA4_WIDTH, HACKRVA4_HEIGHT, (const char *)HACKRVA4_CMAP, (const char *)HACKRVA4_DATA, (drawLCD4) },
+//    { DRBOB, DRBOB_BITS, 1, DRBOB_WIDTH, DRBOB_HEIGHT, (const char *)DRBOB_CMAP, (const char *)DRBOB_DATA, (drawLCD8) },
+//    { HACKRVA4, HACKRVA4_BITS, 1, HACKRVA4_WIDTH, HACKRVA4_HEIGHT, (const char *)HACKRVA4_CMAP, (const char *)HACKRVA4_DATA, (drawLCD4) },
 //    { RVASEC2016, RVASEC2016_BITS, 1, RVASEC2016_WIDTH, RVASEC2016_HEIGHT, (const char *)RVASEC2016_CMAP, (const char *)RVASEC2016_DATA, (drawLCD2) },
 // partial font    { FONT, PICTURE1BIT, 42, 8, 8, (const char *)BW_cmap, (const char *)font_2_bits, (drawLCD1) },
-      { FONT, PICTURE1BIT, 1024, 8, 8, (const char *)BW_cmap, (const char *)font8x8_bits, (drawLCD1) },
+      { FONT, PICTURE1BIT, 128, 8, 8, (const char *)BW_cmap, (const char *)font8x8_bits, (drawLCD1) },
 };
 

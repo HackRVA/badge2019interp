@@ -1,3 +1,4 @@
+#include <string.h>
 #include "colors.h"
 #include "fb.h"
 #include "buttons.h"
