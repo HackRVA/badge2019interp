@@ -92,5 +92,8 @@ void clear_buttons();
 
 void button_task(void *p_arg);
 
+int getButton();
+int getDPAD();
+
 #endif	/* BUTTONS_H */
 

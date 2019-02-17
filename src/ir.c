@@ -90,7 +90,7 @@ void IRPair()
     IRqueueSend(pkt);
 }
 
-union IRpacket_u G_hack={0};
+volatile union IRpacket_u G_hack={0};
 
 /* handler for IR recv in main thread */
 void IRhandler() 
@@ -102,11 +102,10 @@ void IRhandler()
 
     /* curr == next == empty */
     if (IRpacketInCurr != IRpacketInNext) {
+        G_hack = IRpacketsIn[IRpacketInCurr] ;
 
         if (IRpacketsIn[IRpacketInCurr].p.address < IR_LASTADRESS) /* basic sanity check before we call unknown handlers */
             IRcallbacks[ IRpacketsIn[IRpacketInCurr].p.address].handler( IRpacketsIn[IRpacketInCurr].p );
-
-        G_hack = IRpacketsIn[IRpacketInCurr] ;
 
         IRpacketInCurr++;
         IRpacketInCurr %= MAXPACKETQUEUE;

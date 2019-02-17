@@ -41,6 +41,24 @@ int main()
 
 
 
+int main()
+{
+    int d;
+    d = getDPAD();
+    return d;
+}
+
+int main()
+{
+    int b;
+    b = getButton();
+    return b;
+}
+
+
+
+
+
 
 int main()
 {
@@ -79,7 +97,7 @@ int main() {
 int main(){
  int r;
  IRsend(123);
- IRreceive(&r);
+ r = IRreceive();
  FbWrite("IR done");
  led(100, 0, 0);
  exit(r);
@@ -91,7 +109,7 @@ int main() {
    led(100, 0, 0);
 
    IRsend(123);
-   IRreceive(&r);
+   r = IRreceive();
    FbWrite("IR done");
 
    led(0, 0, 0);
@@ -101,8 +119,42 @@ int main() {
 
 int main() {
    int r;
-   IRreceive(&r);
+   r = IRreceive();
    return r;
+}
+
+
+int main()
+{
+    int r,b;
+
+    b=0;
+    while (b == 0) {
+	r = IRreceive();
+	if (r != 0) led(r, r, r);
+	b = getButton();
+    }
+}
+
+int main()
+{
+    int r;
+
+    r=0;
+    while (r == 0) {
+	r = IRreceive();
+	led(r, r, r);
+    }
+}
+
+
+int main()
+{
+   char r;
+   r = (char)IRreceive();
+   led(r,r,r);
+
+   return (int)r;
 }
 
 

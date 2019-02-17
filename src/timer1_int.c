@@ -462,30 +462,30 @@ void __ISR(_TIMER_3_VECTOR, IPL2SOFT) Timer3Handler(void)
    mT3ClearIntFlag(); // clear the interrupt flag
 }
 
-unsigned char G_red_cnt=0;
-unsigned char G_red_pwm=0;
+volatile unsigned char G_red_cnt=0;
+volatile unsigned char G_red_pwm=0;
 
-unsigned char G_green_cnt=0;
-unsigned char G_green_pwm=0;
+volatile unsigned char G_green_cnt=0;
+volatile unsigned char G_green_pwm=0;
 
-unsigned char G_blue_cnt=0;
-unsigned char G_blue_pwm=0;
+volatile unsigned char G_blue_cnt=0;
+volatile unsigned char G_blue_pwm=0;
 
-unsigned char G_flare_red_cnt=0;
-unsigned char G_flare_red_pwm=0;
+volatile unsigned char G_flare_red_cnt=0;
+volatile unsigned char G_flare_red_pwm=0;
 
-unsigned char G_flare_green_cnt=0;
-unsigned char G_flare_green_pwm=0;
+volatile unsigned char G_flare_green_cnt=0;
+volatile unsigned char G_flare_green_pwm=0;
 
-unsigned char G_flare_blue_cnt=0;
-unsigned char G_flare_blue_pwm=0;
+volatile unsigned char G_flare_blue_cnt=0;
+volatile unsigned char G_flare_blue_pwm=0;
 
-unsigned char G_bright=0;
+volatile unsigned char G_bright=0;
 
-unsigned char G_backlight=255;
-unsigned char G_backlight_cnt=0;
+volatile unsigned char G_backlight=255;
+volatile unsigned char G_backlight_cnt=0;
 
-unsigned char G_no_LED_PWM = 0;
+volatile unsigned char G_no_LED_PWM = 0;
 
 
 void no_LED_PWM(unsigned char trueFalse) {

@@ -38,8 +38,12 @@ void doButtons()
 
     timestamp++;
 
+    /*
+	buttons are pulled high, 
+	so zero is pressed
+    */
     // Standalone/main button
-    if(!(PORTBbits.RB14 != 0)){
+    if(PORTBbits.RB14 == 0){
 	if(G_button_cnt < 255)
 	    G_button_cnt++;
     }
@@ -49,18 +53,17 @@ void doButtons()
     }
     
     //UP:
-    if(!(PORTBbits.RB2 != 0)){
+    if(PORTBbits.RB2 == 0){
 	if(G_up_button_cnt < 255)
 	    G_up_button_cnt++;
     }
     else{
-	
 	G_up_button_cnt = 0;
 	REMOVE_FROM_MASK(G_pressed_button, UP_BTN_MASK);
     }
     
     //LEFT:
-    if(!(PORTBbits.RB0 != 0)){
+    if(PORTBbits.RB0 == 0){
 	if(G_left_button_cnt < 255)
 	    G_left_button_cnt++;
     }
@@ -70,7 +73,7 @@ void doButtons()
     }
     
     //RIGHT:
-    if(!(PORTCbits.RC2 != 0)){
+    if(PORTCbits.RC2 == 0){
 	if(G_right_button_cnt < 255)
 	    G_right_button_cnt++;
     }
@@ -95,10 +98,35 @@ void doButtons()
 
 
 void clear_buttons(){
-    
     G_button_cnt = 0;
     G_up_button_cnt = 0;
     G_down_button_cnt = 0;
     G_left_button_cnt = 0;
     G_right_button_cnt = 0;
+}
+
+/*
+   these read directly for the interpreter
+   because it is outside the main event 
+   loop which is consuming the 
+   buttons presses
+*/
+int getButton()
+{
+    int b=0;
+
+    b = (PORTBbits.RB14 == 0) ? SOLO_BTN_MASK : 0;
+    return (b);
+}
+
+int getDPAD()
+{
+    int b=0;
+
+    b |= (PORTBbits.RB2 == 0) ? UP_BTN_MASK : 0;
+    b |= (PORTBbits.RB0 == 0) ? LEFT_BTN_MASK : 0;
+    b |= (PORTCbits.RC2 == 0) ? RIGHT_BTN_MASK : 0;
+    b |= (PORTBbits.RB1 == 0) ? DOWN_BTN_MASK : 0;
+
+   return(b);
 }

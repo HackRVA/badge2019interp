@@ -6,6 +6,7 @@
 #include "badge.h"
 #include "ir.h"
 #include "assets.h"
+#include "buttons.h"
 
 static jmp_buf error_exit;
 
@@ -65,7 +66,7 @@ enum { LEA, IMM, JMP, CALL, JZ, JNZ, ENT, ADJ, LEV, LI, LC, SI, SC, PUSH,
        OR, XOR, AND, EQ, NE, LT, GT, LE, GE, SHL, SHR, ADD, SUB, MUL, DIV, MOD, 
        PRTF, MALC, MSET, MCMP,
        FLARELED, LED, FBMOVE, FBWRITE, BACKLIGHT,
-       IRRECEIVE, IRSEND, SETNOTE,
+       IRRECEIVE, IRSEND, SETNOTE, GETBUTTON, GETDPAD,
        EXIT
 };
 
@@ -151,10 +152,10 @@ void IRsend(int p)
     IRqueueSend(pkt);
 }
 
-extern union IRpacket_u G_hack;
-void IRreceive(int *r)
+extern volatile union IRpacket_u G_hack;
+char IRreceive()
 {
-   *r = G_hack.v;
+   return (char)(G_hack.p.data & 0xF);
 }
 
 
@@ -1371,9 +1372,11 @@ int eval() {
         else if (op == FBMOVE) { FbMove((char)sp[1], (char)sp[0]); }
         else if (op == FBWRITE) { FbWrite((char *)sp[0]); }
         else if (op == BACKLIGHT) { backlight((char)sp[0]); }
-        else if (op == IRRECEIVE) { IRreceive((int *)sp[0]); }
+        else if (op == IRRECEIVE) { ax = (char)IRreceive(); }
         else if (op == IRSEND) { IRsend((int)sp[0]); }
         else if (op == SETNOTE) { setNote((int)sp[1], (int)sp[0]); }
+        else if (op == GETBUTTON) { ax = (int)getButton(); }
+        else if (op == GETDPAD) { ax = (int)getDPAD(); }
         else {
             echoUSB("unknown instruction\n");
 	    longjmp(error_exit, op);
@@ -1406,7 +1409,7 @@ char *ramptr;
 const char Csrc[] = "char else enum if int return sizeof while "
           "printf malloc memset memcmp "
 	  "flareled led FbMove FbWrite backlight "
-	  "IRreceive IRsend setNote "
+	  "IRreceive IRsend setNote getButton getDPAD "
 	  "exit void main";
 
 void init_interpreter()
