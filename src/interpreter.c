@@ -1482,7 +1482,7 @@ void init_interpreter()
     memset(symbols, 0, poolsize);
 #endif
 
-    src = Csrc;
+    src = (char *)Csrc;
 
      // add keywords to symbol table
     i = Char;

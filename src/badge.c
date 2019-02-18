@@ -208,8 +208,6 @@ void LCDprint(char *str,int len) {
    FbWriteString(str, len);
 }
 
-const char htab[]={"0123456789ABCDEF"};
-
 void decDump(unsigned int value, char *out) {
     int i;
     for (i=7; i>=0; i--) {
@@ -222,7 +220,7 @@ void decDump(unsigned int value, char *out) {
 void hexDump(unsigned int value, char *out) {
     int i;
     for (i=7; i>=0; i--) 
-       out[i] = htab[(value >> (i*4)) & 0xF]; 
+       out[i] = hextab[(value >> (i*4)) & 0xF]; 
     out[8]=0;
 }
 
