@@ -494,6 +494,8 @@ void expression(int level) {
         else if (token == Id) {
             // there are several type when occurs to Id
             // but this is unit, so it can only be
+            // 1. function call
+            // 2. Enum variable
             // 3. global/local variable
             match(Id);
 
@@ -1511,8 +1513,8 @@ int run()
     char *argv[]={""};
 
     if (!(pc = (int *)idmain[Value])) {
-        //printf("main() not defined\n");
-        return -1;
+	echoUSB("main() not defined");
+	longjmp(error_exit, -1);
     }
 
     // setup stack
