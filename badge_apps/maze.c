@@ -922,7 +922,7 @@ static int go_up_or_down(int direction)
     if (direction > 0 && maze_current_level >= NLEVELS - 1)
         return 0;
     else if (direction < 0 && maze_current_level <= 0) {
-	if (!has_chalice && 0) {
+	if (!has_chalice) {
             encounter_text = "YOU MUST GET";
             encounter_adjective = "THE CHALICE";
             encounter_name = "FIRST";
