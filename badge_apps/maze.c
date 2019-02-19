@@ -1858,6 +1858,7 @@ static void maze_take_object(void)
 static void maze_win_condition(void)
 {
     FbClear();
+    FbColor(WHITE);
     FbMove(10, 30);
     FbWriteLine("YOU HAVE");
     FbMove(10, 40);
