@@ -425,6 +425,13 @@ static void button_pressed()
 	}
 }
 
+static int bogus_time = 0;
+
+static int get_time(void)
+{
+	return bogus_time;
+}
+
 static void set_game_start_timestamp(int time)
 {
 #ifdef __linux__
@@ -433,7 +440,11 @@ static void set_game_start_timestamp(int time)
 	gettimeofday(&tv, NULL);
 	game_start_timestamp = tv.tv_sec + time;
 #else
-	/* TODO: write this */
+	/* TODO: re-write this to use the wall clock code when it is ready.
+	 * This doesn't really work quite right without proper time.
+	 * For now, I'll do this so that at least something happens.
+	 */
+	game_start_timestamp = get_time() + time;
 #endif
 }
 
@@ -611,24 +622,32 @@ static void check_for_incoming_packets(void)
 
 static void advance_time()
 {
-#ifdef __linux__
-	struct timeval tv;
 	int old_time = seconds_until_game_starts;
 	int old_suppress = suppress_further_hits_until;
+#ifdef __linux__
+	struct timeval tv;
 
 	gettimeofday(&tv, NULL);
 	current_time = tv.tv_sec;
-	if (seconds_until_game_starts != NO_GAME_START_TIME && game_start_timestamp != NO_GAME_START_TIME) {
-		seconds_until_game_starts = game_start_timestamp - tv.tv_sec;
+#else
+	/* TODO: re-write this to use the wall clock code when it is ready.
+	 * This doesn't really work quite right without proper time.
+	 * For now, I'll do this so that at least something happens.
+	 */
+	static t1 = 0;
+	t1++;
+	if (t1 == 10000) {
+		t1 = 0;
+		bogus_time++;
+		current_time = bogus_time;
 	}
+#endif
+	if (seconds_until_game_starts != NO_GAME_START_TIME && game_start_timestamp != NO_GAME_START_TIME)
+		seconds_until_game_starts = game_start_timestamp - current_time;
 	if (suppress_further_hits_until <= current_time)
 		suppress_further_hits_until = -1;
-	if (old_time != seconds_until_game_starts ||
-		old_suppress != suppress_further_hits_until)
+	if (old_time != seconds_until_game_starts || old_suppress != suppress_further_hits_until)
 		screen_changed = 1;
-#else
-	/* TODO: fill this in */
-#endif
 }
 
 static void game_process_button_presses(void)
