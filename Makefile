@@ -25,7 +25,7 @@ LIBS = /opt/microchip/xc32/v1.34/pic32mx/lib/libmchp_peripheral_32MX270F256D.a
 SRC_S = 
 
 # bootloader
-LDFLAGS = -Wl,--defsym=_min_heap_size=0x100,--defsym=_min_stack_size=0x100,--gc-sections,-Map="mymap.map",--report-mem,--cref,-T,src/app_32MX270F256D.ld -Os
+LDFLAGS = -Wl,--defsym=_min_heap_size=0x100,--defsym=_min_stack_size=0x400,--gc-sections,-Map="mymap.map",--report-mem,--cref,-T,src/app_32MX270F256D.ld -Os
 
 SRC_BADGE_C = \
 	src/microchip.c src/assets.c src/assetList.c src/ir.c \

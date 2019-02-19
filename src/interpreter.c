@@ -1549,7 +1549,7 @@ void interp_stats()
     while (current_id[Token]) {
         current_id = current_id + IdSize;
     }
-    symbolsz = current_id - symbols ;
+    symbolsz = (unsigned int)current_id - (unsigned int)symbols ;
 
     //echoUSB("TX,DA,ST,SY");
 
