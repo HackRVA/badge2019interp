@@ -1389,6 +1389,9 @@ static void maze_player_died(void)
     encounter_adjective = "";
     encounter_name = "x";
     combat_mode = 0;
+    maze_current_level = 0;
+    maze_previous_level = -1;
+    maze_player_initial_placement = MAZE_PLACE_PLAYER_BENEATH_UP_LADDER;
     maze_program_state = MAZE_SCREEN_RENDER;
 }
 
