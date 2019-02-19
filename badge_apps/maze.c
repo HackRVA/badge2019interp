@@ -103,6 +103,7 @@ static unsigned char combat_mode = 0;
 static unsigned int maze_random_seed[NLEVELS] = { 0 };
 static int maze_previous_level = -1;
 static int maze_current_level = 0;
+static int level_color[] = { YELLOW, CYAN, WHITE };
 
 #define MAZE_PLACE_PLAYER_DO_NOT_MOVE 0
 #define MAZE_PLACE_PLAYER_BENEATH_UP_LADDER 1
@@ -1780,7 +1781,7 @@ int maze_cb(void)
         print_maze();
         break;
     case MAZE_RENDER:
-        render_maze(WHITE);
+        render_maze(level_color[maze_current_level % 3]);
         break;
     case MAZE_OBJECT_RENDER:
         draw_objects();
