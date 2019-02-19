@@ -265,9 +265,6 @@ static struct point cobra_points[] =
 static struct point grenade_points[] =
 #include "grenade_points.h"
 
-static struct point key_points[] =
-#include "key_points.h"
-
 static struct point orc_points[] =
 #include "orc_points.h"
 
@@ -307,15 +304,14 @@ static struct maze_object_template maze_object_template[] = {
     { "CHEST", YELLOW, MAZE_OBJECT_TREASURE, chest_points, ARRAYSIZE(chest_points), 0, 0, 0 },
     { "COBRA", GREEN, MAZE_OBJECT_MONSTER, cobra_points, ARRAYSIZE(cobra_points), 2, 5, 10 },
     { "HOLY GRENADE", YELLOW, MAZE_OBJECT_GRENADE, grenade_points, ARRAYSIZE(grenade_points), 0, 0, 20 },
-    { "KEY", YELLOW, MAZE_OBJECT_KEY, key_points, ARRAYSIZE(key_points), 0, 0, 0 },
     { "SCARY ORC", GREEN, MAZE_OBJECT_MONSTER, orc_points, ARRAYSIZE(orc_points), 4, 15, 15 },
     { "PHANTASM", WHITE, MAZE_OBJECT_MONSTER, phantasm_points, ARRAYSIZE(phantasm_points), 6, 15, 4 },
     { "POTION", RED, MAZE_OBJECT_POTION, potion_points, ARRAYSIZE(potion_points), 0, 0, 30 },
     { "SHIELD", YELLOW, MAZE_OBJECT_ARMOR, shield_points, ARRAYSIZE(shield_points), 0, 0, 5 },
     { "SWORD", YELLOW, MAZE_OBJECT_WEAPON, sword_points, ARRAYSIZE(sword_points), 0, 0, 15 },
-#define DOWN_LADDER 11
+#define DOWN_LADDER 10
     { "LADDER", WHITE, MAZE_OBJECT_DOWN_LADDER, down_ladder_points, ARRAYSIZE(down_ladder_points), 0, 0, 0 },
-#define UP_LADDER 12
+#define UP_LADDER 11
     { "LADDER", WHITE, MAZE_OBJECT_UP_LADDER, up_ladder_points, ARRAYSIZE(down_ladder_points), 0, 0, 0 },
 };
 
