@@ -635,7 +635,7 @@ static void add_chalice(int level)
 #ifdef __linux__
 	printf("Didn't add chalice.\n");
 #endif
-        /* now what? */
+        return; /* now what? */
     }
 
     maze_object[i].x = x;
