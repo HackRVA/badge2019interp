@@ -393,6 +393,7 @@ static void game_exit(void)
 {
 	unregister_ir_packet_callback();
 	returnToMenus();
+	game_state = INITIAL_STATE;
 }
 
 static void game_main_menu(void)
