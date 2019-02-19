@@ -129,11 +129,12 @@ int main()
     int r,b;
 
     b=0;
-    while (b == 0) {
+    while (b != 4) {
 	r = IRreceive();
 	if (r != 0) led(r, r, r);
-	b = getButton();
+	b = getDPAD();
     }
+   return b;
 }
 
 int main()
@@ -155,6 +156,37 @@ int main()
    led(r,r,r);
 
    return (int)r;
+}
+
+
+
+// bf882060 g     O *ABS*	00000000 BMXPFMSZ
+main()
+{
+   int *x;
+   x = 0x bf882060;
+
+   return *x;
+}
+
+// bf882070 g     O *ABS*	00000000 BMXBOOTSZ
+main()
+{
+   int *x;
+   x = 0xbf882070;
+
+   return *x;
+}
+
+// bf80f220 g     O *ABS*	00000000 DEVID
+// 29D5A53
+
+main()
+{
+   int *x;
+   x = 0x bf80f220;
+
+   return *x;
 }
 
 
