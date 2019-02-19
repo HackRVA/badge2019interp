@@ -80,7 +80,8 @@ enum maze_program_state_t {
     MAZE_CHOOSE_DROP_OBJECT,
     MAZE_TAKE_OBJECT,
     MAZE_DROP_OBJECT,
-    MAZE_EXIT
+    MAZE_WIN_CONDITION,
+    MAZE_EXIT,
 };
 static enum maze_program_state_t maze_program_state = MAZE_GAME_INIT;
 static int maze_back_wall_distance = 7;
@@ -104,6 +105,7 @@ static unsigned int maze_random_seed[NLEVELS] = { 0 };
 static int maze_previous_level = -1;
 static int maze_current_level = 0;
 static int level_color[] = { YELLOW, CYAN, WHITE };
+static char game_is_won = 0;
 
 #define MAZE_PLACE_PLAYER_DO_NOT_MOVE 0
 #define MAZE_PLACE_PLAYER_BENEATH_UP_LADDER 1
@@ -880,9 +882,18 @@ static void draw_forward_wall(int start, int scale)
     FbHorizontalLine(start, SCREEN_YDIM - 1 - start, SCREEN_XDIM - 1 - start, SCREEN_YDIM - 1 - start);
 }
 
+static char *encounter_text = "x";
+static char *encounter_adjective = "";
+static char *encounter_name = "";
+static unsigned char encounter_object = 255;
+
+/* Returns 1 if traversal of ladder successful.
+ * Returns 0 if you cannot go that way.
+ */
 static int go_up_or_down(int direction)
 {
     int i, ok, ladder_type, placement;
+    unsigned char has_chalice = 0;
 
     if (direction > 0) {
         ladder_type = DOWN_LADDER;
@@ -898,16 +909,27 @@ static int go_up_or_down(int direction)
         if (maze_object[i].type == ladder_type &&
             maze_object[i].x == player.x && maze_object[i].y == player.y) {
                 ok = 1;
-                break;
         }
+        if (maze_object[i].type == CHALICE &&
+            maze_object[i].x == 255)
+            has_chalice = 1;
+        if (ok && has_chalice)
+            break;
     }
     if (!ok)
         return 0;
 
     if (direction > 0 && maze_current_level >= NLEVELS - 1)
         return 0;
-    else if (direction < 0 && maze_current_level <= 0)
-        return 0;
+    else if (direction < 0 && maze_current_level <= 0) {
+	if (!has_chalice && 0) {
+            encounter_text = "YOU MUST GET";
+            encounter_adjective = "THE CHALICE";
+            encounter_name = "FIRST";
+            encounter_object = 255;
+            return 0;
+        }
+    }
 
     maze_previous_level = maze_current_level;
     maze_current_level += direction;
@@ -925,11 +947,6 @@ static int go_down(void)
 {
     return go_up_or_down(1);
 }
-
-static char *encounter_text = "x";
-static char *encounter_adjective = "";
-static char *encounter_name = "";
-static unsigned char encounter_object = 255;
 
 static int check_for_encounter(unsigned char newx, unsigned char newy)
 {
@@ -1018,6 +1035,10 @@ static void maze_button_pressed(void)
     int takeable_object_count = 0;
     int droppable_object_count = 0;
 
+    if (game_is_won) {
+        maze_program_state = MAZE_GAME_INIT;
+        return;
+    }
     if (player.hitpoints == 0)
         return;
     if (maze_menu.menu_active) {
@@ -1658,6 +1679,8 @@ static void maze_game_init(void)
     player_init();
     potions_init();
 
+    game_is_won = 0;
+
     maze_program_state = MAZE_GAME_START_MENU;
 }
 
@@ -1832,6 +1855,32 @@ static void maze_take_object(void)
     }
 }
 
+static void maze_win_condition(void)
+{
+    FbClear();
+    FbMove(10, 30);
+    FbWriteLine("YOU HAVE");
+    FbMove(10, 40);
+    FbWriteLine("ESCAPED ALIVE");
+    FbMove(10, 50);
+    FbWriteLine("WITH THE");
+    FbMove(10, 60);
+    FbWriteLine("CHALICE OF");
+    FbMove(10, 70);
+    FbWriteLine("OBFUSCATION!");
+    FbMove(10, 90);
+    FbWriteLine("YOU WIN!");
+    maze_menu.menu_active = 0;
+    encounter_text = "x";
+    encounter_adjective = "";
+    encounter_name = "x";
+    combat_mode = 0;
+    maze_current_level = 0;
+    maze_previous_level = -1;
+    maze_player_initial_placement = MAZE_PLACE_PLAYER_BENEATH_UP_LADDER;
+    maze_program_state = MAZE_SCREEN_RENDER;
+}
+
 static void maze_drop_object(void)
 {
     int i;
@@ -1896,6 +1945,8 @@ int maze_cb(void)
     case MAZE_STATE_GO_UP:
         if (!go_up())
             maze_program_state = MAZE_RENDER;
+        if (maze_current_level == -1) /* They have escaped the maze with the chalice */
+            maze_program_state = MAZE_WIN_CONDITION;
         break;
     case MAZE_STATE_FIGHT:
          maze_begin_fight();
@@ -1948,6 +1999,10 @@ int maze_cb(void)
     case MAZE_EXIT:
         maze_program_state = MAZE_GAME_INIT;
         returnToMenus();
+        break;
+    case MAZE_WIN_CONDITION:
+        game_is_won = 1;
+        maze_win_condition();
         break;
     }
     return 0;
