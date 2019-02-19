@@ -1743,6 +1743,14 @@ static void maze_take_object(void)
         player.gp += maze_object[i].tsd.treasure.gp;
         maze_object[i].tsd.treasure.gp = 0; /* you can't get infinite gp by repeatedly dropping and taking treasure */
         break;
+    case MAZE_OBJECT_WEAPON:
+        if (player.weapon == 255) /* bare handed? Auto wield weapon. */
+            maze_program_state = MAZE_WIELD_WEAPON;
+        break;
+    case MAZE_OBJECT_ARMOR:
+        if (player.armor == 255) /* bare chested? Auto don armor. */
+            maze_program_state = MAZE_DON_ARMOR;
+        break;
     default:
         break;
     }
