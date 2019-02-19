@@ -230,7 +230,8 @@ enum maze_object_category {
     MAZE_OBJECT_ARMOR,
     MAZE_OBJECT_TREASURE,
     MAZE_OBJECT_DOWN_LADDER,
-    MAZE_OBJECT_UP_LADDER
+    MAZE_OBJECT_UP_LADDER,
+    MAZE_OBJECT_CHALICE,
 };
 
 struct maze_object_template {
@@ -292,7 +293,10 @@ static struct point player_points[] =
 static struct point bones_points[] =
 #include "bones_points.h"
 
-#define MAZE_NOBJECT_TYPES 13
+static struct point chalice_points[] =
+#include "chalice_points.h"
+
+#define MAZE_NOBJECT_TYPES 14
 static int nobject_types = MAZE_NOBJECT_TYPES;
 
 #define MAX_MAZE_OBJECTS 30
@@ -313,6 +317,8 @@ static struct maze_object_template maze_object_template[] = {
     { "LADDER", WHITE, MAZE_OBJECT_DOWN_LADDER, down_ladder_points, ARRAYSIZE(down_ladder_points), 0, 0, 0 },
 #define UP_LADDER 11
     { "LADDER", WHITE, MAZE_OBJECT_UP_LADDER, up_ladder_points, ARRAYSIZE(down_ladder_points), 0, 0, 0 },
+#define CHALICE 12
+    { "CHALICE", YELLOW, MAZE_OBJECT_CHALICE, chalice_points, ARRAYSIZE(chalice_points), 0, 0, 0 },
 };
 
 struct maze_menu_item {
@@ -323,6 +329,8 @@ struct maze_menu_item {
 
 static struct maze_menu {
     char title[15];
+    char title2[15];
+    char title3[15];
     struct maze_menu_item item[20];
     unsigned char nitems;
     unsigned char current_item;
@@ -335,7 +343,9 @@ static int nmaze_objects = 0;
 
 static void maze_menu_clear(void)
 {
-    strncpy(maze_menu.title, "", sizeof(maze_menu.title) - 1);
+    maze_menu.title[0] = '\0';
+    maze_menu.title2[0] = '\0';
+    maze_menu.title3[0] = '\0';
     maze_menu.nitems = 0;
     maze_menu.current_item = 0;
     maze_menu.menu_active = 0;
@@ -535,6 +545,7 @@ static int object_is_portable(int i)
     case MAZE_OBJECT_ARMOR:
     case MAZE_OBJECT_SCROLL:
     case MAZE_OBJECT_GRENADE:
+    case MAZE_OBJECT_CHALICE:
         return 1;
     default:
         return 0;
@@ -596,6 +607,51 @@ static void add_ladders(int level)
     add_ladder(UP_LADDER);
 }
 
+static void add_chalice(int level)
+{
+    int i, x, y;
+    if (level < NLEVELS - 1) {
+#ifdef __linux__
+        printf("Not adding chalice, level = %d < %d\n", level, NLEVELS - 1);
+#endif
+        return; /* chalice is only on deepest level */
+    }
+
+    do {
+        x = xorshift(&xorshift_state) % XDIM;
+        y = xorshift(&xorshift_state) % YDIM;
+    } while (!is_passage(x, y) || something_here(x, y) || (x == player.x && y == player.y));
+
+    if (nmaze_objects < MAX_MAZE_OBJECTS - 1) {
+        i = nmaze_objects;
+    } else {
+        for (i = 0; i < MAX_MAZE_OBJECTS; i++) {
+            if (maze_object[i].x != 255 &&
+                maze_object[i].type != DOWN_LADDER && maze_object[i].type != UP_LADDER)
+                break;
+        }
+    }
+    if (i >= MAX_MAZE_OBJECTS) { /* Player somehow has all objects */
+#ifdef __linux__
+	printf("Didn't add chalice.\n");
+#endif
+        /* now what? */
+    }
+
+    maze_object[i].x = x;
+    maze_object[i].y = y;
+    maze_object[i].type = CHALICE;
+#ifdef __linux__
+	printf("Added chalice, object %d at %d, %d, level %d\n", i, x, y, level);
+#endif
+    if (i >= nmaze_objects - 1) {
+        nmaze_objects = i + 1;
+#ifdef __linux__
+	printf("Added new object for chalice\n");
+#endif
+    }
+}
+
 static void add_random_object(int x, int y)
 {
     int otype, i;
@@ -609,7 +665,7 @@ static void add_random_object(int x, int y)
 
     maze_object[i].x = x;
     maze_object[i].y = y;
-    otype = xorshift(&xorshift_state) % (nobject_types - 2); /* minus 2 to exclude ladders */
+    otype = xorshift(&xorshift_state) % (nobject_types - 3); /* minus 3 to exclude ladders and chalice */
     maze_object[i].type = otype;
     switch(maze_object_template[maze_object[i].type].category) {
     case MAZE_OBJECT_MONSTER:
@@ -697,6 +753,7 @@ static void generate_maze(void)
             maze_random_seed[maze_current_level] = xorshift(&xorshift_state);
         } else {
             add_ladders(maze_current_level);
+            add_chalice(maze_current_level);
         }
         return;
     }
@@ -714,6 +771,7 @@ static void generate_maze(void)
                 maze_random_seed[maze_current_level] = xorshift(&xorshift_state);
             } else {
                 add_ladders(maze_current_level);
+                add_chalice(maze_current_level);
             }
             return;
         }
@@ -933,6 +991,11 @@ static int check_for_encounter(unsigned char newx, unsigned char newy)
                     encounter_name = "LEADS UP";
                 }
                 break;
+            case MAZE_OBJECT_CHALICE:
+                encounter_text = "YOU FOUND THE";
+                encounter_adjective = "CHALICE OF";
+                encounter_name = "OBFUSCATION!";
+                break;
             default:
                 if (!monster) {
                     encounter_text = "YOU FOUND SOMETHING";
@@ -986,6 +1049,7 @@ static void maze_button_pressed(void)
             case MAZE_OBJECT_ARMOR:
             case MAZE_OBJECT_SCROLL:
             case MAZE_OBJECT_GRENADE:
+            case MAZE_OBJECT_CHALICE:
                  takeable_object_count++;
                  break;
             default:
@@ -1601,10 +1665,10 @@ static void maze_draw_menu(void)
 {
     int i, y, first_item, last_item;
 
-    first_item = maze_menu.current_item - 4;
+    first_item = maze_menu.current_item - 3;
     if (first_item < 0)
         first_item = 0;
-    last_item = maze_menu.current_item + 4;
+    last_item = maze_menu.current_item + 3;
     if (last_item > maze_menu.nitems - 1)
         last_item = maze_menu.nitems - 1;
 
@@ -1612,6 +1676,14 @@ static void maze_draw_menu(void)
     FbColor(WHITE);
     FbMove(8, 5);
     FbWriteLine(maze_menu.title);
+    if (maze_menu.title2[0] != '\0') {
+        FbMove(8, 12);
+        FbWriteLine(maze_menu.title2);
+    }
+    if (maze_menu.title3[0] != '\0') {
+        FbMove(8, 19);
+        FbWriteLine(maze_menu.title3);
+    }
 
     y = SCREEN_YDIM / 2 - 10 * (maze_menu.current_item - first_item);
     for (i = first_item; i <= last_item; i++) {
@@ -1638,7 +1710,9 @@ static void maze_game_start_menu(void)
     maze_menu_clear();
 
     maze_menu.menu_active = 1;
-    strcpy(maze_menu.title, "MINES OF BADGE");
+    strcpy(maze_menu.title, "SEEK YE THE");
+    strcpy(maze_menu.title2, "CHALICE OF");
+    strcpy(maze_menu.title3, "OBFUSCATION!");
     maze_menu_add_item("NEW GAME", MAZE_LEVEL_INIT, 0);
     maze_menu_add_item("EXIT GAME", MAZE_EXIT, 0);
 
@@ -1705,6 +1779,9 @@ static void maze_choose_take_or_drop_object(char *title, enum maze_program_state
                 break;
             case MAZE_OBJECT_GRENADE:
                 strcpy(name, "GRENADE");
+                break;
+            case MAZE_OBJECT_CHALICE:
+                strcpy(name, "CHALICE");
                 break;
             default:
                 continue;
