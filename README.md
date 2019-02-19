@@ -22,6 +22,7 @@ You may have to paste this in 2 pieces because
 of a USB overrun error. You will know if it overruns
 if the paste result doesn't look like below.
 
+```
 int main()
 {
    int r;
@@ -36,6 +37,7 @@ int main()
 }
 
 run
+```
 
 
 ***Code overview***
@@ -97,16 +99,20 @@ run
 
 ** interpreter stats **
 
->    R XXXXXX  - return or exit() code from interpreter main()
->    T XXXXXX  - program size
->    D XXXXXX  - program data size
->    S XXXXXX  - stack size
->    Y XXXXXX  - symbol table
+```
+    R XXXXXX  - return or exit() code from interpreter main()
+    T XXXXXX  - program size
+    D XXXXXX  - program data size
+    S XXXXXX  - stack size
+    Y XXXXXX  - symbol table
+```
 
 current ram allocation:
 
->   #define TEXTSECTION 128 // * 4 
->   #define DATASECTION 128 // * 1 
->   #define STACKSECTION 128 // * 4 
->   #define SYMBOLSECTION 512 // * 4 
+```
+   #define TEXTSECTION 128 // * 4 
+   #define DATASECTION 128 // * 1 
+   #define STACKSECTION 128 // * 4 
+   #define SYMBOLSECTION 512 // * 4 
+```
 
