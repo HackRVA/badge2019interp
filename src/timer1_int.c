@@ -451,14 +451,14 @@ void __ISR( _EXTERNAL_4_VECTOR, IPL6SOFT) Int4Interrupt(void)
 // audio higher than LED
 void __ISR(_TIMER_4_VECTOR, IPL3SOFT) Timer4Handler(void)
 {
-   doAudio();
+   doAudio(); // have to finish before next timer interrupt
    mT4ClearIntFlag(); // clear the interrupt flag
 }
 
 // LED PWM lowest
 void __ISR(_TIMER_3_VECTOR, IPL2SOFT) Timer3Handler(void)
 {
-   doLED_PWM();
+   doLED_PWM(); // have to finished before next interrupt
    mT3ClearIntFlag(); // clear the interrupt flag
 }
 

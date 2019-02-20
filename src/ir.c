@@ -13,11 +13,19 @@ unsigned char IRpacketOutCurr = 0;
 unsigned char IRpacketOutNext = 0;
 union IRpacket_u IRpacketsOut[MAXPACKETQUEUE];
 
+/*
+   IR stats
+*/
+unsigned int IR_inpkts = 0;
+unsigned int IR_outpkts = 0;
+
+
+// will be called by an interrupt 
 // Set to a badge id if the badge got an init ping
-unsigned short pinged = 0 ;
+volatile unsigned short pinged = 0 ;
 
 // Set to a badge id if badge got a ping response
-unsigned short ping_responded = 0;
+volatile unsigned short ping_responded = 0;
 
 unsigned char QC_IR = 0;
 
@@ -49,6 +57,11 @@ struct IRcallback_t IRcallbacks[] = {
 	{ ir_livetext },	/* stream text screen */
 	{ ir_liveled },	/* stream rgb to LED */
 
+	/* 
+	   ================================
+	         handled by apps
+	   ================================
+	*/
 //	{ ir_udraw},
 	{ ir_app0 },
 	{ ir_app1 },
@@ -66,6 +79,7 @@ struct IRcallback_t IRcallbacks[] = {
 
 void IRqueueSend(union IRpacket_u pkt) 
 {
+    IR_outpkts++;
     /* make sure not full */
     if ( ((IRpacketOutNext+1) % MAXPACKETQUEUE) != IRpacketOutCurr) {
 	IRpacketsOut[IRpacketOutNext].v = pkt.v;
@@ -102,6 +116,7 @@ void IRhandler()
 
     /* curr == next == empty */
     if (IRpacketInCurr != IRpacketInNext) {
+        IR_inpkts++;
         if (IRpacketsIn[IRpacketInCurr].p.address < IR_LASTADRESS) /* basic sanity check before we call unknown handlers */
             IRcallbacks[ IRpacketsIn[IRpacketInCurr].p.address].handler( IRpacketsIn[IRpacketInCurr].p );
 
@@ -177,17 +192,20 @@ void ir_asset(struct IRpacket_t p)
 {
 }
 
+
 // This is the initial ping ( person initiating the pinging sent this)
 void ir_ping(struct IRpacket_t p)
 {
     //respond to ping
     union IRpacket_u pkt;
     
+    pinged++;
     // Badge got a Ping from another badge
     if(p.data & PING_REQUEST)
     {
         // Get out the requester's ID
-        pinged = p.data & 0x1FF;
+        //pinged = p.data & 0x1FF;
+        //pinged = p.data;
         // If broadcast, just set to some high number
 //        if(pinged == 0)
 //            pinged = 1024;

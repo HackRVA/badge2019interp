@@ -32,10 +32,14 @@ extern unsigned char IRpacketOutNext ;
 extern union IRpacket_u IRpacketsOut[];
 
 // Set to a badge id if the badge got an init ping
-extern unsigned short pinged;
+extern volatile unsigned short pinged;
 
 // Set to a badge id if badge got a ping response
-extern unsigned short ping_responded;
+extern volatile unsigned short ping_responded;
+
+extern unsigned int IR_inpkts;
+extern unsigned int IR_outpkts;
+
 
 struct IRcallback_t {
     void (*handler)(struct IRpacket_t p);

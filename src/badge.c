@@ -221,7 +221,7 @@ void decDump(unsigned int value, char *out) {
 void hexDump(unsigned int value, char *out) {
     int i;
     for (i=7; i>=0; i--) 
-       out[i] = hextab[(value >> (i*4)) & 0xF]; 
+       out[7-i] = hextab[(value >> (i*4)) & 0xF]; 
     out[8]=0;
 }
 
@@ -240,10 +240,15 @@ void echoUSB(char *str) {
    int i,len;
 
    len = strlen(str);
-   // can use USB_Out_Buffer since it may be locked in a host xfer
-   if ((lineOutBufPtr + len) > CDC_DATA_OUT_EP_SIZE) {
+
+   if (len > CDC_DATA_OUT_EP_SIZE) return;
+
+   // not enough buffer, flush
+#ifdef FASTUSB
+   if ((lineOutBufPtr + len) > CDC_DATA_OUT_EP_SIZE) { 
 	flushUSB();
    }
+#endif
 
    /* separate output strings */
    //lineOutBuffer[lineOutBufPtr++] = '\r';
@@ -254,6 +259,10 @@ void echoUSB(char *str) {
 	lineOutBuffer[lineOutBufPtr++] = str[i];
    }
    lineOutBuffer[lineOutBufPtr] = 0;
+
+#ifndef FASTUSB
+   flushUSB(); // flush every time
+#endif
 }
 
 /*

@@ -62,9 +62,9 @@ int token; // current token
 
 enum { LEA, IMM, JMP, CALL, JZ, JNZ, ENT, ADJ, LEV, LI, LC, SI, SC, PUSH,
        OR, XOR, AND, EQ, NE, LT, GT, LE, GE, SHL, SHR, ADD, SUB, MUL, DIV, MOD, 
-       PRTF, MALC, MSET, MCMP,
+       PRT, PRTD, MALC, MSET, MCMP,
        FLARELED, LED, FBMOVE, FBWRITE, BACKLIGHT,
-       IRRECEIVE, IRSEND, SETNOTE, GETBUTTON, GETDPAD, CONTRAST,
+       IRRECEIVE, IRSEND, SETNOTE, GETBUTTON, GETDPAD, CONTRAST, IRSTATS,
        EXIT
 };
 
@@ -119,7 +119,7 @@ int expr_type;   // the type of an expression
    howto extend interpreter
 
    add INST to /enum { LEA ,IMM/
-   add keyword to /"PRTF,MALC/
+   add keyword to /"PRT,MALC/
    add keyword to /src = "char else/
    add opcode check eg: /else if (op == MCMP)/
    add function call below
@@ -131,32 +131,41 @@ void FbWrite(unsigned char *string)
     FbPushBuffer();
 }
 
-void FbMove(unsigned char x, unsigned char y);
-
-void backlight(char b);
-void led(unsigned char r, unsigned char g, unsigned char b);
-void flareled(unsigned char r, unsigned char g, unsigned char b);
-
-
 void contrast(unsigned char con)
 {
     S6B33_send_command(CONTRAST_CONTROL1); 
     S6B33_send_command(con);
 }
 
-void ir_ping(struct IRpacket_t p);
+void IRstats()
+{
+    char dbuffer[9];
+
+    decDump(IR_inpkts, dbuffer);
+    echoUSB("I "); echoUSB(dbuffer); echoUSB("\r\n");
+
+    decDump(IR_outpkts, dbuffer);
+    echoUSB("O "); echoUSB(dbuffer); echoUSB("\r\n");
+
+    decDump(pinged, dbuffer);
+    echoUSB("P "); echoUSB(dbuffer); echoUSB("\r\n");
+}
 
 void IRsend(int p)
 {
-    struct IRpacket_t pkt;
+    union IRpacket_u pkt;
 
-    ir_ping(pkt);
+    pkt.p.command = IR_WRITE;
+    pkt.p.address = IR_PING;
+    pkt.p.badgeId = 0x0; 
+    pkt.p.data    = 0xABCD;
+
+    IRqueueSend(pkt);
 }
 
-extern unsigned short ping_responded;
-unsigned short IRreceive()
+unsigned int IRreceive()
 {
-   return (unsigned short)(ping_responded);
+   return (unsigned int)(pinged);
 }
 
 
@@ -1318,6 +1327,8 @@ int eval() {
     cycle = 0;
 
     while (1) {
+        IRhandler(); // service IR packets
+
 	if (stacklow > sp) stacklow = sp; /* stack low water mark */
 	
         cycle ++;
@@ -1360,10 +1371,23 @@ int eval() {
 		//printf("exit(%d)", *sp); 
 		return *sp;
 	}
-        else if (op == PRTF) { 
+        else if (op == PRT) { 
 		tmp = sp + pc[1]; 
 		//ax = printf((char *)tmp[-1], tmp[-2], tmp[-3], tmp[-4], tmp[-5], tmp[-6]);
+                echoUSB("print ");
                 echoUSB((char *)tmp[-1]);
+                echoUSB("\r\n");
+                ax = 0;
+	}
+        else if (op == PRTD) { 
+		char dbuffer[9];
+
+		tmp = sp + pc[1]; 
+		
+		hexDump(*tmp, dbuffer);
+                echoUSB("printd ");
+                echoUSB(dbuffer);
+                echoUSB("\r\n");
                 ax = 0;
 	}
         //else if (op == MALC) { ax = (int)malloc(*sp);}
@@ -1377,12 +1401,13 @@ int eval() {
         else if (op == FBMOVE) { FbMove((char)sp[1], (char)sp[0]); }
         else if (op == FBWRITE) { FbWrite((char *)sp[0]); }
         else if (op == BACKLIGHT) { backlight((char)sp[0]); }
-        else if (op == IRRECEIVE) { ax = (char)IRreceive(); }
+        else if (op == IRRECEIVE) { ax = (unsigned int)IRreceive(); }
         else if (op == IRSEND) { IRsend((int)sp[0]); }
         else if (op == SETNOTE) { setNote((int)sp[1], (int)sp[0]); }
         else if (op == GETBUTTON) { ax = (int)getButton(); }
         else if (op == GETDPAD) { ax = (int)getDPAD(); }
         else if (op == CONTRAST) { contrast((char)sp[0]); }
+        else if (op == IRSTATS) { IRstats(); }
         else {
             echoUSB("unknown instruction\n");
 	    longjmp(error_exit, op);
@@ -1413,9 +1438,9 @@ char *ramptr;
 #endif
 
 const char Csrc[] = "char else enum if int return sizeof while "
-          "printf malloc memset memcmp "
+          "print printd malloc memset memcmp "
 	  "flareled led FbMove FbWrite backlight "
-	  "IRreceive IRsend setNote getButton getDPAD contrast "
+	  "IRreceive IRsend setNote getButton getDPAD contrast IRstats "
 	  "exit void main";
 
 void init_interpreter()
@@ -1496,7 +1521,7 @@ void init_interpreter()
     }
 
     // add library to symbol table
-    i = PRTF;
+    i = PRT;
     while (i <= EXIT) {
         next();
         current_id[Class] = Sys;

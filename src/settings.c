@@ -7,9 +7,6 @@
 #include "ir.h"
 #include "fb.h"
 
-extern unsigned short pinged;
-extern unsigned short ping_responded;
-
 void ping_cb(){
     static unsigned char num_pinged = 0;
 

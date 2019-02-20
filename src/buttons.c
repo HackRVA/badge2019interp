@@ -114,19 +114,46 @@ void clear_buttons(){
 int getButton()
 {
     int b=0;
+    static int lastb=0;
+    static unsigned int now=0, last=0;
 
-    b = (PORTBbits.RB14 == 0) ? SOLO_BTN_MASK : 0;
-    return (b);
+    now = _CP0_GET_COUNT();
+    if (now < last) last = now; // wrapped
+
+    b |= (PORTBbits.RB14 == 0) ? SOLO_BTN_MASK : 0;
+
+    if (now > (last+4000000)) {
+	lastb = b;
+        last = _CP0_GET_COUNT(); // this is in microseconds 1/1000000 and wraps after 2^32/40mhz ~107 seconds
+	b = 0;
+    }
+    else 
+	lastb = 0;
+
+    return (lastb);
 }
 
 int getDPAD()
 {
     int b=0;
+    static int lastb=0;
+    static unsigned int now=0, last=0;
+
+    now = _CP0_GET_COUNT();
+    if (now < last) last = now; // wrapped
 
     b |= (PORTBbits.RB2 == 0) ? UP_BTN_MASK : 0;
     b |= (PORTBbits.RB0 == 0) ? LEFT_BTN_MASK : 0;
     b |= (PORTCbits.RC2 == 0) ? RIGHT_BTN_MASK : 0;
     b |= (PORTBbits.RB1 == 0) ? DOWN_BTN_MASK : 0;
 
-   return(b);
+    if (now > (last+4000000)) { // 1/10 sec  4,000,000 / 40,000,000
+	lastb = b;
+        last = _CP0_GET_COUNT();
+	b=0;
+    }
+    else 
+	lastb = 0;
+
+    return (lastb);
 }
