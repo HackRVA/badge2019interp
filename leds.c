@@ -164,7 +164,7 @@ int main()
 main()
 {
    int *x;
-   x = 0x bf882060;
+   x = 0xbf882060;
 
    return *x;
 }
@@ -184,7 +184,7 @@ main()
 main()
 {
    int *x;
-   x = 0x bf80f220;
+   x = 0xbf80f220;
 
    return *x;
 }

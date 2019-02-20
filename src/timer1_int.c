@@ -103,7 +103,7 @@ void timerInit(void)
 
     TRISAbits.TRISA1 = 0; // 2019 IR == OUTPUT
     CNPDAbits.CNPDA1 = 0;  // pulldown off
-    CNPUAbits.CNPUA1 = 1;  // pullup on == IR off since driving transistor inverts val
+    CNPUAbits.CNPUA1 = 0;  // pullup off
 
     SYSKEY = 0x0;
     SYSKEY = 0xAA996655;

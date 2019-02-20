@@ -147,8 +147,8 @@ void UserInit(void)
         2019 mic input
         RC3 / AN12
     */
-    ANSELCbits.ANSC3 = 1;
-    TRISCbits.TRISC3 = 1; // mic is an analog input
+    ANSELCbits.ANSC3 = 1; // is analog 
+    TRISCbits.TRISC3 = 1; // mic input
     CNPUCbits.CNPUC3 = 0; // pullup off
     CNPDCbits.CNPDC3 = 0; // pulldown off
 
@@ -186,6 +186,14 @@ void UserInit(void)
 
 
     /*
+	IR led
+    */
+    TRISAbits.TRISA1 = 0; // output
+    CNPUAbits.CNPUA1 = 0; // pullup off
+    CNPDAbits.CNPDA1 = 0; // pulldown off
+    LATAbits.LATA1 = 0;   /* off initially */
+
+    /*
 	leds all off/normal
     */
     LATCbits.LATC0 = 0;      /* RED */
@@ -199,13 +207,6 @@ void UserInit(void)
 
     timerInit();
     ADC_init(AN_MIC, HZ_150); // init to sampling mic very slowly
-
-    led(100,0,100);
-
-}
-
-void LCDprint(char *str,int len) {
-   FbWriteString(str, len);
 }
 
 void decDump(unsigned int value, char *out) {

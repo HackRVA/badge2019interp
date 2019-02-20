@@ -7,6 +7,7 @@
 #include "ir.h"
 #include "assets.h"
 #include "buttons.h"
+#include "S6B33.h"
 
 static jmp_buf error_exit;
 
@@ -28,9 +29,6 @@ union IRpacket_u G_hack;
 void echoUSB(char *str) {
 }
 
-void IRqueueSend(union IRpacket_u pkt)
-{
-}
 
 void flareled(unsigned char r, unsigned char g, unsigned char b) {
 }
@@ -66,7 +64,7 @@ enum { LEA, IMM, JMP, CALL, JZ, JNZ, ENT, ADJ, LEV, LI, LC, SI, SC, PUSH,
        OR, XOR, AND, EQ, NE, LT, GT, LE, GE, SHL, SHR, ADD, SUB, MUL, DIV, MOD, 
        PRTF, MALC, MSET, MCMP,
        FLARELED, LED, FBMOVE, FBWRITE, BACKLIGHT,
-       IRRECEIVE, IRSEND, SETNOTE, GETBUTTON, GETDPAD,
+       IRRECEIVE, IRSEND, SETNOTE, GETBUTTON, GETDPAD, CONTRAST,
        EXIT
 };
 
@@ -139,23 +137,26 @@ void backlight(char b);
 void led(unsigned char r, unsigned char g, unsigned char b);
 void flareled(unsigned char r, unsigned char g, unsigned char b);
 
-void IRqueueSend(union IRpacket_u pkt);
+
+void contrast(unsigned char con)
+{
+    S6B33_send_command(CONTRAST_CONTROL1); 
+    S6B33_send_command(con);
+}
+
+void ir_ping(struct IRpacket_t p);
 
 void IRsend(int p)
 {
-    union IRpacket_u pkt;
+    struct IRpacket_t pkt;
 
-    pkt.p.command = IR_WRITE;
-    pkt.p.address = IR_PING;
-    pkt.p.badgeId = 0; // all
-    pkt.p.data = 255;
-    IRqueueSend(pkt);
+    ir_ping(pkt);
 }
 
-extern volatile union IRpacket_u G_hack;
-char IRreceive()
+extern unsigned short ping_responded;
+unsigned short IRreceive()
 {
-   return (char)(G_hack.p.data & 0xF);
+   return (unsigned short)(ping_responded);
 }
 
 
@@ -1362,6 +1363,8 @@ int eval() {
         else if (op == PRTF) { 
 		tmp = sp + pc[1]; 
 		//ax = printf((char *)tmp[-1], tmp[-2], tmp[-3], tmp[-4], tmp[-5], tmp[-6]);
+                echoUSB((char *)tmp[-1]);
+                ax = 0;
 	}
         //else if (op == MALC) { ax = (int)malloc(*sp);}
         else if (op == MALC) { }
@@ -1379,6 +1382,7 @@ int eval() {
         else if (op == SETNOTE) { setNote((int)sp[1], (int)sp[0]); }
         else if (op == GETBUTTON) { ax = (int)getButton(); }
         else if (op == GETDPAD) { ax = (int)getDPAD(); }
+        else if (op == CONTRAST) { contrast((char)sp[0]); }
         else {
             echoUSB("unknown instruction\n");
 	    longjmp(error_exit, op);
@@ -1411,7 +1415,7 @@ char *ramptr;
 const char Csrc[] = "char else enum if int return sizeof while "
           "printf malloc memset memcmp "
 	  "flareled led FbMove FbWrite backlight "
-	  "IRreceive IRsend setNote getButton getDPAD "
+	  "IRreceive IRsend setNote getButton getDPAD contrast "
 	  "exit void main";
 
 void init_interpreter()
