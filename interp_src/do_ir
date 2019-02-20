@@ -1,0 +1,6 @@
+cat /dev/ttyACM0 &
+cat /dev/ttyACM1 &
+
+cat irsend.c > /dev/ttyACM0 &
+cat irrecv.c > /dev/ttyACM1 &
+
