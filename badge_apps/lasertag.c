@@ -572,6 +572,9 @@ static void process_packet(unsigned int packet)
 	unsigned char opcode;
 	int v;
 
+	if (packet == 32) /* Ignore spurious 32 that might come in. */
+		return;
+
 	payload = get_payload(packet);
 	opcode = payload >> 12;
 	switch (opcode) {
