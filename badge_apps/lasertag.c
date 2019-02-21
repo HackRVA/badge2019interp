@@ -310,6 +310,22 @@ static void draw_menu(void)
 	FbWriteLine(title);
 	FbMove(10, 110);
 	FbWriteLine(timecode);
+
+#define LASERTAG_DISPLAY_CURRENT_TIME 0
+#if LASERTAG_DISPLAY_CURRENT_TIME
+	/* Draw the current time */
+	itoa(str2, wclock.hour, 10);
+	strcpy(timecode, str2);
+	strcat(timecode, ":");
+	itoa(str2, wclock.min, 10);
+	strcat(timecode, str2);
+	strcat(timecode, ":");
+	itoa(str2, wclock.sec, 10);
+	strcat(timecode, str2);
+	FbMove(10, 120);
+	FbWriteLine(timecode);
+#endif
+
 	game_state = GAME_SCREEN_RENDER;
 }
 
@@ -428,7 +444,14 @@ static void button_pressed()
 
 static int get_time(void)
 {
+#if LASERTAG_DISPLAY_CURRENT_TIME
+	static int previous_sec = 0;
 	/* I guess this will wrap-around at midnight. Do we actually care about that? */
+	if (previous_sec != wclock.sec) {
+		previous_sec = wclock.sec;
+		screen_changed = 1;
+	}
+#endif
 	return 3600 * (int) wclock.hour + 60 * (int) wclock.min + (int) wclock.sec;
 }
 
