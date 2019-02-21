@@ -2,6 +2,7 @@
 #include "flash.h"
 #include "ir.h"
 #include "adc.h"
+#include "timer1_int.h"
 
 /*
     38khz IR timer code and interupt code
@@ -18,6 +19,7 @@
     2018 reworked high -> low priority
 
     priority 6 = external int 4. IR recv. started
+    // EXT4 int enabled when IR recv is 0 otherwise 1+
     priority 5 = timer2 IR send/recv
     priority 4 = ADC analog/digital converter
     priority 3 = timer4 audio PWM
@@ -32,13 +34,35 @@
 
 
 
+/*
+   wall clock is driven off of LED timer interupt
+*/
+struct wallclock_t wclock={0,0,0,0,0,0,0,0,0};
+
+
+unsigned int G_IRsendVal = 0;
+unsigned int G_IRrecvVal = 0;
+
+unsigned int G_IRrecv = 0;
+unsigned int G_IRsend = 0;
+
+unsigned char G_IRerror = 0;
+
+unsigned char G_bitCnt = 0;
+unsigned char G_firstHalf = 0;
+unsigned char G_lastHalf = 0;
+unsigned char G_halfCount = 0;
+
+
+
 #define SYS_FREQ 		(40000000L)
 
 #define IR_TOGGLES		38000
 #define T2_TICK       		(SYS_FREQ/IR_TOGGLES)
 
+// easily divisible for wall clock
+#define LED_TOGGLES		32768
 //#define LED_TOGGLES		38000
-#define LED_TOGGLES		40000
 #define T3_TICK       		(SYS_FREQ/LED_TOGGLES)
 
 /* audio timer4*/
@@ -124,20 +148,6 @@ void timerInit(void)
 
     IEC0bits.T2IE=1; // also enable timer2 interupt
 }
-
-// EXT4 int enabled when IR recv is 0 otherwise 1+
-unsigned int G_IRsendVal = 0;
-unsigned int G_IRrecvVal = 0;
-
-unsigned int G_IRrecv = 0;
-unsigned int G_IRsend = 0;
-
-unsigned char G_IRerror = 0;
-
-unsigned char G_bitCnt = 0;
-unsigned char G_firstHalf = 0;
-unsigned char G_lastHalf = 0;
-unsigned char G_halfCount = 0;
 
 
 /* 
@@ -458,8 +468,42 @@ void __ISR(_TIMER_4_VECTOR, IPL3SOFT) Timer4Handler(void)
 // LED PWM lowest
 void __ISR(_TIMER_3_VECTOR, IPL2SOFT) Timer3Handler(void)
 {
-   doLED_PWM(); // have to finished before next interrupt
-   mT3ClearIntFlag(); // clear the interrupt flag
+    /*
+	difference should be exactly T3_TICK
+	but will jitter because it restarts when interrupt is reenabled
+    */
+    wclock.now = _CP0_GET_COUNT();
+    if (wclock.now < wclock.last)  // wrapped?
+	wclock.delta = (unsigned int)((unsigned long long)(((unsigned long long)0xffffffffL + wclock.now) - wclock.last)); // wrapped
+    else 
+	wclock.delta = wclock.now - wclock.last;
+
+    wclock.last = wclock.now;
+
+    wclock.lag += wclock.delta;
+    while (wclock.lag >= T3_TICK) {
+	wclock.lag -= T3_TICK;
+	wclock.low++;
+
+	if (wclock.low==0) { // wrapped
+	   wclock.hi++;
+	   if (wclock.hi==64) { // 32768/2 == toggles
+	      wclock.hi=0;
+	      wclock.sec++;
+	      if (wclock.sec == 59) { // maybe inc. by 2 because of lag
+		wclock.min++;
+		wclock.sec = 0;
+		if (wclock.min == 59) {
+		   wclock.hour++;
+		   wclock.min = 0;;
+		}
+	   }
+	}
+       }
+    }
+
+    doLED_PWM(); // have to finished before next interrupt
+    mT3ClearIntFlag(); // clear the interrupt flag
 }
 
 volatile unsigned char G_red_cnt=0;

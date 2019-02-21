@@ -3,11 +3,13 @@
 #include <string.h>
 #include <setjmp.h>
 
+#include <plib.h>
 #include "badge.h"
 #include "ir.h"
 #include "assets.h"
 #include "buttons.h"
 #include "S6B33.h"
+#include "timer1_int.h"
 
 static jmp_buf error_exit;
 
@@ -65,6 +67,7 @@ enum { LEA, IMM, JMP, CALL, JZ, JNZ, ENT, ADJ, LEV, LI, LC, SI, SC, PUSH,
        PRT, PRTD, MALC, MSET, MCMP,
        FLARELED, LED, FBMOVE, FBWRITE, BACKLIGHT,
        IRRECEIVE, IRSEND, SETNOTE, GETBUTTON, GETDPAD, CONTRAST, IRSTATS,
+       SETTIME, GETTIME,
        EXIT
 };
 
@@ -89,7 +92,7 @@ enum {Token, Hash, Name, Type, Class, Value, BType, BClass, BValue, IdSize};
 
 
 // types of variable/function
-enum { CHAR, INT, PTR };
+enum { CHARCAST, INTCAST, PTR };
 
 // type of declaration.
 enum {Global, Local};
@@ -168,6 +171,34 @@ unsigned int IRreceive()
    return (unsigned int)(pinged);
 }
 
+extern struct wallclock_t wclock;
+void setTime(unsigned char hour, unsigned char min, unsigned char sec)
+{
+    wclock.last = _CP0_GET_COUNT();
+    wclock.now = _CP0_GET_COUNT();
+    wclock.delta = wclock.now - wclock.last;
+    wclock.lag=0;
+
+    wclock.hour = hour;
+    wclock.min = min;
+    wclock.sec = sec;
+}
+
+static char time[9];
+char *getTime()
+{
+   time[0] = wclock.hour / 10 + 48;
+   time[1] = wclock.hour % 10 + 48;
+   time[2] = ':';
+   time[3] = wclock.min / 10 + 48;
+   time[4] = wclock.min % 10 + 48;
+   time[5] = ':';
+   time[6] = wclock.sec / 10 + 48;
+   time[7] = wclock.sec % 10 + 48;
+   time[8] = 0;
+
+   return time;
+}
 
 
 // function frame
@@ -452,7 +483,7 @@ void expression(int level) {
             // emit code
             *++text = IMM;
             *++text = token_val;
-            expr_type = INT;
+            expr_type = INTCAST;
         }
         else if (token == '"') {
             // continous string "abc" "abc"
@@ -479,13 +510,13 @@ void expression(int level) {
             // supported.
             match(Sizeof);
             match('(');
-            expr_type = INT;
+            expr_type = INTCAST;
 
             if (token == Int) {
                 match(Int);
             } else if (token == Char) {
                 match(Char);
-                expr_type = CHAR;
+                expr_type = CHARCAST;
             }
 
             while (token == Mul) {
@@ -497,9 +528,9 @@ void expression(int level) {
 
             // emit code
             *++text = IMM;
-            *++text = (expr_type == CHAR) ? sizeof(char) : sizeof(int);
+            *++text = (expr_type == CHARCAST) ? sizeof(char) : sizeof(int);
 
-            expr_type = INT;
+            expr_type = INTCAST;
         }
         else if (token == Id) {
             // there are several type when occurs to Id
@@ -555,7 +586,7 @@ void expression(int level) {
                 // enum variable
                 *++text = IMM;
                 *++text = id[Value];
-                expr_type = INT;
+                expr_type = INTCAST;
             }
             else {
                 // variable
@@ -582,7 +613,7 @@ void expression(int level) {
             // cast or parenthesis
             match('(');
             if (token == Int || token == Char) {
-                tmp = (token == Char) ? CHAR : INT; // cast type
+                tmp = (token == Char) ? CHARCAST : INTCAST; // cast type
                 match(token);
                 while (token == Mul) {
                     match(Mul);
@@ -612,7 +643,7 @@ void expression(int level) {
 		longjmp(error_exit, line);
             }
 
-            *++text = (expr_type == CHAR) ? LC : LI;
+            *++text = (expr_type == CHARCAST) ? LC : LI;
         }
         else if (token == And) {
             // get the address of
@@ -638,7 +669,7 @@ void expression(int level) {
             *++text = 0;
             *++text = EQ;
 
-            expr_type = INT;
+            expr_type = INTCAST;
         }
         else if (token == '~') {
             // bitwise not
@@ -651,14 +682,14 @@ void expression(int level) {
             *++text = -1;
             *++text = XOR;
 
-            expr_type = INT;
+            expr_type = INTCAST;
         }
         else if (token == Add) {
             // +var, do nothing
             match(Add);
             expression(Inc);
 
-            expr_type = INT;
+            expr_type = INTCAST;
         }
         else if (token == Sub) {
             // -var
@@ -677,7 +708,7 @@ void expression(int level) {
                 *++text = MUL;
             }
 
-            expr_type = INT;
+            expr_type = INTCAST;
         }
         else if (token == Inc || token == Dec) {
             tmp = token;
@@ -697,7 +728,7 @@ void expression(int level) {
             *++text = IMM;
             *++text = (expr_type > PTR) ? sizeof(int) : sizeof(char);
             *++text = (tmp == Inc) ? ADD : SUB;
-            *++text = (expr_type == CHAR) ? SC : SI;
+            *++text = (expr_type == CHARCAST) ? SC : SI;
         }
         else {
             echoUSB("bad expression\n");
@@ -722,7 +753,7 @@ void expression(int level) {
                 expression(Assign);
 
                 expr_type = tmp;
-                *++text = (expr_type == CHAR) ? SC : SI;
+                *++text = (expr_type == CHARCAST) ? SC : SI;
             }
             else if (token == Cond) {
                 // expr ? a : b;
@@ -749,7 +780,7 @@ void expression(int level) {
                 addr = ++text;
                 expression(Lan);
                 *addr = (int)(text + 1);
-                expr_type = INT;
+                expr_type = INTCAST;
             }
             else if (token == Lan) {
                 // logic and
@@ -758,7 +789,7 @@ void expression(int level) {
                 addr = ++text;
                 expression(Or);
                 *addr = (int)(text + 1);
-                expr_type = INT;
+                expr_type = INTCAST;
             }
             else if (token == Or) {
                 // bitwise or
@@ -766,7 +797,7 @@ void expression(int level) {
                 *++text = PUSH;
                 expression(Xor);
                 *++text = OR;
-                expr_type = INT;
+                expr_type = INTCAST;
             }
             else if (token == Xor) {
                 // bitwise xor
@@ -774,7 +805,7 @@ void expression(int level) {
                 *++text = PUSH;
                 expression(And);
                 *++text = XOR;
-                expr_type = INT;
+                expr_type = INTCAST;
             }
             else if (token == And) {
                 // bitwise and
@@ -782,7 +813,7 @@ void expression(int level) {
                 *++text = PUSH;
                 expression(Eq);
                 *++text = AND;
-                expr_type = INT;
+                expr_type = INTCAST;
             }
             else if (token == Eq) {
                 // equal ==
@@ -790,7 +821,7 @@ void expression(int level) {
                 *++text = PUSH;
                 expression(Ne);
                 *++text = EQ;
-                expr_type = INT;
+                expr_type = INTCAST;
             }
             else if (token == Ne) {
                 // not equal !=
@@ -798,7 +829,7 @@ void expression(int level) {
                 *++text = PUSH;
                 expression(Lt);
                 *++text = NE;
-                expr_type = INT;
+                expr_type = INTCAST;
             }
             else if (token == Lt) {
                 // less than
@@ -806,7 +837,7 @@ void expression(int level) {
                 *++text = PUSH;
                 expression(Shl);
                 *++text = LT;
-                expr_type = INT;
+                expr_type = INTCAST;
             }
             else if (token == Gt) {
                 // greater than
@@ -814,7 +845,7 @@ void expression(int level) {
                 *++text = PUSH;
                 expression(Shl);
                 *++text = GT;
-                expr_type = INT;
+                expr_type = INTCAST;
             }
             else if (token == Le) {
                 // less than or equal to
@@ -822,7 +853,7 @@ void expression(int level) {
                 *++text = PUSH;
                 expression(Shl);
                 *++text = LE;
-                expr_type = INT;
+                expr_type = INTCAST;
             }
             else if (token == Ge) {
                 // greater than or equal to
@@ -830,7 +861,7 @@ void expression(int level) {
                 *++text = PUSH;
                 expression(Shl);
                 *++text = GE;
-                expr_type = INT;
+                expr_type = INTCAST;
             }
             else if (token == Shl) {
                 // shift left
@@ -838,7 +869,7 @@ void expression(int level) {
                 *++text = PUSH;
                 expression(Add);
                 *++text = SHL;
-                expr_type = INT;
+                expr_type = INTCAST;
             }
             else if (token == Shr) {
                 // shift right
@@ -846,7 +877,7 @@ void expression(int level) {
                 *++text = PUSH;
                 expression(Add);
                 *++text = SHR;
-                expr_type = INT;
+                expr_type = INTCAST;
             }
             else if (token == Add) {
                 // add
@@ -876,7 +907,7 @@ void expression(int level) {
                     *++text = IMM;
                     *++text = sizeof(int);
                     *++text = DIV;
-                    expr_type = INT;
+                    expr_type = INTCAST;
                 } else if (tmp > PTR) {
                     // pointer movement
                     *++text = PUSH;
@@ -936,7 +967,7 @@ void expression(int level) {
                 *++text = IMM;
                 *++text = (expr_type > PTR) ? sizeof(int) : sizeof(char);
                 *++text = (token == Inc) ? ADD : SUB;
-                *++text = (expr_type == CHAR) ? SC : SI;
+                *++text = (expr_type == CHARCAST) ? SC : SI;
                 *++text = PUSH;
                 *++text = IMM;
                 *++text = (expr_type > PTR) ? sizeof(int) : sizeof(char);
@@ -963,7 +994,7 @@ void expression(int level) {
                 }
                 expr_type = tmp - PTR;
                 *++text = ADD;
-                *++text = (expr_type == CHAR) ? LC : LI;
+                *++text = (expr_type == CHARCAST) ? LC : LI;
             }
             else {
                 echoUSB("compiler error, line, token\n");
@@ -1100,7 +1131,7 @@ void enum_declaration() {
         }
 
         current_id[Class] = Num;
-        current_id[Type] = INT;
+        current_id[Type] = INTCAST;
         current_id[Value] = i++;
 
         if (token == ',') {
@@ -1115,11 +1146,11 @@ void function_parameter() {
     params = 0;
     while (token != ')') {
         // int name, ...
-        type = INT;
+        type = INTCAST;
         if (token == Int) {
             match(Int);
         } else if (token == Char) {
-            type = CHAR;
+            type = CHARCAST;
             match(Char);
         }
 
@@ -1167,7 +1198,7 @@ void function_body() {
 
     while (token == Int || token == Char) {
         // local variable declaration, just like global ones.
-        basetype = (token == Int) ? INT : CHAR;
+        basetype = (token == Int) ? INTCAST : CHARCAST;
         match(token);
 
         while (token != ';') {
@@ -1244,7 +1275,7 @@ void global_declaration() {
     int type; // tmp, actual type for variable
     int i; // tmp
 
-    basetype = INT;
+    basetype = INTCAST;
 
     // parse enum, this should be treated alone.
     if (token == Enum) {
@@ -1270,7 +1301,7 @@ void global_declaration() {
     }
     else if (token == Char) {
         match(Char);
-        basetype = CHAR;
+        basetype = CHARCAST;
     }
 
     // parse the comma seperated variable declaration.
@@ -1408,6 +1439,8 @@ int eval() {
         else if (op == GETDPAD) { ax = (int)getDPAD(); }
         else if (op == CONTRAST) { contrast((char)sp[0]); }
         else if (op == IRSTATS) { IRstats(); }
+        else if (op == SETTIME) { setTime((char)sp[2], (char)sp[1], (char)sp[0]); }
+        else if (op == GETTIME) { ax = (char *)getTime(); }
         else {
             echoUSB("unknown instruction\n");
 	    longjmp(error_exit, op);
@@ -1440,7 +1473,8 @@ char *ramptr;
 const char Csrc[] = "char else enum if int return sizeof while "
           "print printd malloc memset memcmp "
 	  "flareled led FbMove FbWrite backlight "
-	  "IRreceive IRsend setNote getButton getDPAD contrast IRstats "
+	  "IRreceive IRsend setNote getButton getDPAD contrast "
+	  "IRstats setTime getTime "
 	  "exit void main";
 
 void init_interpreter()
@@ -1525,7 +1559,7 @@ void init_interpreter()
     while (i <= EXIT) {
         next();
         current_id[Class] = Sys;
-        current_id[Type] = INT;
+        current_id[Type] = INTCAST;
         current_id[Value] = i++;
     }
 

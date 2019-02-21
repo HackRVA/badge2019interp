@@ -1,5 +1,21 @@
 #ifndef timer1_int_h
 #define timer1_int_h
+
+struct wallclock_t {
+   unsigned char low;
+   unsigned char hi;
+   unsigned char hour;
+   unsigned char sec;
+   unsigned char min;
+
+   unsigned int now;
+   unsigned int last;
+   unsigned int lag;
+   unsigned int delta;
+};
+
+extern struct wallclock_t wclock;
+
 void red(unsigned char onPWM) ;
 void green(unsigned char onPWM) ;
 void blue(unsigned char onPWM) ;
