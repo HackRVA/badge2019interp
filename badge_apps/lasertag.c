@@ -27,6 +27,7 @@ char **arguments;
 #include "buttons.h"
 #include "ir.h"
 #include "flash.h" /* for G_sysData */
+#include "timer1_int.h"
 
 /* TODO: I shouldn't have to declare these myself. */
 #define size_t int
@@ -425,11 +426,10 @@ static void button_pressed()
 	}
 }
 
-static int bogus_time = 0;
-
 static int get_time(void)
 {
-	return bogus_time;
+	/* I guess this will wrap-around at midnight. Do we actually care about that? */
+	return 3600 * (int) wclock.hour + 60 * (int) wclock.min + (int) wclock.sec;
 }
 
 static void set_game_start_timestamp(int time)
@@ -440,10 +440,6 @@ static void set_game_start_timestamp(int time)
 	gettimeofday(&tv, NULL);
 	game_start_timestamp = tv.tv_sec + time;
 #else
-	/* TODO: re-write this to use the wall clock code when it is ready.
-	 * This doesn't really work quite right without proper time.
-	 * For now, I'll do this so that at least something happens.
-	 */
 	game_start_timestamp = get_time() + time;
 #endif
 }
@@ -624,23 +620,14 @@ static void advance_time()
 {
 	int old_time = seconds_until_game_starts;
 	int old_suppress = suppress_further_hits_until;
+
 #ifdef __linux__
 	struct timeval tv;
 
 	gettimeofday(&tv, NULL);
 	current_time = tv.tv_sec;
 #else
-	/* TODO: re-write this to use the wall clock code when it is ready.
-	 * This doesn't really work quite right without proper time.
-	 * For now, I'll do this so that at least something happens.
-	 */
-	static t1 = 0;
-	t1++;
-	if (t1 == 10000) {
-		t1 = 0;
-		bogus_time++;
-		current_time = bogus_time;
-	}
+	current_time = get_time();
 #endif
 	if (seconds_until_game_starts != NO_GAME_START_TIME && game_start_timestamp != NO_GAME_START_TIME)
 		seconds_until_game_starts = game_start_timestamp - current_time;
