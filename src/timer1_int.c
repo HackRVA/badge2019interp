@@ -37,7 +37,7 @@
 /*
    wall clock is driven off of LED timer interupt
 */
-struct wallclock_t wclock={0,0,0,0,0,0,0,0,0};
+struct wallclock_t wclock={0,0,0,0,0,0,0};
 
 
 unsigned int G_IRsendVal = 0;
@@ -61,7 +61,7 @@ unsigned char G_halfCount = 0;
 #define T2_TICK       		(SYS_FREQ/IR_TOGGLES)
 
 // easily divisible for wall clock
-#define LED_TOGGLES		32768
+#define LED_TOGGLES		40000
 //#define LED_TOGGLES		38000
 #define T3_TICK       		(SYS_FREQ/LED_TOGGLES)
 
@@ -471,8 +471,12 @@ void __ISR(_TIMER_3_VECTOR, IPL2SOFT) Timer3Handler(void)
     /*
 	difference should be exactly T3_TICK
 	but will jitter because it restarts when interrupt is reenabled
+
+	Oscillator is +-0.5% kyocera PBRc4.00mhz digikey 478-2107-2
+	over 1hr 0.005 * 60 * 60 = ~18sec
+
     */
-    wclock.now = _CP0_GET_COUNT();
+    wclock.now = _CP0_GET_COUNT(); // rumored to increment at CPUCLK/2 or- 20mhz
     if (wclock.now < wclock.last)  // wrapped?
 	wclock.delta = (unsigned int)((unsigned long long)(((unsigned long long)0xffffffffL + wclock.now) - wclock.last)); // wrapped
     else 
@@ -480,26 +484,20 @@ void __ISR(_TIMER_3_VECTOR, IPL2SOFT) Timer3Handler(void)
 
     wclock.last = wclock.now;
 
-    wclock.lag += wclock.delta;
-    while (wclock.lag >= T3_TICK) {
-	wclock.lag -= T3_TICK;
-	wclock.low++;
+    wclock.accum += wclock.delta;
 
-	if (wclock.low==0) { // wrapped
-	   wclock.hi++;
-	   if (wclock.hi==64) { // 32768/2 == toggles
-	      wclock.hi=0;
-	      wclock.sec++;
-	      if (wclock.sec == 59) { // maybe inc. by 2 because of lag
-		wclock.min++;
-		wclock.sec = 0;
-		if (wclock.min == 59) {
-		   wclock.hour++;
-		   wclock.min = 0;;
-		}
-	   }
+    while (wclock.accum >= (SYS_FREQ/2)) {
+	wclock.accum -= (SYS_FREQ/2);
+
+	wclock.sec++;
+	if (wclock.sec == 60) { // maybe inc. by 2 because of lag
+	    wclock.min++;
+	    wclock.sec = 0;
+	    if (wclock.min == 60) {
+		wclock.hour++;
+		wclock.min = 0;;
+	    }
 	}
-       }
     }
 
     doLED_PWM(); // have to finished before next interrupt

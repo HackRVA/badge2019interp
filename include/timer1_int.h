@@ -2,16 +2,14 @@
 #define timer1_int_h
 
 struct wallclock_t {
-   unsigned char low;
-   unsigned char hi;
    unsigned char hour;
    unsigned char sec;
    unsigned char min;
 
    unsigned int now;
    unsigned int last;
-   unsigned int lag;
    unsigned int delta;
+   unsigned int accum;
 };
 
 extern struct wallclock_t wclock;

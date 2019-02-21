@@ -177,7 +177,7 @@ void setTime(unsigned char hour, unsigned char min, unsigned char sec)
     wclock.last = _CP0_GET_COUNT();
     wclock.now = _CP0_GET_COUNT();
     wclock.delta = wclock.now - wclock.last;
-    wclock.lag=0;
+    wclock.accum = wclock.delta;
 
     wclock.hour = hour;
     wclock.min = min;
