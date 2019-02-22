@@ -206,7 +206,6 @@ void UserInit(void)
     FbPushBuffer();
 
     timerInit();
-    ADC_init(AN_MIC, HZ_150); // init to sampling mic very slowly
 }
 
 void decDump(unsigned int value, char *out) {

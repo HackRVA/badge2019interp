@@ -1,0 +1,8 @@
+make clean
+
+make
+
+make ramsyms
+
+make romsyms
+

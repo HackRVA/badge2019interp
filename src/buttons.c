@@ -122,7 +122,7 @@ int getButton()
 
     b |= (PORTBbits.RB14 == 0) ? SOLO_BTN_MASK : 0;
 
-    if (now > (last+4000000)) {
+    if (now > (last+2000000)) {
 	lastb = b;
         last = _CP0_GET_COUNT(); // this is in microseconds 1/1000000 and wraps after 2^32/40mhz ~107 seconds
 	b = 0;
@@ -147,7 +147,7 @@ int getDPAD()
     b |= (PORTCbits.RC2 == 0) ? RIGHT_BTN_MASK : 0;
     b |= (PORTBbits.RB1 == 0) ? DOWN_BTN_MASK : 0;
 
-    if (now > (last+4000000)) { // 1/10 sec  4,000,000 / 40,000,000
+    if (now > (last+2000000)) { // 1/5 sec  4,000,000 / 20,000,000
 	lastb = b;
         last = _CP0_GET_COUNT();
 	b=0;
