@@ -9,9 +9,8 @@
  NOTE
 */
 enum {
-    DRBOB=0,
-    HACKRVA4,
-//    RVASECBUG,
+//    DRBOB=0,
+//    HACKRVA4,
     FONT,
 
     LASTASSET,

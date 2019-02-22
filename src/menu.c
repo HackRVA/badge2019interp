@@ -476,7 +476,7 @@ const struct menu_t settings_m[] = {
 //   {"my badgeId",	VERT_ITEM, MENU, {(struct menu_t *)myBadgeid_m}},
 //   {"peer badgeId",	VERT_ITEM, MENU, {(struct menu_t *)peerBadgeid_m}},
 //   {"time n date",VERT_ITEM|DEFAULT_ITEM, MENU, {(struct menu_t *)timedate_m}},
-   {"Ping",VERT_ITEM, MENU, {(struct menu_t *)ping_m}},
+//   {"Ping",VERT_ITEM, MENU, {(struct menu_t *)ping_m}},
    {"Backlight",VERT_ITEM, MENU, {(struct menu_t *)backlight_m}},
    {"Led",	VERT_ITEM, MENU, {(struct menu_t *)LEDlight_m}},  /* coerce/cast to a menu_t data pointer */
    {"Buzzer",	VERT_ITEM|DEFAULT_ITEM, MENU, {(struct menu_t *)buzzer_m}},
@@ -486,9 +486,9 @@ const struct menu_t settings_m[] = {
 
 
 const struct menu_t main_m[] = {
-   {"Schedule",    VERT_ITEM, MENU, {schedule_m}},
+//   {"Schedule",    VERT_ITEM, MENU, {schedule_m}},
    {"Games",       VERT_ITEM|DEFAULT_ITEM, MENU, {games_m}},
-   {"QC",          VERT_ITEM, FUNCTION, {(struct menu_t *)QC_cb}},
+//   {"QC",          VERT_ITEM, FUNCTION, {(struct menu_t *)QC_cb}},
    {"Settings",    VERT_ITEM|LAST_ITEM, MENU, {settings_m}},
 } ;
 

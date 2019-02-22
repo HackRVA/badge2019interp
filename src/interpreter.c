@@ -67,7 +67,7 @@ enum { LEA, IMM, JMP, CALL, JZ, JNZ, ENT, ADJ, LEV, LI, LC, SI, SC, PUSH,
        PRT, PRTD, MALC, MSET, MCMP,
        FLARELED, LED, FBMOVE, FBWRITE, BACKLIGHT,
        IRRECEIVE, IRSEND, SETNOTE, GETBUTTON, GETDPAD, CONTRAST, IRSTATS,
-       SETTIME, GETTIME,
+       SETTIME, GETTIME, FBLINE, FBCLEAR,
        EXIT
 };
 
@@ -128,11 +128,11 @@ int expr_type;   // the type of an expression
    add function call below
 */
 
-void FbWrite(unsigned char *string)
-{
-    FbWriteLine(string);
-    FbPushBuffer();
-}
+//void FbWrite(unsigned char *string)
+//{
+//    FbWriteLine(string);
+//    FbPushBuffer();
+//}
 
 void contrast(unsigned char con)
 {
@@ -1430,7 +1430,7 @@ int eval() {
         else if (op == FLARELED) { flareled((char)sp[2], (char)sp[1], (char)sp[0]); }
         else if (op == LED) { led((char)sp[2], (char)sp[1], (char)sp[0]); }
         else if (op == FBMOVE) { FbMove((char)sp[1], (char)sp[0]); }
-        else if (op == FBWRITE) { FbWrite((char *)sp[0]); }
+        else if (op == FBWRITE) { FbWriteLine((char *)sp[0]); }
         else if (op == BACKLIGHT) { backlight((char)sp[0]); }
         else if (op == IRRECEIVE) { ax = (unsigned int)IRreceive(); }
         else if (op == IRSEND) { IRsend((int)sp[0]); }
@@ -1441,6 +1441,8 @@ int eval() {
         else if (op == IRSTATS) { IRstats(); }
         else if (op == SETTIME) { setTime((char)sp[2], (char)sp[1], (char)sp[0]); }
         else if (op == GETTIME) { ax = (char *)getTime(); }
+        else if (op == FBLINE) { FbLine((char)sp[3], (char)sp[2], (char)sp[1], (char)sp[0]); }
+        else if (op == FBCLEAR) { FbClear(); }
         else {
             echoUSB("unknown instruction\n");
 	    longjmp(error_exit, op);
@@ -1452,10 +1454,10 @@ int eval() {
 #ifdef NEWIMPROVED
 
 char *ramptr=0;
-#define TEXTSECTION 128 // * 4 
-#define DATASECTION 128 // * 1 
-#define STACKSECTION 128 // * 4 
-#define SYMBOLSECTION 512 // * 4 
+#define TEXTSECTION 1024 // * 4 
+#define DATASECTION 32 // * 1 
+#define STACKSECTION 32 // * 4 
+#define SYMBOLSECTION 1024 // * 4 
 #define RAMSIZE (STACKSECTION*4 + TEXTSECTION*4 + DATASECTION + SYMBOLSECTION*4)
 char interp_ram[RAMSIZE];
 
@@ -1474,7 +1476,7 @@ const char Csrc[] = "char else enum if int return sizeof while "
           "print printd malloc memset memcmp "
 	  "flareled led FbMove FbWrite backlight "
 	  "IRreceive IRsend setNote getButton getDPAD contrast "
-	  "IRstats setTime getTime "
+	  "IRstats setTime getTime FbLine FbClear "
 	  "exit void main";
 
 void init_interpreter()
@@ -1601,9 +1603,9 @@ void interp_stats()
     unsigned int textsz, datasz, stacksz, symbolsz;
     char textbuf[9]; /* 1 for null */
 
-    textsz = text - textbase;
+    textsz = (unsigned int)text - (unsigned int)textbase;
 
-    datasz = data - database;
+    datasz = (unsigned int)data - (unsigned int)database;
 
     /* top of stack - stacklow point */
     stacksz =  ((unsigned int)stackbase + STACKSECTION * sizeof(int)) - (unsigned int)stacklow;
