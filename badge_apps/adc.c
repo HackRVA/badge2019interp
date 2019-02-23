@@ -19,8 +19,6 @@ enum adc_state {
 };
 
 void adc_cb() {
-   static unsigned char initted=0;
-
    static int cnt=0;
    static unsigned char state = INIT;
    int i, ADCloopCnt=0, changed=0;
