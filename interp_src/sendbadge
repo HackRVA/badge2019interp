@@ -1,0 +1,5 @@
+#!/bin/tcsh -f
+cat /dev/ttyACM0 &; 
+cat > /dev/ttyACM0
+
+exit 0;

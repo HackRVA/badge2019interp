@@ -10,11 +10,13 @@ int main()
 
     led(128, 128, 128);
 }
+run
 
 int main()
 {
     setNote(100, 4096);
 }
+run
 
 
 
@@ -38,7 +40,7 @@ int main()
         i = i + 5;
     }
 }
-
+run
 
 
 int main()
@@ -80,11 +82,13 @@ int main()
 int main() {
     FbWrite("hello world");
 }
+run
 
 int main() {
     FbMove(50, 40);
     FbWrite("yo");
 }
+run
 
 
 int main() {
@@ -93,6 +97,7 @@ int main() {
  led(0, 0, 100);
  return 123;
 }
+run
 
 int main(){
  int r;

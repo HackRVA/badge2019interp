@@ -285,17 +285,23 @@ void doLine()
 
 	decDump(r, &(lineOutBuffer[lineOutBufPtr]));
 	lineOutBufPtr += 8; /* always converts 8 digits */
-//	lineOutBuffer[lineOutBufPtr++]=13;
-//	lineOutBuffer[lineOutBufPtr++]=10;
-//	lineOutBuffer[lineOutBufPtr]=0;
 
         interp_stats();
-
 	memset(sourceBuffer, 0, SOURCEBUFFERSIZE);
     }
-    else {
+    else 
 	strcat(sourceBuffer, textBuffer);
+
+/*
+    else {
+	    if (strncmp(textBuffer,"new",3) == 0) {
+		memset(sourceBuffer, 0, SOURCEBUFFERSIZE);
+    	    }
+	    else {
+		strcat(sourceBuffer, textBuffer);
+	    }
     }
+*/
     memset(textBuffer, 0, TEXTBUFFERSIZE);
     textBufPtr=0;
 }
