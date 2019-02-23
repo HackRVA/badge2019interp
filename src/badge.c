@@ -243,18 +243,6 @@ void echoUSB(char *str) {
 
    if (len > CDC_DATA_OUT_EP_SIZE) return;
 
-   // not enough buffer, flush
-#ifdef FASTUSB
-   if ((lineOutBufPtr + len) > CDC_DATA_OUT_EP_SIZE) { 
-	flushUSB();
-   }
-#endif
-
-   /* separate output strings */
-   //lineOutBuffer[lineOutBufPtr++] = '\r';
-   //lineOutBuffer[lineOutBufPtr++] = '\n';
-   //lineOutBuffer[lineOutBufPtr++] = ' ';
-
    for (i=0; i<len; i++) {
 	lineOutBuffer[lineOutBufPtr++] = str[i];
    }

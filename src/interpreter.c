@@ -67,7 +67,7 @@ enum { LEA, IMM, JMP, CALL, JZ, JNZ, ENT, ADJ, LEV, LI, LC, SI, SC, PUSH,
        PRT, PRTD, MALC, MSET, MCMP,
        FLARELED, LED, FBMOVE, FBWRITE, BACKLIGHT,
        IRRECEIVE, IRSEND, SETNOTE, GETBUTTON, GETDPAD, CONTRAST, IRSTATS,
-       SETTIME, GETTIME, FBLINE, FBCLEAR,
+       SETTIME, GETTIME, FBLINE, FBCLEAR, FLASHW, FLASHR,
        EXIT
 };
 
@@ -127,12 +127,6 @@ int expr_type;   // the type of an expression
    add opcode check eg: /else if (op == MCMP)/
    add function call below
 */
-
-//void FbWrite(unsigned char *string)
-//{
-//    FbWriteLine(string);
-//    FbPushBuffer();
-//}
 
 void contrast(unsigned char con)
 {
@@ -200,6 +194,50 @@ char *getTime()
    return time;
 }
 
+/* 
+  interpreter flash area
+*/
+const unsigned char Iflash[2048] = {0x00};
+
+unsigned int *IflashAddr=0;
+unsigned int *IflashAddrPtr=0;
+unsigned int findex=0;
+
+
+void IflashInit()
+{
+    /* 1k align */
+    IflashAddr = (unsigned int *)(((unsigned int)(Iflash)+1024) & 0b11111111111111111111110000000000); // 1k flash boundary
+    IflashAddrPtr = IflashAddr;
+
+    if (*IflashAddr != (unsigned int)0xFACEBEEF) {
+        findex=0;
+	NVMErasePage(IflashAddr);
+	NVMWriteWord(IflashAddr, (unsigned int)0xFACEBEEF);
+        IflashAddrPtr++;
+	findex++;
+    }
+
+}
+
+unsigned int *IflashWrite(unsigned int data) {
+    if (IflashAddrPtr == 0) IflashInit();
+
+    NVMWriteWord(IflashAddrPtr, data);
+    IflashAddrPtr++;
+
+    return (findex++);
+}
+
+unsigned int IflashRead(unsigned int index) {
+    unsigned int *r_addr;
+
+    if (IflashAddrPtr == 0) IflashInit();
+
+    r_addr = IflashAddr + index;
+
+    return(*r_addr);
+}
 
 // function frame
 //
@@ -1358,6 +1396,7 @@ int eval() {
     cycle = 0;
 
     while (1) {
+	flushUSB(); // usb service
         IRhandler(); // service IR packets
 
 	if (stacklow > sp) stacklow = sp; /* stack low water mark */
@@ -1402,21 +1441,23 @@ int eval() {
 		//printf("exit(%d)", *sp); 
 		return *sp;
 	}
-        else if (op == PRT) { 
-		tmp = sp + pc[1]; 
+        else if (op == PRT) { /* changed: print string */
+		//tmp = sp + pc[1]; 
 		//ax = printf((char *)tmp[-1], tmp[-2], tmp[-3], tmp[-4], tmp[-5], tmp[-6]);
-                echoUSB("print ");
-                echoUSB((char *)tmp[-1]);
+                //echoUSB("print ");
+                //echoUSB((char *)tmp[-1]);
+                echoUSB((char *)sp[0]);
                 echoUSB("\r\n");
                 ax = 0;
 	}
-        else if (op == PRTD) { 
-		char dbuffer[9];
+        else if (op == PRTD) { /* print(arg) as hex */ 
+		static char dbuffer[9];
 
-		tmp = sp + pc[1]; 
+		//tmp = sp + pc[1]; 
 		
-		hexDump(*tmp, dbuffer);
-                echoUSB("printd ");
+		//hexDump(*tmp, dbuffer);
+		hexDump((int)sp[0], dbuffer);
+                //echoUSB("printd ");
                 echoUSB(dbuffer);
                 echoUSB("\r\n");
                 ax = 0;
@@ -1435,14 +1476,16 @@ int eval() {
         else if (op == IRRECEIVE) { ax = (unsigned int)IRreceive(); }
         else if (op == IRSEND) { IRsend((int)sp[0]); }
         else if (op == SETNOTE) { setNote((int)sp[1], (int)sp[0]); }
-        else if (op == GETBUTTON) { ax = (int)getButton(); }
-        else if (op == GETDPAD) { ax = (int)getDPAD(); }
+        else if (op == GETBUTTON) { ax = (int)getButton(); } /* return button bitmask */
+        else if (op == GETDPAD) { ax = (int)getDPAD(); }  /* return button bitmask */
         else if (op == CONTRAST) { contrast((char)sp[0]); }
         else if (op == IRSTATS) { IRstats(); }
         else if (op == SETTIME) { setTime((char)sp[2], (char)sp[1], (char)sp[0]); }
-        else if (op == GETTIME) { ax = (char *)getTime(); }
+        else if (op == GETTIME) { ax = (int)getTime(); }
         else if (op == FBLINE) { FbLine((char)sp[3], (char)sp[2], (char)sp[1], (char)sp[0]); }
         else if (op == FBCLEAR) { FbClear(); }
+        else if (op == FLASHW) { ax = (unsigned int)IflashWrite((unsigned int)sp[0]); }
+        else if (op == FLASHR) { ax = IflashRead((unsigned int)sp[0]); }
         else {
             echoUSB("unknown instruction\n");
 	    longjmp(error_exit, op);
@@ -1461,22 +1504,13 @@ char *ramptr=0;
 #define RAMSIZE (STACKSECTION*4 + TEXTSECTION*4 + DATASECTION + SYMBOLSECTION*4)
 char interp_ram[RAMSIZE];
 
-/*
-char interp_ram[8192];
-char *ramptr;
-#define STACKSECTION 512 // * 4 == 2k
-#define TEXTSECTION 512 // * 4 == 2k
-#define DATASECTION 512 // * 1 == 512
-#define SYMBOLSECTION 512 // * 4 == 2k
-*/
-
 #endif
 
 const char Csrc[] = "char else enum if int return sizeof while "
           "print printd malloc memset memcmp "
 	  "flareled led FbMove FbWrite backlight "
 	  "IRreceive IRsend setNote getButton getDPAD contrast "
-	  "IRstats setTime getTime FbLine FbClear "
+	  "IRstats setTime getTime FbLine FbClear flashWrite flashRead "
 	  "exit void main";
 
 void init_interpreter()
