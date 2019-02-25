@@ -10,11 +10,13 @@ int main()
 
     led(128, 128, 128);
 }
+run
 
 int main()
 {
     setNote(100, 4096);
 }
+run
 
 
 
@@ -38,22 +40,7 @@ int main()
         i = i + 5;
     }
 }
-
-
-
-int main()
-{
-    int d;
-    d = getDPAD();
-    return d;
-}
-
-int main()
-{
-    int b;
-    b = getButton();
-    return b;
-}
+run
 
 
 
@@ -76,15 +63,19 @@ int main()
         i = i + 1;
     }
 }
+run
+
 
 int main() {
     FbWrite("hello world");
 }
+run
 
 int main() {
     FbMove(50, 40);
     FbWrite("yo");
 }
+run
 
 
 int main() {
@@ -93,6 +84,8 @@ int main() {
  led(0, 0, 100);
  return 123;
 }
+run
+
 
 int main(){
  int r;
@@ -102,6 +95,7 @@ int main(){
  led(100, 0, 0);
  exit(r);
 }
+run
 
 int main() {
    int r;
@@ -116,37 +110,15 @@ int main() {
 
    exit(0);
 }
+run
 
 int main() {
    int r;
    r = IRreceive();
    return r;
 }
+run
 
-
-int main()
-{
-    int r,b;
-
-    b=0;
-    while (b != 4) {
-	r = IRreceive();
-	if (r != 0) led(r, r, r);
-	b = getDPAD();
-    }
-   return b;
-}
-
-int main()
-{
-    int r;
-
-    r=0;
-    while (r == 0) {
-	r = IRreceive();
-	led(r, r, r);
-    }
-}
 
 
 int main()
@@ -157,36 +129,5 @@ int main()
 
    return (int)r;
 }
-
-
-
-// bf882060 g     O *ABS*	00000000 BMXPFMSZ
-main()
-{
-   int *x;
-   x = 0xbf882060;
-
-   return *x;
-}
-
-// bf882070 g     O *ABS*	00000000 BMXBOOTSZ
-main()
-{
-   int *x;
-   x = 0xbf882070;
-
-   return *x;
-}
-
-// bf80f220 g     O *ABS*	00000000 DEVID
-// 29D5A53
-
-main()
-{
-   int *x;
-   x = 0xbf80f220;
-
-   return *x;
-}
-
+run
 
