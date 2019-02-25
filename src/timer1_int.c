@@ -490,7 +490,7 @@ void __ISR(_TIMER_3_VECTOR, IPL2SOFT) Timer3Handler(void)
 	wclock.accum -= (SYS_FREQ/2);
 
 	wclock.sec++;
-	if (wclock.sec == 60) { // maybe inc. by 2 because of lag
+	if (wclock.sec == 60) {
 	    wclock.min++;
 	    wclock.sec = 0;
 	    if (wclock.min == 60) {

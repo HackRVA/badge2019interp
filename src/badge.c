@@ -247,9 +247,7 @@ void echoUSB(char *str) {
    }
    lineOutBuffer[lineOutBufPtr] = 0;
 
-#ifndef FASTUSB
    flushUSB(); // flush every time
-#endif
 }
 
 /*
@@ -280,6 +278,9 @@ void doLine()
 
 	r = interpreter_main(sourceBuffer); 
 
+	lineOutBufPtr = 0; 
+	lineOutBuffer[lineOutBufPtr] = 0; 
+
 	strcpy(&(lineOutBuffer[lineOutBufPtr]), "\r\nR ");
 	lineOutBufPtr += 4;
 
@@ -287,21 +288,38 @@ void doLine()
 	lineOutBufPtr += 8; /* always converts 8 digits */
 
         interp_stats();
-	memset(sourceBuffer, 0, SOURCEBUFFERSIZE);
-    }
-    else 
-	strcat(sourceBuffer, textBuffer);
 
-/*
-    else {
-	    if (strncmp(textBuffer,"new",3) == 0) {
-		memset(sourceBuffer, 0, SOURCEBUFFERSIZE);
-    	    }
-	    else {
-		strcat(sourceBuffer, textBuffer);
-	    }
+	lineOutBufPtr = 0; 
+	lineOutBuffer[lineOutBufPtr] = 0; 
+	//memset(sourceBuffer, 0, SOURCEBUFFERSIZE);
     }
-*/
+    else if (strncmp(textBuffer,"new",3) == 0) {
+	    memset(sourceBuffer, 0, SOURCEBUFFERSIZE);
+    } 
+    else if (strncmp(textBuffer,"list",4) == 0) {
+	char *startS, *endS;
+
+	echoUSB("\r\nlisting\r\n");
+	startS = sourceBuffer;
+
+	lineOutBufPtr = 0; 
+	lineOutBuffer[lineOutBufPtr] = 0; 
+
+	while (1) {
+            endS = strchr(startS, '\n');
+
+            if (endS == 0) break;
+
+            strncpy(textBuffer, startS, endS-startS); //
+            textBuffer[endS-startS] = '\0';
+            echoUSB(textBuffer);
+            echoUSB("\r\n");
+
+            startS = endS+1;
+	}
+    } else {
+	    strcat(sourceBuffer, textBuffer);
+    }
     memset(textBuffer, 0, TEXTBUFFERSIZE);
     textBufPtr=0;
 }
@@ -387,41 +405,16 @@ void ProcessIO(void)
 	nread = 0;
     }
 
-#define FLUSHUSB
-#ifdef FLUSHUSB
     flushUSB();
-#else
-    if (USBtransferReady()) {
-	int nextWrite;
-
-	if (writeLOCK) {
-	   USB_Out_Buffer[0] = 0;
-	   writeLOCK = 0;
-	} 
-
-	// jam interpreter line buffer into buffer since usb is done
-	if (lineOutBufPtr != 0) {
-	   strncpy(USB_Out_Buffer, lineOutBuffer, lineOutBufPtr);
-	   USB_Out_Buffer[lineOutBufPtr] = 0;
-	   lineOutBufPtr = 0;
-	   lineOutBuffer[lineOutBufPtr] = 0;
-	}
-
-	nextWrite = strlen(USB_Out_Buffer);
-	if (nextWrite != 0) {
-	   putUSBUSART(USB_Out_Buffer, nextWrite);
-	   writeLOCK = 1; // dont touch until USB done
-	}
-    }
-    CDCTxService();
-#endif
 }
 
-#ifdef FLUSHUSB
 void flushUSB()
 {
-    if (USBtransferReady()) {
-	int nextWrite;
+    while (!USBtransferReady()) CDCTxService();
+
+    //if (USBtransferReady()) {
+    {
+	int len;
 
 	if (writeLOCK) {
 	   USB_Out_Buffer[0] = 0;
@@ -436,12 +429,10 @@ void flushUSB()
 	   lineOutBuffer[lineOutBufPtr] = 0;
 	}
 
-	nextWrite = strlen(USB_Out_Buffer);
-	if (nextWrite != 0) {
-	   putUSBUSART(USB_Out_Buffer, nextWrite);
+	len = strlen(USB_Out_Buffer);
+	if (len != 0) {
+	   putUSBUSART(USB_Out_Buffer, len);
 	   writeLOCK = 1; // dont touch until USB done
 	}
     }
-    CDCTxService();
 }
-#endif

@@ -20,6 +20,7 @@ main()
    r = flashRead(1); printd(r);
    r = flashRead(2); printd(r);
    r = flashRead(3); printd(r);
+   r = flashRead(4); printd(r);
 }
 run
 

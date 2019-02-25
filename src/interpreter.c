@@ -64,7 +64,7 @@ int token; // current token
 
 enum { LEA, IMM, JMP, CALL, JZ, JNZ, ENT, ADJ, LEV, LI, LC, SI, SC, PUSH,
        OR, XOR, AND, EQ, NE, LT, GT, LE, GE, SHL, SHR, ADD, SUB, MUL, DIV, MOD, 
-       PRT, PRTD, MALC, MSET, MCMP,
+       PRT, PRTD, PRTX, MALC, MSET, MCMP,
        FLARELED, LED, FBMOVE, FBWRITE, BACKLIGHT,
        IRRECEIVE, IRSEND, SETNOTE, GETBUTTON, GETDPAD, CONTRAST, IRSTATS,
        SETTIME, GETTIME, FBLINE, FBCLEAR, FLASHW, FLASHR,
@@ -1446,18 +1446,23 @@ int eval() {
 		//ax = printf((char *)tmp[-1], tmp[-2], tmp[-3], tmp[-4], tmp[-5], tmp[-6]);
                 //echoUSB("print ");
                 //echoUSB((char *)tmp[-1]);
-                echoUSB((char *)sp[0]);
+		if ((char *)sp[0] < 0xa0000000) 
+		    echoUSB("prt <addr>");
+                else
+		    echoUSB((char *)sp[0]);
                 echoUSB("\r\n");
                 ax = 0;
 	}
         else if (op == PRTD) { /* print(arg) as hex */ 
 		static char dbuffer[9];
-
-		//tmp = sp + pc[1]; 
-		
-		//hexDump(*tmp, dbuffer);
+		decDump((int)sp[0], dbuffer);
+                echoUSB(dbuffer);
+                echoUSB("\r\n");
+                ax = 0;
+	}
+        else if (op == PRTX) { /* print(arg) as hex */ 
+		static char dbuffer[9];
 		hexDump((int)sp[0], dbuffer);
-                //echoUSB("printd ");
                 echoUSB(dbuffer);
                 echoUSB("\r\n");
                 ax = 0;
@@ -1507,7 +1512,7 @@ char interp_ram[RAMSIZE];
 #endif
 
 const char Csrc[] = "char else enum if int return sizeof while "
-          "print printd malloc memset memcmp "
+          "print printd printx malloc memset memcmp "
 	  "flareled led FbMove FbWrite backlight "
 	  "IRreceive IRsend setNote getButton getDPAD contrast "
 	  "IRstats setTime getTime FbLine FbClear flashWrite flashRead "

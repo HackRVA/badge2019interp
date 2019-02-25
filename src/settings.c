@@ -36,6 +36,10 @@ void ping_cb(){
         FbPushBuffer();
         blue(100);
         ping_responded = 0;
+
+        
+	while ((ReadCoreTimer() & 0x1000000) != 0) ; // wait a bit
+
     }
 
     returnToMenus();
