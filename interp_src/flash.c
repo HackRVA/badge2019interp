@@ -5,10 +5,10 @@ main()
    w = flashWrite(0xabcdef01);
    printd(w);
 
-   r=flashRead(0); printd(r);
-   r=flashRead(1); printd(r);
-   r=flashRead(2); printd(r);
-   r=flashRead(3); printd(r);
+   r=flashRead(0); printx(r);
+   r=flashRead(1); printx(r);
+   r=flashRead(2); printx(r);
+   r=flashRead(3); printx(r);
 }
 run
 
@@ -16,10 +16,10 @@ run
 main()
 {
    int r;
-   r = flashRead(0); printd(r);
-   r = flashRead(1); printd(r);
-   r = flashRead(2); printd(r);
-   r = flashRead(3); printd(r);
+   r = flashRead(0); printx(r);
+   r = flashRead(1); printx(r);
+   r = flashRead(2); printx(r);
+   r = flashRead(3); printx(r);
    r = flashRead(4); printd(r);
 }
 run
@@ -39,7 +39,7 @@ main()
 
    w=flashWrite(0x01234567);
    printd(w);
-   r = flashRead(0); printd(r);
+   r = flashRead(0); printx(r);
 }
 run
 
