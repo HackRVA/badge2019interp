@@ -10,6 +10,7 @@
 #include "buttons.h"
 #include "S6B33.h"
 #include "timer1_int.h"
+#include "tinyalloc.h"
 
 static jmp_buf error_exit;
 
@@ -97,21 +98,17 @@ enum { CHARCAST, INTCAST, PTR };
 // type of declaration.
 enum {Global, Local};
 
-int *text, *textbase, // text segment
-    *stack, *stackbase, *stacklow;// stack
-char *data, *database; // data segment
+int *text=0, *textbase, // text segment
+    *stack=0, *stackbase, *stacklow;// stack
+char *data=0, *database; // data segment
 int *idmain;
 
 char *src=0;  // pointer to source code string;
 
-#define NEWIMPROVED
-#ifndef NEWIMPROVED
-int poolsize; // default size of text/data/stack
-#endif
 int *pc, *bp, *sp, ax, cycle; // virtual machine registers
 
 int *current_id, // current parsed ID
-    *symbols, *symbolbase,    // symbol table
+    *symbols=0, *symbolbase,    // symbol table
     line,        // line number of source code
     token_val;   // value of current token (mainly for number)
 
@@ -1446,7 +1443,7 @@ int eval() {
 		//ax = printf((char *)tmp[-1], tmp[-2], tmp[-3], tmp[-4], tmp[-5], tmp[-6]);
                 //echoUSB("print ");
                 //echoUSB((char *)tmp[-1]);
-		if ((char *)sp[0] < 0xa0000000) 
+		if ((char *)sp[0] < (char *)0xa0000000) 
 		    echoUSB("prt <addr>");
                 else
 		    echoUSB((char *)sp[0]);
@@ -1498,19 +1495,6 @@ int eval() {
     }
 }
 
-
-#ifdef NEWIMPROVED
-
-char *ramptr=0;
-#define TEXTSECTION 1024 // * 4 
-#define DATASECTION 32 // * 1 
-#define STACKSECTION 32 // * 4 
-#define SYMBOLSECTION 1024 // * 4 
-#define RAMSIZE (STACKSECTION*4 + TEXTSECTION*4 + DATASECTION + SYMBOLSECTION*4)
-char interp_ram[RAMSIZE];
-
-#endif
-
 const char Csrc[] = "char else enum if int return sizeof while "
           "print printd printx malloc memset memcmp "
 	  "flareled led FbMove FbWrite backlight "
@@ -1518,26 +1502,37 @@ const char Csrc[] = "char else enum if int return sizeof while "
 	  "IRstats setTime getTime FbLine FbClear flashWrite flashRead "
 	  "exit void main";
 
-void init_interpreter()
+int G_stacksection =0;
+void init_interpreter(int textsection, int datasection, int stacksection, int symbolsection)
 {
     int i, fd;
 
-#ifdef NEWIMPROVED
-    ramptr = interp_ram;
-    memset(interp_ram, 0, RAMSIZE);
+    if (text != 0) {
+	ta_free(text);
+	ta_free(stack);
+	ta_free(data);
+	ta_free(symbols);
+	text=0;
+	stack=0;
+	data=0;
+	symbols=0;
+    }
 
-    textbase = text = (int *)ramptr;
-    ramptr += TEXTSECTION * sizeof(int);
+    /* init tinyalloc */
+    ta_init();
 
-    database = data = ramptr;
-    ramptr += DATASECTION * sizeof(char);
+    textbase = text = ta_alloc(textsection);
+    memset(textbase, 0, textsection);
 
-    stackbase = stack = (int *)ramptr;
-    ramptr += STACKSECTION * sizeof(int);
+    database = data = ta_alloc(datasection);
+    memset(database, 0, datasection);
 
-    symbolbase = symbols = (int *)ramptr;
-    ramptr += SYMBOLSECTION * sizeof(int);
+    stackbase = stack = ta_alloc(stacksection);
+    memset(stackbase, 0, stacksection);
+    G_stacksection = stacksection;
 
+    symbolbase = symbols = ta_alloc(symbolsection);
+    memset(symbolbase, 0, symbolsection);
 
     idmain = 0;
     src=0;
@@ -1558,33 +1553,6 @@ void init_interpreter()
     token_val=0;
 
     line = 1;
-#else
-    poolsize = 1 * 1024; // arbitrary size
-    line = 1;
-
-    // allocate memory
-    if (!(text = malloc(poolsize))) {
-        printf("could not malloc(%d) for text area\n", poolsize);
-        return -1;
-    }
-    if (!(data = malloc(poolsize))) {
-        printf("could not malloc(%d) for data area\n", poolsize);
-        return -1;
-    }
-    if (!(stack = malloc(poolsize))) {
-        printf("could not malloc(%d) for stack area\n", poolsize);
-        return -1;
-    }
-    if (!(symbols = malloc(poolsize))) {
-        printf("could not malloc(%d) for symbol table\n", poolsize);
-        return -1;
-    }
-
-    memset(text, 0, poolsize);
-    memset(data, 0, poolsize);
-    memset(stack, 0, poolsize);
-    memset(symbols, 0, poolsize);
-#endif
 
     src = (char *)Csrc;
 
@@ -1608,8 +1576,6 @@ void init_interpreter()
     next(); idmain = current_id; // keep track of main
 }
 
-
-
 int run()
 {
     int *tmp;
@@ -1622,11 +1588,7 @@ int run()
     }
 
     // setup stack
-#ifdef NEWIMPROVED
-    stacklow = sp = (int *)((int)stack + STACKSECTION * sizeof(int));
-#else
-    sp = (int *)((int)stack + poolsize);
-#endif
+    stacklow = sp = (int *)((int)stack + G_stacksection);
     *--sp = EXIT; // call exit if main returns
     *--sp = PUSH; tmp = sp;
     *--sp = argc;
@@ -1635,7 +1597,6 @@ int run()
 
     return eval();
 }
-
 
 void interp_stats()
 {
@@ -1647,7 +1608,7 @@ void interp_stats()
     datasz = (unsigned int)data - (unsigned int)database;
 
     /* top of stack - stacklow point */
-    stacksz =  ((unsigned int)stackbase + STACKSECTION * sizeof(int)) - (unsigned int)stacklow;
+    stacksz =  ((unsigned int)stackbase + G_stacksection) - (unsigned int)stacklow;
 
     current_id = symbols;
     while (current_id[Token]) {
@@ -1698,11 +1659,10 @@ int interpreter_main(char *prog)
 	r += 100000; /* indicate error with offset */
    }
    else {
-	init_interpreter();
+	init_interpreter(3000, 64, 64, 3000);
 	src = prog;
 	program();
 	r = run();
    }
-
    return r;
 }

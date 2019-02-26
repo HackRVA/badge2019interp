@@ -80,7 +80,7 @@ run
 
 int main() {
  FbWrite("hello world");
- flareled(100, 10, 200);
+ flareled(150, 10, 250);
  led(0, 0, 100);
  return 123;
 }
