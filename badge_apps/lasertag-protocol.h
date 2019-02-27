@@ -13,7 +13,7 @@
  *
  */
 
-#define BADGE_IR_GAME_ADDRESS 0x1A /* Arbitrary 5 bits for now ... we will need to coordinate this later */
+#define BADGE_IR_GAME_ADDRESS IR_APP1
 
 #define OPCODE_SET_GAME_START_TIME 0x00
 /* Low 12 bits of payload are signed seconds until game starts, up to +/- 34 minutes. */
