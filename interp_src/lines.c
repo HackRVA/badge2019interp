@@ -1,6 +1,7 @@
 main()
 {
    int x, y, z, a, b, c, d, e, f;
+   int z1, a1, b1, c1, d1, e1, f1;
    x = 10;
    y = 10;
 

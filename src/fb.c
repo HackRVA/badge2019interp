@@ -17,11 +17,7 @@ struct framebuffer_t G_Fb;
 
 */
 
-#define LCD_XSIZE 132
-#define LCD_YSIZE 132
-
 /* the output buffer */
-#define FBSIZE (LCD_XSIZE * LCD_YSIZE)
 unsigned short LCDbuffer[FBSIZE] ;
 
 #define BUFFER( ADDR ) LCDbuffer[(ADDR)]

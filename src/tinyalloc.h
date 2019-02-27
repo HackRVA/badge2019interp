@@ -4,8 +4,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-#define TINYALLOC_HEAP 8192
-extern char tinyalloc_heap[TINYALLOC_HEAP];
+#define TA_DISABLE_COMPACT
 
 bool ta_init();
 void *ta_alloc(size_t num);
@@ -16,5 +15,35 @@ size_t ta_num_free();
 size_t ta_num_used();
 size_t ta_num_fresh();
 bool ta_check();
+
+typedef struct Block Block;
+
+struct Block {
+    void *addr;
+    Block *next;
+    size_t size;
+};
+
+#define TA_SPLIT_THRESH 16
+#define TA_HEAP_BLOCKS 64
+typedef struct {
+    Block *free;   // first free block
+    Block *used;   // first used block
+    Block *fresh;  // first available blank block
+    unsigned int top;    // top free addr
+    Block blocks[TA_HEAP_BLOCKS];
+} Heap;
+
+extern Heap ta_heap;
+
+extern unsigned char *ta_base;
+extern unsigned char *ta_heap_start;
+extern unsigned char *ta_heap_limit;
+
+
+#define TA_BASE *ta_base
+#define TA_HEAP_START ta_heap_start
+#define TA_HEAP_LIMIT ta_heap_limit
+
 
 #endif
