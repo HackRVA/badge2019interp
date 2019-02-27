@@ -331,8 +331,6 @@ void ProcessIO(void)
     static int doInterpreter = 0;
     int i;
 
-    if (mchipUSBnotReady()) return;
-
     /*
 	this ProcessIO() is the badge main loop
 	buttons are serviced only when the app finishes
@@ -342,6 +340,8 @@ void ProcessIO(void)
     IRhandler(); /* do any pending IR callbacks */
     menus();
     FbPushBuffer();
+
+    if (mchipUSBnotReady()) return;
 
 
     if (writeLOCK == 0) {
