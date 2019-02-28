@@ -11,6 +11,7 @@
 #include "S6B33.h"
 #include "timer1_int.h"
 #include "tinyalloc.h"
+#include "fb.h"
 
 static jmp_buf error_exit;
 
@@ -217,7 +218,7 @@ void IflashInit()
 
 }
 
-unsigned int *IflashWrite(unsigned int data) {
+unsigned int IflashWrite(unsigned int data) {
     if (IflashAddrPtr == 0) IflashInit();
 
     NVMWriteWord(IflashAddrPtr, data);
@@ -1502,37 +1503,100 @@ const char Csrc[] = "char else enum if int return sizeof while "
 	  "IRstats setTime getTime FbLine FbClear flashWrite flashRead "
 	  "exit void main";
 
-int G_stacksection =0;
-void init_interpreter(int textsection, int datasection, int stacksection, int symbolsection)
+/*
+   use the frame buffer memory
+   but you can't print/draw or will 
+   corrupt the ram arean
+
+
+*/
+#define TEXTSZ (2048+1024)
+#define DATASZ 256
+#define STACKSZ 256
+#define SYMBOLSZ 4096
+
+#define INTERP_RAM interpreter_ram
+#define INTERP_RAM_SIZE (TEXTSZ+DATASZ+STACKSZ+SYMBOLSZ)
+char interpreter_ram[INTERP_RAM_SIZE];
+
+/* default percent (100*scaled) of ram for each section */
+unsigned int G_textpct=38, G_datapct=6, G_stackpct=6, G_symbolpct=50;
+
+/* (percent * ramsize)/100 */
+unsigned int textsz, datasz, stacksz, symbolsz;
+
+void interpreter_allocation(int textpct, int datapct, int stackpct, int symbolpct)
+{
+    G_textpct = textpct;
+    G_datapct = datapct;
+    G_stackpct = stackpct;
+    G_symbolpct = symbolpct;
+}
+
+void interpreter_use_fb(int yes)
+{
+    int ramsz;
+
+    if (!yes) {
+	ta_heap_start = INTERP_RAM;
+	ta_heap_limit = &INTERP_RAM[INTERP_RAM_SIZE];
+    }
+    else {
+	/* 
+	    LCDbuffer is short int 132*132*2=34848, 
+	    leave first 4 text lines alone
+	    == 32 scanlines or 8448 bytes
+	    132*132*2-132*8*2*4
+	    26400
+
+	    reserved at the begining == Top scans of LCD
+	*/
+	#define TEXTLINES 4
+	#define SCANLINES_RESERVED (8 * TEXTLINES)
+	#define LCD_RESERVED (SCANLINES_RESERVED * LCD_XSIZE * sizeof(short))
+
+	ta_heap_start = (char *)LCDbuffer;
+	//ta_heap_start += 132*2 * 8*4;
+	ta_heap_start += LCD_RESERVED;
+	ta_heap_limit = &LCDbuffer[FBSIZE];
+
+	FbClear(); 
+	FbMove(0,0); /* in case user forgets */
+    }
+    ramsz = (ta_heap_limit - ta_heap_start);
+    textsz = (G_textpct * ramsz) / 100;
+    datasz = (G_datapct * ramsz) / 100;
+    stacksz = (G_stackpct * ramsz) / 100;
+    symbolsz = (G_symbolpct * ramsz) / 100;
+}
+
+void init_interpreter()
 {
     int i, fd;
 
-    if (text != 0) {
-	ta_free(text);
-	ta_free(stack);
-	ta_free(data);
-	ta_free(symbols);
-	text=0;
-	stack=0;
-	data=0;
-	symbols=0;
+    text=0;
+    stack=0;
+    data=0;
+    symbols=0;
+
+    if (ta_heap_start == 0) {
+	interpreter_use_fb(0);
     }
 
     /* init tinyalloc */
     ta_init();
 
-    textbase = text = ta_alloc(textsection);
-    memset(textbase, 0, textsection);
+    textbase = text = ta_alloc(textsz);
+    memset(textbase, 0, textsz);
 
-    database = data = ta_alloc(datasection);
-    memset(database, 0, datasection);
+    database = data = ta_alloc(datasz);
+    memset(database, 0, datasz);
 
-    stackbase = stack = ta_alloc(stacksection);
-    memset(stackbase, 0, stacksection);
-    G_stacksection = stacksection;
+    stackbase = stack = ta_alloc(stacksz);
+    memset(stackbase, 0, stacksz);
 
-    symbolbase = symbols = ta_alloc(symbolsection);
-    memset(symbolbase, 0, symbolsection);
+    symbolbase = symbols = ta_alloc(symbolsz);
+    memset(symbolbase, 0, symbolsz);
 
     idmain = 0;
     src=0;
@@ -1584,11 +1648,11 @@ int run()
 
     if (!(pc = (int *)idmain[Value])) {
 	echoUSB("main() not defined");
-	longjmp(error_exit, -1);
+	longjmp(error_exit, 666);
     }
 
     // setup stack
-    stacklow = sp = (int *)((int)stack + G_stacksection);
+    stacklow = sp = (int *)((int)stack + stacksz);
     *--sp = EXIT; // call exit if main returns
     *--sp = PUSH; tmp = sp;
     *--sp = argc;
@@ -1600,38 +1664,42 @@ int run()
 
 void interp_stats()
 {
-    unsigned int textsz, datasz, stacksz, symbolsz;
+    unsigned int used_textsz, used_datasz, used_stacksz, used_symbolsz;
     char textbuf[9]; /* 1 for null */
 
-    textsz = (unsigned int)text - (unsigned int)textbase;
+    used_textsz = (unsigned int)text - (unsigned int)textbase;
+    used_textsz = (used_textsz * 100) / textsz;
 
-    datasz = (unsigned int)data - (unsigned int)database;
+    used_datasz = (unsigned int)data - (unsigned int)database;
+    used_datasz = (used_datasz * 100) / datasz;
 
     /* top of stack - stacklow point */
-    stacksz =  ((unsigned int)stackbase + G_stacksection) - (unsigned int)stacklow;
+    used_stacksz =  ((unsigned int)stackbase + stacksz) - (unsigned int)stacklow;
+    used_stacksz = (used_stacksz * 100) / stacksz;
 
     current_id = symbols;
     while (current_id[Token]) {
         current_id = current_id + IdSize;
     }
-    symbolsz = (unsigned int)current_id - (unsigned int)symbols ;
+    used_symbolsz = (unsigned int)current_id - (unsigned int)symbols ;
+    used_symbolsz = (used_symbolsz * 100) / symbolsz;
 
     //echoUSB("TX,DA,ST,SY");
 
-    decDump(textsz, textbuf);
-    echoUSB("\r\nT ");
+    decDump(used_textsz, textbuf);
+    echoUSB("\r\nText %");
     echoUSB(textbuf);
 
-    decDump(datasz, textbuf);
-    echoUSB("\r\nD ");
+    decDump(used_datasz, textbuf);
+    echoUSB("\r\nData %");
     echoUSB(textbuf);
 
-    decDump(stacksz, textbuf);
-    echoUSB("\r\nS ");
+    decDump(used_stacksz, textbuf);
+    echoUSB("\r\nStack %");
     echoUSB(textbuf);
 
-    decDump(symbolsz, textbuf);
-    echoUSB("\r\nY ");
+    decDump(used_symbolsz, textbuf);
+    echoUSB("\r\nSymbol %");
     echoUSB(textbuf);
 
     echoUSB("\r\n");
@@ -1659,7 +1727,7 @@ int interpreter_main(char *prog)
 	r += 100000; /* indicate error with offset */
    }
    else {
-	init_interpreter(3000, 64, 64, 3000);
+	init_interpreter();
 	src = prog;
 	program();
 	r = run();

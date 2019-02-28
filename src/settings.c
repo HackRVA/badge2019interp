@@ -56,7 +56,6 @@ const struct menu_t ping_m[] = {
 */
 void myBadgeid_cb(struct menu_t *h) {
    struct menu_t *selectedMenu;
-   extern const char hextab[];
 
    //dstMenu = getSelectedMenuStack(1);
    selectedMenu = getSelectedMenu();

@@ -293,6 +293,16 @@ void doLine()
 	lineOutBuffer[lineOutBufPtr] = 0; 
 	//memset(sourceBuffer, 0, SOURCEBUFFERSIZE);
     }
+    else if (strncmp(textBuffer,"alloc",5) == 0) {
+        /* textpct datapct stackpct symbolpct */
+	interpreter_allocation(38, 6, 6, 50);
+    } 
+    else if (strncmp(textBuffer,"usefb",5) == 0) {
+	interpreter_use_fb(1);
+    } 
+    else if (strncmp(textBuffer,"useram",6) == 0) {
+	interpreter_use_fb(0);
+    } 
     else if (strncmp(textBuffer,"new",3) == 0) {
 	    memset(sourceBuffer, 0, SOURCEBUFFERSIZE);
     } 
@@ -324,12 +334,36 @@ void doLine()
     textBufPtr=0;
 }
 
+
+/*
+  flush twice in case additional data send
+*/
+void check_usb_output(int *outp, int force)
+{
+  if (force || (*outp == (CDC_DATA_OUT_EP_SIZE-1))) {
+	USB_Out_Buffer[*outp] = 0;
+	*outp = 0; 
+	flushUSB();
+	flushUSB();
+  }
+}
+
+#define CHECK_USB_OUTPUT \
+  if (outp == (CDC_DATA_OUT_EP_SIZE-1)) { \
+	USB_Out_Buffer[outp] = 0; \
+	outp = 0; \
+	flushUSB(); \
+	flushUSB(); \
+  };
+
 static unsigned char writeLOCK=0;
 void ProcessIO(void)
 {
     unsigned char nread=0;
     static int doInterpreter = 0;
     int i;
+
+    if (mchipUSBnotReady()) return;
 
     /*
 	this ProcessIO() is the badge main loop
@@ -341,28 +375,12 @@ void ProcessIO(void)
     menus();
     FbPushBuffer();
 
-    if (mchipUSBnotReady()) return;
-
 
     if (writeLOCK == 0) {
 	nread = getsUSBUSART(USB_In_Buffer, CDC_DATA_IN_EP_SIZE);
     }
 
     if(nread > 0) {
-	// LCD contrast
-#ifdef BADFORINTERP
-	if ((USB_In_Buffer[0] == '-') || (USB_In_Buffer[0] == '+')) {
-	   // for S6B33 G_contrast1
-	   if (USB_In_Buffer[0] == '-') G_contrast1 -= 4;
-	   if (USB_In_Buffer[0] == '+') G_contrast1 += 4;
-
-	   LCDReset();
-
-	   USB_In_Buffer[0] = 0;
-	}
-#endif
-
-	if (USB_In_Buffer[0] != 0) {
 	   int i, outp=0;
 
 	   for (i=0; i < nread; i++) {
@@ -372,11 +390,13 @@ void ProcessIO(void)
 		   if (textBufPtr > 0) textBufPtr--;
 
 		   USB_Out_Buffer[outp++] = '';
-		   if (outp==CDC_DATA_OUT_EP_SIZE) outp--;
+		   check_usb_output(&outp, 0);
+
 		   USB_Out_Buffer[outp++] = ' ';
-		   if (outp==CDC_DATA_OUT_EP_SIZE) outp--;
+		   check_usb_output(&outp, 0);
+
 		   USB_Out_Buffer[outp++] = '';
-		   if (outp==CDC_DATA_OUT_EP_SIZE) outp--;
+		   check_usb_output(&outp, 0);
 		}
 		else {
 		   textBuffer[textBufPtr++] = USB_In_Buffer[i]; // used for python
@@ -385,23 +405,21 @@ void ProcessIO(void)
 		   //if ((USB_In_Buffer[i] == 10) | (USB_In_Buffer[i] == 13)) {
 		   if (USB_In_Buffer[i] == 10) {
 			USB_Out_Buffer[outp++] = 13; // insert before the char
-		        if (outp==CDC_DATA_OUT_EP_SIZE) outp--;
+		   	check_usb_output(&outp, 0);
+
 			USB_Out_Buffer[outp++] = 10; // insert before the char
-		        if (outp==CDC_DATA_OUT_EP_SIZE) outp--;
-		        USB_Out_Buffer[outp] = 0;
+
+		   	check_usb_output(&outp, 1); // force out
 
 			doLine();
 		   }
 		   else {
-		      USB_Out_Buffer[outp++] = USB_In_Buffer[i];
-		      if (outp==CDC_DATA_OUT_EP_SIZE) outp--;
-		      USB_Out_Buffer[outp] = 0;
+			USB_Out_Buffer[outp++] = USB_In_Buffer[i];
+		   	check_usb_output(&outp, 0);
 		   }
 		}
-	   }
-	   USB_Out_Buffer[outp] = 0; // null in case
-	   //USB_In_Buffer[0] = 0;
-	}
+	    }
+	    USB_Out_Buffer[outp] = 0; // null in case
 	nread = 0;
     }
 

@@ -80,18 +80,20 @@ int main()
 }
 
 int main() {
+    FbMove(10, 0);
     FbWrite("hello world");
 }
 run
 
 int main() {
-    FbMove(50, 40);
+    FbMove(10, 0);
     FbWrite("yo");
 }
 run
 
 
 int main() {
+ FbMove(10, 0);
  FbWrite("hello world");
  flareled(100, 10, 200);
  led(0, 0, 100);

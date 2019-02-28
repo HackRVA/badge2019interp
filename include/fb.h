@@ -13,6 +13,13 @@ enum {
     FB_MOVE, 			/* (x 8bit, y 8bit) where the next stuff goes */
 };
 
+#define LCD_XSIZE 132
+#define LCD_YSIZE 132
+
+/* the output buffer */
+#define FBSIZE (LCD_XSIZE * LCD_YSIZE)
+extern unsigned short LCDbuffer[] ;
+
 struct vector8_t {
    unsigned char x;
    unsigned char y;
