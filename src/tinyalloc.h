@@ -25,7 +25,7 @@ struct Block {
 };
 
 #define TA_SPLIT_THRESH 16
-#define TA_HEAP_BLOCKS 64
+#define TA_HEAP_BLOCKS 32
 typedef struct {
     Block *free;   // first free block
     Block *used;   // first used block

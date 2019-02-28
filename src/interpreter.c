@@ -1519,31 +1519,48 @@ const char Csrc[] = "char else enum if int return sizeof while "
 #define INTERP_RAM_SIZE (TEXTSZ+DATASZ+STACKSZ+SYMBOLSZ)
 char interpreter_ram[INTERP_RAM_SIZE];
 
-unsigned int textsz, datasz, stacksz, symbolsz;
+/* default percent (100*scaled) of ram for each section */
+unsigned int G_textpct=38, G_datapct=6, G_stackpct=6, G_symbolpct=50;
+
+/* (percent * ramsize)/100 */
 unsigned int textsz, datasz, stacksz, symbolsz;
 
-void interpreter_use_fb()
+void interpreter_allocation(int textpct, int datapct, int stackpct, int symbolpct)
 {
-    /* 
-	LCDbuffer is short int 132*132*2=34848, 
-	leave first 4 text lines alone
-	== 32 scanlines or 8448 bytes
-	132*132*2-132*8*2*4
-	26400
+    G_textpct = textpct;
+    G_datapct = datapct;
+    G_stackpct = stackpct;
+    G_symbolpct = symbolpct;
+}
 
-    */
-    ta_heap_start = (char *)LCDbuffer;
-    ta_heap_start += 132*2 * 8*4;
-    ta_heap_limit = &LCDbuffer[FBSIZE];
+void interpreter_use_fb(int yes)
+{
+    int ramsz;
 
-    /* 26400 bytes available */
-    textsz   = 10 * 1024;
-    datasz   =  4 * 1024; 
-    stacksz  =  1 * 1024;
-    symbolsz = 10 * 1024;
+    if (!yes) {
+	ta_heap_start = INTERP_RAM;
+	ta_heap_limit = &INTERP_RAM[INTERP_RAM_SIZE];
+    }
+    else {
+	/* 
+	    LCDbuffer is short int 132*132*2=34848, 
+	    leave first 4 text lines alone
+	    == 32 scanlines or 8448 bytes
+	    132*132*2-132*8*2*4
+	    26400
+	*/
+	ta_heap_start = (char *)LCDbuffer;
+	ta_heap_start += 132*2 * 8*4;
+	ta_heap_limit = &LCDbuffer[FBSIZE];
 
-    FbClear(); 
-    FbMove(0,0); /* in case user forgets */
+	FbClear(); 
+	FbMove(0,0); /* in case user forgets */
+    }
+    ramsz = (ta_heap_limit - ta_heap_start);
+    textsz = (G_textpct * ramsz) / 100;
+    datasz = (G_datapct * ramsz) / 100;
+    stacksz = (G_stackpct * ramsz) / 100;
+    symbolsz = (G_symbolpct * ramsz) / 100;
 }
 
 void init_interpreter()
@@ -1556,12 +1573,7 @@ void init_interpreter()
     symbols=0;
 
     if (ta_heap_start == 0) {
-	ta_heap_start = INTERP_RAM;
-	ta_heap_limit = &INTERP_RAM[INTERP_RAM_SIZE];
-	textsz = TEXTSZ;
-	datasz = DATASZ; 
-	stacksz = STACKSZ;
-	symbolsz = SYMBOLSZ;
+	interpreter_use_fb(0);
     }
 
     /* init tinyalloc */
@@ -1702,8 +1714,6 @@ int interpreter_main(char *prog)
 {
 #endif
    int r=0;
-
-   interpreter_use_fb();
 
    /* in case of error */
    if (r=setjmp(error_exit)) {

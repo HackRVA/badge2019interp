@@ -1,7 +1,6 @@
 main()
 {
    int x, y, z, a, b, c, d, e, f;
-   int z1, a1, b1, c1, d1, e1, f1;
    x = 10;
    y = 10;
 
@@ -30,9 +29,9 @@ main()
       setNote(x,4096);
    }
    setNote(60,4096);
-   FbMove(10,80);
+   FbMove(10,16);
    FbWrite(getTime());
-   FbMove(10,90);
+   FbMove(10,20);
    FbWrite("abcdefghijk");
 
    return 12345;
