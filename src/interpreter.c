@@ -1548,9 +1548,16 @@ void interpreter_use_fb(int yes)
 	    == 32 scanlines or 8448 bytes
 	    132*132*2-132*8*2*4
 	    26400
+
+	    reserved at the begining == Top scans of LCD
 	*/
+	#define TEXTLINES 4
+	#define SCANLINES_RESERVED (8 * TEXTLINES)
+	#define LCD_RESERVED (SCANLINES_RESERVED * LCD_XSIZE * sizeof(short))
+
 	ta_heap_start = (char *)LCDbuffer;
-	ta_heap_start += 132*2 * 8*4;
+	//ta_heap_start += 132*2 * 8*4;
+	ta_heap_start += LCD_RESERVED;
 	ta_heap_limit = &LCDbuffer[FBSIZE];
 
 	FbClear(); 
