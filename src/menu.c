@@ -18,6 +18,7 @@
 #include "maze.h"
 #include "QC.h"
 #include "lasertag.h"
+#include "irxmit.h"
 
 
 #define MAIN_MENU_BKG_COLOR GREY2
@@ -469,6 +470,7 @@ const struct menu_t games_m[] = {
    {"Sensors",       VERT_ITEM, FUNCTION, {(struct menu_t *)adc_cb} },
    {"Maze",          VERT_ITEM, FUNCTION, {(struct menu_t *)maze_cb} },
    {"Laser Tag",     VERT_ITEM, FUNCTION, {(struct menu_t *)lasertag_cb} },
+   {"IR XMIT",       VERT_ITEM, FUNCTION, {(struct menu_t *)irxmit_cb} },
    {"Back",	     VERT_ITEM|LAST_ITEM, BACK, {NULL}},
 };
 
