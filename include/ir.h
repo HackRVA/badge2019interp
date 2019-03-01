@@ -1,12 +1,14 @@
 #ifndef ir_h
 #define ir_h
 
+/* This packet is transmitted over IR shifting the bits out high order bit first, low order bit last */
 struct IRpacket_t {
-       unsigned  data:16;
-       unsigned  badgeId:9;
-       unsigned  address:5;
-       unsigned  command:1;
-       unsigned  startBit:1;
+       unsigned  data:16;	/* low order 16 bits, this is for use by apps as they see fit */
+       unsigned  badgeId:9;	/* Badge ID of RECEIVER (or 0 for broadcast). IF badgeID field is not */
+				/* the badge ID of receiver and is not 0, then it will be DROPPED by receiver. */
+       unsigned  address:5;	/* Used to identify which app is to receive this packet. See IR_APP0... IR_APP7, below */
+       unsigned  command:1;	/* apps may use this bit however they like */
+       unsigned  startBit:1;	/* This is the high order bit, will always be 1 on receipt, forced to 1 on xmit. */
 } ;
 
 union IRpacket_u {
