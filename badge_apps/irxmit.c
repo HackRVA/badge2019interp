@@ -7,6 +7,10 @@
 #include "../linux/linuxcompat.h"
 #include "lasertag-protocol.h"
 
+static const struct gsysdata {
+	unsigned short badgeId;
+} G_sysData = { 99 };
+
 #else
 
 #include "colors.h"
@@ -14,6 +18,7 @@
 #include "buttons.h"
 #include "ir.h"
 #include "lasertag-protocol.h"
+#include "flash.h"
 
 /* TODO: I shouldn't have to declare these myself. */
 #define size_t int
@@ -127,19 +132,19 @@ static void send_a_packet(unsigned int packet)
 
 }
 
+#define BASE_STATION_BADGE_ID G_sysData.badgeId
+
 static void send_hit(void)
 {
 	unsigned int badge_id, team_id;
 
-	badge_id = 15;
+	badge_id = G_sysData.badgeId;
 	team_id = 5;
 
 	send_a_packet(build_packet(1, 1, BADGE_IR_GAME_ADDRESS, badge_id,
 		(OPCODE_HIT << 12) | team_id));
 	app_state = CHECK_THE_BUTTONS;
 }
-
-#define BASE_STATION_BADGE_ID 99
 
 static void send_start_time(void)
 {
