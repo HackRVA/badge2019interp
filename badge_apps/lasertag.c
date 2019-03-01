@@ -66,7 +66,7 @@ static int packet_queue[QUEUE_SIZE] = { 0 };
 unsigned int last_packet = 0;
 static unsigned int old_value = 0;
 
-static int screen_changed = 0;
+int lasertag_screen_changed = 0;
 #define NO_GAME_START_TIME -1000000
 static volatile int packets_received = 0;
 static volatile int seconds_until_game_starts = NO_GAME_START_TIME;
@@ -272,7 +272,7 @@ static void draw_menu(void)
 				strcpy(timecode, "");
 				game_duration = -1;
 				seconds_until_game_starts = NO_GAME_START_TIME;
-				screen_changed = 1;
+				lasertag_screen_changed = 1;
 				color = YELLOW;
 			}
 		}
@@ -286,7 +286,7 @@ static void draw_menu(void)
 		itoa(str2, suppress_further_hits_until - current_time, 10);
 		if (old_deadtime != suppress_further_hits_until - current_time) {
 			old_deadtime = suppress_further_hits_until - current_time;
-			screen_changed = 1;
+			lasertag_screen_changed = 1;
 		}
 		strcat(str, str2);
 		FbWriteLine(str);
@@ -348,7 +348,7 @@ static void menu_change_current_selection(int direction)
 		menu.current_item = menu.nitems - 1;
 	else if (menu.current_item >= menu.nitems)
 		menu.current_item = 0;
-	screen_changed |= (menu.current_item != old);
+	lasertag_screen_changed |= (menu.current_item != old);
 }
 
 void lasertag_ir_packet_callback(struct IRpacket_t packet)
@@ -361,7 +361,7 @@ void lasertag_ir_packet_callback(struct IRpacket_t packet)
 	if (last_packet != old_value) {
 		old_value = last_packet;
 	}
-	screen_changed = 1;
+	lasertag_screen_changed = 1;
 
 	next_queue_in = (queue_in + 1) % QUEUE_SIZE;
 	if (next_queue_in == queue_out) /* queue is full, drop packet */
@@ -377,7 +377,7 @@ static void setup_main_menu(void)
 	strcpy(menu.title, "");
 	menu_add_item("SHOOT", GAME_SHOOT, 0);
 	menu_add_item("EXIT GAME", GAME_CONFIRM_EXIT, 0);
-	screen_changed = 1;
+	lasertag_screen_changed = 1;
 }
 
 static void setup_confirm_exit_menu(void)
@@ -387,7 +387,7 @@ static void setup_confirm_exit_menu(void)
 	strcpy(menu.title, "REALLY QUIT?");
 	menu_add_item("DO NOT QUIT", GAME_EXIT_ABANDONED, 0);
 	menu_add_item("REALLY QUIT", GAME_EXIT, 0);
-	screen_changed = 1;
+	lasertag_screen_changed = 1;
 }
 
 #ifndef __linux__
@@ -424,7 +424,7 @@ static void initial_state(void)
 	queue_out = 0;
 	setup_main_menu();
 	game_state = GAME_MAIN_MENU;
-	screen_changed = 1;
+	lasertag_screen_changed = 1;
 }
 
 static void game_exit(void)
@@ -470,7 +470,7 @@ static int get_time(void)
 	/* I guess this will wrap-around at midnight. Do we actually care about that? */
 	if (previous_sec != wclock.sec) {
 		previous_sec = wclock.sec;
-		screen_changed = 1;
+		lasertag_screen_changed = 1;
 	}
 #endif
 	return 3600 * (int) wclock.hour + 60 * (int) wclock.min + (int) wclock.sec;
@@ -519,7 +519,7 @@ static void process_hit(unsigned int packet)
 	hit_table[nhits].timestamp = (unsigned short) timestamp;
 	hit_table[nhits].team = shooter_team;
 	nhits++;
-	screen_changed = 1;
+	lasertag_screen_changed = 1;
 	if (nhits >= MAX_HIT_TABLE_ENTRIES)
 		nhits = 0;
 	suppress_further_hits_until = current_time + 30;
@@ -609,12 +609,12 @@ static void process_packet(unsigned int packet)
 		set_game_start_timestamp(seconds_until_game_starts);
 		if (seconds_until_game_starts > 0)
 			nhits = 0; /* don't reset counter if game already started? */
-		screen_changed = 1;
+		lasertag_screen_changed = 1;
 		break;
 	case OPCODE_SET_GAME_DURATION:
 		/* time is 12 unsigned number */
 		game_duration = payload & 0x0fff;
-		screen_changed = 1;
+		lasertag_screen_changed = 1;
 		break;
 	case OPCODE_HIT:
 		process_hit(packet);
@@ -624,11 +624,11 @@ static void process_packet(unsigned int packet)
 		break;
 	case OPCODE_SET_BADGE_TEAM:
 		team = payload & 0x0f; /* TODO sanity check this better. */
-		screen_changed = 1;
+		lasertag_screen_changed = 1;
 		break;
 	case OPCODE_SET_GAME_VARIANT:
 		game_variant = payload & 0x0f; /* TODO sanity check this better. */
-		screen_changed = 1;
+		lasertag_screen_changed = 1;
 		break;
 	case OPCODE_GAME_ID:
 		game_id = payload & 0x0fff;
@@ -682,7 +682,7 @@ static void advance_time()
 	if (suppress_further_hits_until <= current_time)
 		suppress_further_hits_until = -1;
 	if (old_time != seconds_until_game_starts || old_suppress != suppress_further_hits_until)
-		screen_changed = 1;
+		lasertag_screen_changed = 1;
 }
 
 static void game_process_button_presses(void)
@@ -700,7 +700,7 @@ static void game_process_button_presses(void)
 	} else if (LEFT_BTN_AND_CONSUME) {
 	} else if (RIGHT_BTN_AND_CONSUME) {
 	}
-	if (game_state == GAME_PROCESS_BUTTON_PRESSES && screen_changed)
+	if (game_state == GAME_PROCESS_BUTTON_PRESSES && lasertag_screen_changed)
 		game_state = GAME_MAIN_MENU;
 	return;
 }
@@ -708,10 +708,10 @@ static void game_process_button_presses(void)
 static void game_screen_render(void)
 {
 	game_state = GAME_PROCESS_BUTTON_PRESSES;
-	if (!screen_changed)
+	if (!lasertag_screen_changed)
 		return;
 	FbSwapBuffers();
-	screen_changed = 0;
+	lasertag_screen_changed = 0;
 }
 
 static void game_shoot(void)

@@ -107,6 +107,8 @@ void IRPair()
 
 volatile union IRpacket_u G_hack={0};
 
+extern int lasertag_screen_changed;
+
 /* handler for IR recv in main thread */
 void IRhandler() 
 {
@@ -118,6 +120,7 @@ void IRhandler()
     /* curr == next == empty */
     if (IRpacketInCurr != IRpacketInNext) {
         IR_inpkts++;
+	lasertag_screen_changed = 1;
         // if (IRpacketsIn[IRpacketInCurr].p.address < IR_LASTADRESS) /* basic sanity check before we call unknown handlers */
             IRcallbacks[ IRpacketsIn[IRpacketInCurr].p.address].handler( IRpacketsIn[IRpacketInCurr].p );
 
