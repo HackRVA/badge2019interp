@@ -21,6 +21,7 @@ extern char *strcpy(char *dest, const char *src);
 extern char *strncpy(char *dest, const char *src, size_t n);
 extern void *memset(void *s, int c, size_t n);
 extern char *strcat(char *dest, const char *src);
+static volatile unsigned int last_packet_out = 0;
 
 
 #endif
@@ -109,6 +110,8 @@ static void send_a_packet(unsigned int packet)
 	union IRpacket_u p;
 
 	p.v = packet;
+	last_packet_out = packet;
+	something_changed = 1;
 	IRqueueSend(p);
 
 #ifdef __linux__
@@ -198,12 +201,27 @@ static void send_dump(void)
 	app_state = CHECK_THE_BUTTONS;
 }
 
+static to_hex(char *buffer, unsigned int v)
+{
+	int i;
+	int nybble;
+	char *a = "0123456789ABCDEF";
+
+	for (i = 0; i < 8; i++) {
+		nybble = v & 0x0f;
+		buffer[7 - i] = a[nybble];
+		v = v >> 4;
+	}
+	buffer[8] = '\0';
+}
+
 static void draw_menu(void)
 {
 	int i;
 	char item[20];
 
 	FbClear();
+	FbColor(WHITE);
 	for (i = 0; i < MAX_MENU_CHOICES; i++) {
 		if (i == menu_choice) {
 			FbMove(5, i * 10);
@@ -213,6 +231,9 @@ static void draw_menu(void)
 		FbMove(20, i * 10);
 		FbWriteLine(item);
 	}
+	FbMove(5, 120);
+	to_hex(item, last_packet_out);
+	FbWriteLine(item);
 	app_state = RENDER_SCREEN;
 }
 
