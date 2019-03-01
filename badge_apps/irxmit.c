@@ -7,11 +7,9 @@
 #include "../linux/linuxcompat.h"
 #include "lasertag-protocol.h"
 
-static unsigned short get_badge_id(void)
-{
-	return 99;
-}
-
+static const struct gsysdata {
+	unsigned short badgeId;
+} G_sysData = { 99 };
 
 #else
 
@@ -133,18 +131,16 @@ static void send_a_packet(unsigned int packet)
 
 }
 
+#define BASE_STATION_BADGE_ID G_sysData.badgeId
+
 static void send_hit(void)
 {
 	unsigned int team_id;
-
-	team_id = 5;
 
 	send_a_packet(build_packet(1, 1, BADGE_IR_GAME_ADDRESS, BADGE_IR_BROADCAST_ID,
 		(OPCODE_HIT << 12) | (get_badge_id() << 4) | team_id));
 	app_state = CHECK_THE_BUTTONS;
 }
-
-#define BASE_STATION_BADGE_ID 99
 
 static void send_start_time(void)
 {
