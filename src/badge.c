@@ -281,8 +281,8 @@ void doLine()
 	lineOutBufPtr = 0; 
 	lineOutBuffer[lineOutBufPtr] = 0; 
 
-	strcpy(&(lineOutBuffer[lineOutBufPtr]), "\r\nR ");
-	lineOutBufPtr += 4;
+	strcpy(&(lineOutBuffer[lineOutBufPtr]), "\r\nRet ");
+	lineOutBufPtr += 6;
 
 	decDump(r, &(lineOutBuffer[lineOutBufPtr]));
 	lineOutBufPtr += 8; /* always converts 8 digits */
@@ -293,10 +293,6 @@ void doLine()
 	lineOutBuffer[lineOutBufPtr] = 0; 
 	//memset(sourceBuffer, 0, SOURCEBUFFERSIZE);
     }
-    else if (strncmp(textBuffer,"alloc",5) == 0) {
-        /* textpct datapct stackpct symbolpct */
-	interpreter_allocation(38, 6, 6, 50);
-    } 
     else if (strncmp(textBuffer,"usefb",5) == 0) {
 	interpreter_use_fb(1);
     } 

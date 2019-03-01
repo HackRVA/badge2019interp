@@ -6,10 +6,17 @@
 
 extern unsigned char QC_IR;
 
+enum { 
+   INIT,
+   RUN
+};
+
+
 #define LED_LVL 50
 void QC_cb()
 {
     //static unsigned char call_count = 0;
+    static int QC_state=0;
     unsigned char redraw = 0;
     union IRpacket_u pkt;
     pkt.p.command = IR_WRITE;
@@ -19,19 +26,8 @@ void QC_cb()
     //pkt.p.data    = PING_PAIR_REQUEST;
     pkt.p.data = 1;//PACKRGB(0, 100, 100);
     
-    FbTransparentIndex(0);
-    FbColor(GREEN);
-    FbClear();
-
-    FbMove(45, 45);
-    FbWriteLine("QC!");
-    FbMove(15, 55);
-    FbWriteLine("Do things");
-    FbSwapBuffers();
-    led(0, 30, 0);
-    QC_IR = 0;
-    
-    
+   
+    switch(QC_state)
     {
 //        if(pinged){
 //            setNote(77, 1024);
@@ -45,19 +41,35 @@ void QC_cb()
 //            pinged = 0;
 //            redraw = 1;
 //        }
-        
+	case INIT:
+	    FbTransparentIndex(0);
+	    FbColor(GREEN);
+	    FbClear();
+
+	    FbMove(45, 45);
+	    FbWriteLine("QC!");
+	    FbMove(15, 55);
+	    FbWriteLine("Do things");
+	    FbSwapBuffers();
+	    led(0, 30, 0);
+	    QC_IR = 0;
+	    QC_state++;
+            redraw = 1;
+	    break;
+         
+	case RUN:
         // Received a QC ping
         if(QC_IR == 1){
             setNote(77, 1024);
-            FbMove(10, 50);
+            FbMove(10, 40);
             FbColor(GREEN);
             //FbFilledRectangle(20, 20);
             FbWriteLine("I was pinged");
             led(100, 0, 100); 
             QC_IR = 0;
-            redraw = 1;
             pkt.p.data = 2;
             IRqueueSend(pkt);
+            redraw = 1;
         }
         // Received a QC ping 
         else if(QC_IR == 2){
@@ -97,6 +109,7 @@ void QC_cb()
             FbWriteLine("EXITING");
             FbSwapBuffers();
             led(0,0,0);
+            QC_state = 0;
             returnToMenus();
 	    return;
         }
