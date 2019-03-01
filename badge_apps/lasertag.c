@@ -688,7 +688,7 @@ static void game_screen_render(void)
 	game_state = GAME_PROCESS_BUTTON_PRESSES;
 	if (!screen_changed)
 		return;
-	FbSwapBuffers();
+	FbPushBuffer();
 	screen_changed = 0;
 }
 
