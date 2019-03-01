@@ -697,7 +697,7 @@ static void game_shoot(void)
 	unsigned int packet;
 	unsigned short payload;
 
-	payload = (OPCODE_HIT << 12) | (team & 0x0f);
+	payload = (OPCODE_HIT << 12) | (get_badge_id() << 4) | (team & 0x0f);
 	packet = build_ir_packet(0, 1, BADGE_IR_GAME_ADDRESS, BADGE_IR_BROADCAST_ID, payload);
 	send_ir_packet(packet);
 
