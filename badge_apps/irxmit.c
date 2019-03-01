@@ -98,10 +98,10 @@ static struct menu_item m[] = {
 static unsigned int build_packet(unsigned char cmd, unsigned char start,
 			unsigned char address, unsigned short badge_id, unsigned short payload)
 {
-	return ((cmd & 0x01) << 31) |
-		((start & 0x01) << 30) |
-		((address & 0x01f) << 25) |
-		((badge_id & 0x1ff) << 16) |
+	return (((unsigned int) start & 0x01) << 31) |
+		(((unsigned int) cmd & 0x01) << 30) |
+		(((unsigned int) address & 0x01f) << 25) |
+		(((unsigned int) badge_id & 0x1ff) << 16) |
 		(payload);
 }
 
