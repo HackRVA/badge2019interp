@@ -63,9 +63,12 @@ static int get_badge_id(void)
 static int queue_in;
 static int queue_out;
 static int packet_queue[QUEUE_SIZE] = { 0 };
+unsigned int last_packet = 0;
+static unsigned int old_value = 0;
 
 static int screen_changed = 0;
 #define NO_GAME_START_TIME -1000000
+static volatile int packets_received = 0;
 static volatile int seconds_until_game_starts = NO_GAME_START_TIME;
 static volatile unsigned int game_id = -1;
 static volatile int game_duration = -1;
@@ -325,6 +328,14 @@ static void draw_menu(void)
 	FbMove(10, 120);
 	FbWriteLine(timecode);
 #endif
+	FbMove(10, 120);
+	// itoa(str2, packets_received, 10);
+	itoa(str2, IR_inpkts, 10);
+	strcat(str2, "P ");
+	FbWriteLine(str2);
+	itoa(str2, last_packet, 16);
+	FbMove(60, 120);
+	FbWriteLine(str2);
 
 	game_state = GAME_SCREEN_RENDER;
 }
@@ -340,10 +351,17 @@ static void menu_change_current_selection(int direction)
 	screen_changed |= (menu.current_item != old);
 }
 
-static void ir_packet_callback(struct IRpacket_t packet)
+void lasertag_ir_packet_callback(struct IRpacket_t packet)
 {
 	/* Interrupts will be already disabled when this is called. */
 	int next_queue_in;
+
+	packets_received++;
+	memcpy(&last_packet, &packet, sizeof(last_packet));
+	if (last_packet != old_value) {
+		old_value = last_packet;
+	}
+	screen_changed = 1;
 
 	next_queue_in = (queue_in + 1) % QUEUE_SIZE;
 	if (next_queue_in == queue_out) /* queue is full, drop packet */
@@ -385,6 +403,9 @@ static void register_ir_packet_callback(void (*callback)(struct IRpacket_t))
 	 */
 	old_callback = IRcallbacks[BADGE_IR_GAME_ADDRESS].handler;
 	IRcallbacks[BADGE_IR_GAME_ADDRESS].handler = callback;
+	last_packet = (int) IRcallbacks[BADGE_IR_GAME_ADDRESS].handler;
+	if (last_packet != (int) callback)
+		last_packet = 0x0ffff;
 }
 
 static void unregister_ir_packet_callback(void)
@@ -398,7 +419,7 @@ static void initial_state(void)
 {
 	FbInit();
 	SETUP_IR_SENSOR;
-	register_ir_packet_callback(ir_packet_callback);
+	// register_ir_packet_callback(lasertag_ir_packet_callback);
 	queue_in = 0;
 	queue_out = 0;
 	setup_main_menu();
@@ -408,7 +429,7 @@ static void initial_state(void)
 
 static void game_exit(void)
 {
-	unregister_ir_packet_callback();
+	// unregister_ir_packet_callback();
 	returnToMenus();
 	game_state = INITIAL_STATE;
 }
@@ -571,9 +592,10 @@ static void process_packet(unsigned int packet)
 	unsigned int payload;
 	unsigned char opcode;
 	int v;
-
+#if 0
 	if (packet == 32) /* Ignore spurious 32 that might come in. */
 		return;
+#endif
 
 	payload = get_payload(packet);
 	opcode = payload >> 12;

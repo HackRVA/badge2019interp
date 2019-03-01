@@ -28,6 +28,7 @@ volatile unsigned short pinged = 0 ;
 volatile unsigned short ping_responded = 0;
 
 unsigned char QC_IR = 0;
+extern unsigned int last_packet;
 
 /*
    Dont change the order of this without also changing the enum's in ir.h
@@ -117,9 +118,10 @@ void IRhandler()
     /* curr == next == empty */
     if (IRpacketInCurr != IRpacketInNext) {
         IR_inpkts++;
-        if (IRpacketsIn[IRpacketInCurr].p.address < IR_LASTADRESS) /* basic sanity check before we call unknown handlers */
+        // if (IRpacketsIn[IRpacketInCurr].p.address < IR_LASTADRESS) /* basic sanity check before we call unknown handlers */
             IRcallbacks[ IRpacketsIn[IRpacketInCurr].p.address].handler( IRpacketsIn[IRpacketInCurr].p );
 
+	memcpy(&last_packet, &IRpacketsIn[IRpacketInCurr].p, sizeof(last_packet));
         IRpacketInCurr++;
         IRpacketInCurr %= MAXPACKETQUEUE;
     }
@@ -311,8 +313,11 @@ void ir_app0(struct IRpacket_t p)
     QC_IR = (unsigned char) p.data;
 }
 
+extern void lasertag_ir_packet_callback(struct IRpacket_t packet);
+
 void ir_app1(struct IRpacket_t p)
 {
+	lasertag_ir_packet_callback(p);
 }
 
 void ir_app2(struct IRpacket_t p)

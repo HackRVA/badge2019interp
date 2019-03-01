@@ -21,7 +21,6 @@ extern char *strcpy(char *dest, const char *src);
 extern char *strncpy(char *dest, const char *src, size_t n);
 extern void *memset(void *s, int c, size_t n);
 extern char *strcat(char *dest, const char *src);
-static volatile unsigned int last_packet_out = 0;
 
 
 #endif
@@ -72,6 +71,7 @@ static state_to_function_map_fn_type state_to_function_map[] = {
 static int app_state = INIT_APP_STATE;
 static int something_changed = 0;
 static int menu_choice = 0;
+static volatile unsigned int last_packet_out = 0;
 
 #define SCREEN_XDIM 132
 #define SCREEN_YDIM 132
@@ -201,7 +201,7 @@ static void send_dump(void)
 	app_state = CHECK_THE_BUTTONS;
 }
 
-static to_hex(char *buffer, unsigned int v)
+static void to_hex(char *buffer, unsigned int v)
 {
 	int i;
 	int nybble;
