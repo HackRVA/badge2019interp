@@ -93,7 +93,7 @@ static int nhits = 0;
  * 1 bit for start
  * 1 bit for cmd,
  * 5 bits for addr
- * 9 bits for badge_id,
+ * 9 bits for badge_id of recipient, or 0 for broadcast,
  * 16 bits for payload
  */
 static unsigned int build_ir_packet(unsigned char start, unsigned char cmd,
@@ -124,9 +124,9 @@ static unsigned char __attribute__((unused)) get_addr_bits(unsigned int packet)
 	return (unsigned char) ((packet >> 25) & 0x01f);
 }
 
-static unsigned char __attribute__((unused)) get_badge_id_bits(unsigned int packet)
+static unsigned char __attribute__((unused)) get_shooter_badge_id_bits(unsigned int packet)
 {
-	return (unsigned char) ((packet >> 16) & 0x01f);
+	return (unsigned char) ((packet >> 4) & 0x1ff);
 }
 
 static unsigned short get_payload(unsigned int packet)
@@ -471,7 +471,7 @@ static void process_hit(unsigned int packet)
 {
 	int timestamp;
 	unsigned char shooter_team = (get_payload(packet) | 0x0f);
-	unsigned short badgeid = get_badge_id_bits(packet);
+	unsigned short badgeid = get_shooter_badge_id_bits(packet);
 	timestamp = current_time - game_start_timestamp;
 	if (timestamp < 0) /* game has not started yet  */
 		return;
@@ -516,31 +516,31 @@ static void send_ir_packet(unsigned int packet)
 
 static void send_game_id_packet(unsigned int game_id)
 {
-	send_ir_packet(build_ir_packet(1, 1, BADGE_IR_GAME_ADDRESS, get_badge_id(),
+	send_ir_packet(build_ir_packet(1, 1, BADGE_IR_GAME_ADDRESS, BADGE_IR_BROADCAST_ID,
 		(OPCODE_GAME_ID << 12) | (game_id & 0x0fff)));
 }
 
 static void send_badge_record_count(unsigned int nhits)
 {
-	send_ir_packet(build_ir_packet(1, 1, BADGE_IR_GAME_ADDRESS, get_badge_id(),
+	send_ir_packet(build_ir_packet(1, 1, BADGE_IR_GAME_ADDRESS, BADGE_IR_BROADCAST_ID,
 		(OPCODE_GAME_ID << 12) | (nhits & 0x0fff)));
 }
 
 static void send_badge_upload_hit_record_badge_id(struct hit_table_entry *h)
 {
-	send_ir_packet(build_ir_packet(1, 1, BADGE_IR_GAME_ADDRESS, get_badge_id(),
+	send_ir_packet(build_ir_packet(1, 1, BADGE_IR_GAME_ADDRESS, BADGE_IR_BROADCAST_ID,
 		(OPCODE_BADGE_UPLOAD_HIT_RECORD_BADGE_ID << 12) | (h->badgeid & 0x01ff)));
 }
 
 static void send_badge_upload_hit_record_timestamp(struct hit_table_entry *h)
 {
-	send_ir_packet(build_ir_packet(1, 1, BADGE_IR_GAME_ADDRESS, get_badge_id(),
+	send_ir_packet(build_ir_packet(1, 1, BADGE_IR_GAME_ADDRESS, BADGE_IR_BROADCAST_ID,
 		(OPCODE_BADGE_UPLOAD_HIT_RECORD_TIMESTAMP << 12) | (h->timestamp & 0x0fff)));
 }
 
 static void send_badge_upload_hit_record_team(struct hit_table_entry *h)
 {
-	send_ir_packet(build_ir_packet(1, 1, BADGE_IR_GAME_ADDRESS, get_badge_id(),
+	send_ir_packet(build_ir_packet(1, 1, BADGE_IR_GAME_ADDRESS, BADGE_IR_BROADCAST_ID,
 		(OPCODE_SET_BADGE_TEAM << 12) | (h->team & 0x0fff)));
 }
 
@@ -698,7 +698,7 @@ static void game_shoot(void)
 	unsigned short payload;
 
 	payload = (OPCODE_HIT << 12) | (team & 0x0f);
-	packet = build_ir_packet(0, 1, BADGE_IR_GAME_ADDRESS, get_badge_id(), payload);
+	packet = build_ir_packet(0, 1, BADGE_IR_GAME_ADDRESS, BADGE_IR_BROADCAST_ID, payload);
 	send_ir_packet(packet);
 
 	game_state = GAME_MAIN_MENU;

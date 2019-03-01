@@ -14,6 +14,7 @@
  */
 
 #define BADGE_IR_GAME_ADDRESS IR_APP1
+#define BADGE_IR_BROADCAST_ID 0
 
 #define OPCODE_SET_GAME_START_TIME 0x00
 /* Low 12 bits of payload are signed seconds until game starts, up to +/- 34 minutes. */
@@ -22,7 +23,8 @@
 /* low 12 bits of payload are duration in seconds */
 
 #define OPCODE_HIT 0x02
-/* Low 4 bits of payload are team id of shooter */
+/* Low 4 bits of payload (bits 0 - 3) are team id of shooter */
+/* Bits 4 - 13 are badge ID of shooter */
 
 #define OPCODE_SET_BADGE_TEAM 0x03
 /* Low 4 bits of payload are the team ID */
