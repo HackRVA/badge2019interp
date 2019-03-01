@@ -201,7 +201,7 @@ static void send_dump(void)
 	app_state = CHECK_THE_BUTTONS;
 }
 
-static void to_hex(char *buffer, unsigned int v)
+void to_hex(char *buffer, unsigned int v)
 {
 	int i;
 	int nybble;

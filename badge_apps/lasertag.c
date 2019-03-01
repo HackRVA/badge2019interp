@@ -63,7 +63,8 @@ static int get_badge_id(void)
 static int queue_in;
 static int queue_out;
 static int packet_queue[QUEUE_SIZE] = { 0 };
-unsigned int last_packet = 0;
+unsigned volatile int last_packet = 0;
+unsigned volatile int last_packet_address = 0;
 static unsigned int old_value = 0;
 
 int lasertag_screen_changed = 0;
@@ -210,6 +211,8 @@ static void menu_add_item(char *text, enum game_state_type next_state, unsigned 
 	menu.nitems++;
 }
 
+extern void to_hex(char *buffer, unsigned int v);
+
 static void draw_menu(void)
 {
 	int i, y, first_item, last_item;
@@ -335,6 +338,10 @@ static void draw_menu(void)
 	FbWriteLine(str2);
 	itoa(str2, last_packet, 16);
 	FbMove(60, 120);
+	FbWriteLine(str2);
+
+	to_hex(str2, last_packet_address);
+	FbMove(60, 110);
 	FbWriteLine(str2);
 
 	game_state = GAME_SCREEN_RENDER;

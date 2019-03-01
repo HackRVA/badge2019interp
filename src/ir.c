@@ -28,7 +28,8 @@ volatile unsigned short pinged = 0 ;
 volatile unsigned short ping_responded = 0;
 
 unsigned char QC_IR = 0;
-extern unsigned int last_packet;
+extern volatile unsigned int last_packet;
+extern volatile unsigned int last_packet_address;
 
 /*
    Dont change the order of this without also changing the enum's in ir.h
@@ -121,6 +122,7 @@ void IRhandler()
     if (IRpacketInCurr != IRpacketInNext) {
         IR_inpkts++;
 	lasertag_screen_changed = 1;
+	last_packet_address = IRpacketsIn[IRpacketInCurr].p.address;
         // if (IRpacketsIn[IRpacketInCurr].p.address < IR_LASTADRESS) /* basic sanity check before we call unknown handlers */
             IRcallbacks[ IRpacketsIn[IRpacketInCurr].p.address].handler( IRpacketsIn[IRpacketInCurr].p );
 
