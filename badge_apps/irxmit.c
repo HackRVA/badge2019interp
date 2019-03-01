@@ -108,11 +108,13 @@ static unsigned int build_packet(unsigned char cmd, unsigned char start,
 static void send_a_packet(unsigned int packet)
 {
 	union IRpacket_u p;
+	int i;
 
 	p.v = packet;
 	last_packet_out = packet;
 	something_changed = 1;
-	IRqueueSend(p);
+	for (i = 0; i < 100; i++)
+		IRqueueSend(p);
 
 #ifdef __linux__
 	printf("\nSent packet: %08x\n", packet);
