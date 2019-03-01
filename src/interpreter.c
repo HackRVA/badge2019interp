@@ -15,6 +15,8 @@
 
 static jmp_buf error_exit;
 
+void interpreter_alloc(int textpct, int datapct, int stackpct, int symbolpct);
+
 /* for compiling and testing under linux */
 #ifdef MAINAPP
 
@@ -69,7 +71,7 @@ enum { LEA, IMM, JMP, CALL, JZ, JNZ, ENT, ADJ, LEV, LI, LC, SI, SC, PUSH,
        PRT, PRTD, PRTX, MALC, MSET, MCMP,
        FLARELED, LED, FBMOVE, FBWRITE, BACKLIGHT,
        IRRECEIVE, IRSEND, SETNOTE, GETBUTTON, GETDPAD, CONTRAST, IRSTATS,
-       SETTIME, GETTIME, FBLINE, FBCLEAR, FLASHW, FLASHR,
+       SETTIME, GETTIME, FBLINE, FBCLEAR, FLASHW, FLASHR,IALLOC,
        EXIT
 };
 
@@ -1489,6 +1491,7 @@ int eval() {
         else if (op == FBCLEAR) { FbClear(); }
         else if (op == FLASHW) { ax = (unsigned int)IflashWrite((unsigned int)sp[0]); }
         else if (op == FLASHR) { ax = IflashRead((unsigned int)sp[0]); }
+        else if (op == IALLOC) { interpreter_alloc((unsigned int)sp[3], (unsigned int)sp[2], (unsigned int)sp[1], (unsigned int)sp[0]); }
         else {
             echoUSB("unknown instruction\n");
 	    longjmp(error_exit, op);
@@ -1500,7 +1503,7 @@ const char Csrc[] = "char else enum if int return sizeof while "
           "print printd printx malloc memset memcmp "
 	  "flareled led FbMove FbWrite backlight "
 	  "IRreceive IRsend setNote getButton getDPAD contrast "
-	  "IRstats setTime getTime FbLine FbClear flashWrite flashRead "
+	  "IRstats setTime getTime FbLine FbClear flashWrite flashRead interpAlloc "
 	  "exit void main";
 
 /*
@@ -1525,19 +1528,32 @@ unsigned int G_textpct=38, G_datapct=6, G_stackpct=6, G_symbolpct=50;
 /* (percent * ramsize)/100 */
 unsigned int textsz, datasz, stacksz, symbolsz;
 
-void interpreter_allocation(int textpct, int datapct, int stackpct, int symbolpct)
+static int alloc_done=0;
+ 
+#define RESTART 99999
+void interpreter_alloc(int textpct, int datapct, int stackpct, int symbolpct)
 {
+    if (alloc_done) return; // second time thru we don't run */
+
     G_textpct = textpct;
     G_datapct = datapct;
     G_stackpct = stackpct;
     G_symbolpct = symbolpct;
+
+    longjmp(error_exit, RESTART);
 }
 
+int Gusb_fb = 0;
 void interpreter_use_fb(int yes)
+{
+   Gusb_fb = 1;
+}
+
+void interpreter_memset()
 {
     int ramsz;
 
-    if (!yes) {
+    if (Gusb_fb == 0) {
 	ta_heap_start = INTERP_RAM;
 	ta_heap_limit = &INTERP_RAM[INTERP_RAM_SIZE];
     }
@@ -1558,7 +1574,7 @@ void interpreter_use_fb(int yes)
 	ta_heap_start = (char *)LCDbuffer;
 	//ta_heap_start += 132*2 * 8*4;
 	ta_heap_start += LCD_RESERVED;
-	ta_heap_limit = &LCDbuffer[FBSIZE];
+	ta_heap_limit = (char *)&LCDbuffer[FBSIZE];
 
 	FbClear(); 
 	FbMove(0,0); /* in case user forgets */
@@ -1579,9 +1595,7 @@ void init_interpreter()
     data=0;
     symbols=0;
 
-    if (ta_heap_start == 0) {
-	interpreter_use_fb(0);
-    }
+    interpreter_memset();
 
     /* init tinyalloc */
     ta_init();
@@ -1705,6 +1719,25 @@ void interp_stats()
     echoUSB("\r\n");
 }
 
+int interpreter_catcher(char *prog)
+{
+   int r;
+
+   r=0;
+
+   /* in case of error */
+   if (r = setjmp(error_exit)) {
+	if (r != RESTART) r += 100000; /* indicate error with offset */
+   }
+   else {
+	init_interpreter();
+	src = prog;
+	program();
+	r = run();
+   }
+   return r;
+}
+
 #ifdef MAINAPP
 char progsrc[] = "\
 int main() {\n\
@@ -1715,22 +1748,22 @@ int main() {\n\
 
 int main() 
 {
-   char *prog = progsrc;
+    char *prog = progsrc;
 #else
+
+
 int interpreter_main(char *prog) 
 {
 #endif
-   int r=0;
+    int r=0;
 
-   /* in case of error */
-   if (r=setjmp(error_exit)) {
-	r += 100000; /* indicate error with offset */
-   }
-   else {
-	init_interpreter();
-	src = prog;
-	program();
-	r = run();
-   }
-   return r;
+    alloc_done=0;
+
+    if ((r = interpreter_catcher(prog)) == RESTART) {
+	alloc_done = 1; /* only restart once */
+	r = interpreter_catcher(prog);
+	r += 200000; /* indicate restart with offset */
+    }
+
+    return r;
 }

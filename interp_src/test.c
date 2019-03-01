@@ -2,6 +2,8 @@ int main()
 {
     int i;
 
+    interpAlloc(50, 6, 6, 38);
+
     i=0;
     while (i <= 255) {
 	led(0, 0, i);
@@ -46,6 +48,25 @@ run
 int main()
 {
     int d;
+
+    d = getDPAD();
+    return d;
+}
+
+int main()
+{
+    int d;
+
+    interpAlloc(50, 6, 6, 38);
+    d = getDPAD();
+    return d;
+}
+
+int main()
+{
+    int d;
+
+    interpAlloc(30, 6, 6, 58);
     d = getDPAD();
     return d;
 }

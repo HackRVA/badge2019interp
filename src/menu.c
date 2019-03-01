@@ -488,7 +488,7 @@ const struct menu_t settings_m[] = {
 const struct menu_t main_m[] = {
 //   {"Schedule",    VERT_ITEM, MENU, {schedule_m}},
    {"Games",       VERT_ITEM|DEFAULT_ITEM, MENU, {games_m}},
-//   {"QC",          VERT_ITEM, FUNCTION, {(struct menu_t *)QC_cb}},
+   {"QC",          VERT_ITEM, FUNCTION, {(struct menu_t *)QC_cb}},
    {"Settings",    VERT_ITEM|LAST_ITEM, MENU, {settings_m}},
 } ;
 
