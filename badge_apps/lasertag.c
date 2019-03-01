@@ -124,7 +124,7 @@ static unsigned char __attribute__((unused)) get_addr_bits(unsigned int packet)
 	return (unsigned char) ((packet >> 25) & 0x01f);
 }
 
-static unsigned char __attribute__((unused)) get_shooter_badge_id_bits(unsigned int packet)
+static unsigned char get_shooter_badge_id_bits(unsigned int packet)
 {
 	return (unsigned char) ((packet >> 4) & 0x1ff);
 }
