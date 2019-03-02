@@ -175,9 +175,13 @@ bool ta_init() {
     unsigned int i = TA_HEAP_BLOCKS - 1;
     while (i--) {
         block->next = block + 1;
+        block->addr = NULL;
+        block->size = 0;
         block++;
     }
     block->next = NULL;
+    block->addr = NULL;
+    block->size = 0;
     return true;
 }
 

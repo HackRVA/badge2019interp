@@ -293,12 +293,6 @@ void doLine()
 	lineOutBuffer[lineOutBufPtr] = 0; 
 	//memset(sourceBuffer, 0, SOURCEBUFFERSIZE);
     }
-    else if (strncmp(textBuffer,"usefb",5) == 0) {
-	interpreter_use_fb(1);
-    } 
-    else if (strncmp(textBuffer,"useram",6) == 0) {
-	interpreter_use_fb(0);
-    } 
     else if (strncmp(textBuffer,"new",3) == 0) {
 	    memset(sourceBuffer, 0, SOURCEBUFFERSIZE);
     } 

@@ -1,8 +1,18 @@
+main()
+{
+    interpAlloc(124, 30, 5, 5, 60);
+}
+
+main()
+{
+    interpAlloc(32, 50, 6, 6, 38);
+}
+
+
 int main()
 {
     int i;
 
-    interpAlloc(50, 6, 6, 38);
 
     i=0;
     while (i <= 255) {
@@ -55,20 +65,38 @@ int main()
 
 int main()
 {
-    int d;
-
-    interpAlloc(50, 6, 6, 38);
-    d = getDPAD();
-    return d;
+   interpAlloc(32, 38,6,6,50);
 }
 
 int main()
 {
     int d;
 
-    interpAlloc(30, 6, 6, 58);
     d = getDPAD();
     return d;
+}
+
+int main()
+{
+   interpAlloc(32, 38,6,6,50);
+}
+
+int main()
+{
+   interpAlloc(0, 38,6,6,50);
+}
+
+int main()
+{
+    int d;
+
+    d = getDPAD();
+    return d;
+}
+
+int main()
+{
+   interpAlloc(64, 38,6,6,50);
 }
 
 int main()
@@ -77,10 +105,6 @@ int main()
     b = getButton();
     return b;
 }
-
-
-
-
 
 
 int main()
@@ -101,6 +125,7 @@ int main()
 }
 
 int main() {
+    FbClear(10, 0);
     FbMove(10, 0);
     FbWrite("hello world");
 }

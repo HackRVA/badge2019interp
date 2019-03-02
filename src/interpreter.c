@@ -15,7 +15,7 @@
 
 static jmp_buf error_exit;
 
-void interpreter_alloc(int textpct, int datapct, int stackpct, int symbolpct);
+void interpreter_alloc(int scanlines, int textpct, int datapct, int stackpct, int symbolpct);
 
 /* for compiling and testing under linux */
 #ifdef MAINAPP
@@ -1491,7 +1491,7 @@ int eval() {
         else if (op == FBCLEAR) { FbClear(); }
         else if (op == FLASHW) { ax = (unsigned int)IflashWrite((unsigned int)sp[0]); }
         else if (op == FLASHR) { ax = IflashRead((unsigned int)sp[0]); }
-        else if (op == IALLOC) { interpreter_alloc((unsigned int)sp[3], (unsigned int)sp[2], (unsigned int)sp[1], (unsigned int)sp[0]); }
+        else if (op == IALLOC) { interpreter_alloc((unsigned int)sp[4], (unsigned int)sp[3], (unsigned int)sp[2], (unsigned int)sp[1], (unsigned int)sp[0]); }
         else {
             echoUSB("unknown instruction\n");
 	    longjmp(error_exit, op);
@@ -1525,35 +1525,25 @@ char interpreter_ram[INTERP_RAM_SIZE];
 /* default percent (100*scaled) of ram for each section */
 unsigned int G_textpct=38, G_datapct=6, G_stackpct=6, G_symbolpct=50;
 
+unsigned int G_scanlines = 0;
+
 /* (percent * ramsize)/100 */
 unsigned int textsz, datasz, stacksz, symbolsz;
 
-static int alloc_done=0;
- 
-#define RESTART 99999
-void interpreter_alloc(int textpct, int datapct, int stackpct, int symbolpct)
+void interpreter_alloc(int scanlines, int textpct, int datapct, int stackpct, int symbolpct)
 {
-    if (alloc_done) return; // second time thru we don't run */
-
+    G_scanlines = scanlines;
     G_textpct = textpct;
     G_datapct = datapct;
     G_stackpct = stackpct;
     G_symbolpct = symbolpct;
-
-    longjmp(error_exit, RESTART);
-}
-
-int Gusb_fb = 0;
-void interpreter_use_fb(int yes)
-{
-   Gusb_fb = 1;
 }
 
 void interpreter_memset()
 {
     int ramsz;
 
-    if (Gusb_fb == 0) {
+    if (G_scanlines == 0) {
 	ta_heap_start = INTERP_RAM;
 	ta_heap_limit = &INTERP_RAM[INTERP_RAM_SIZE];
     }
@@ -1566,29 +1556,48 @@ void interpreter_memset()
 	    26400
 
 	    reserved at the begining == Top scans of LCD
-	*/
 	#define TEXTLINES 4
 	#define SCANLINES_RESERVED (8 * TEXTLINES)
 	#define LCD_RESERVED (SCANLINES_RESERVED * LCD_XSIZE * sizeof(short))
+	*/
+
+	int lcd_reserved;
+
+	lcd_reserved = (G_scanlines * LCD_XSIZE * sizeof(short));
 
 	ta_heap_start = (char *)LCDbuffer;
-	//ta_heap_start += 132*2 * 8*4;
-	ta_heap_start += LCD_RESERVED;
+	ta_heap_start += lcd_reserved;
 	ta_heap_limit = (char *)&LCDbuffer[FBSIZE];
 
 	FbClear(); 
 	FbMove(0,0); /* in case user forgets */
     }
-    ramsz = (ta_heap_limit - ta_heap_start);
+    ta_heap_start = (Heap *)(((unsigned int)ta_heap_start+3) & 0xFFFFFFFC); /* round up and align */
+    ta_heap_limit = (Heap *)(((unsigned int)ta_heap_limit-3) & 0xFFFFFFFC); /* round down and align */
+
+    ramsz = (ta_heap_limit - ta_heap_start) ; /* overhead for alignment */
+
     textsz = (G_textpct * ramsz) / 100;
+    textsz = (textsz-3) & 0xFFFFFFFC; /* round down and align */
+
     datasz = (G_datapct * ramsz) / 100;
+    datasz = (datasz-3) & 0xFFFFFFFC; /* round down and align */
+
     stacksz = (G_stackpct * ramsz) / 100;
+    stacksz = (stacksz-3) & 0xFFFFFFFC; /* round down and align */
+
     symbolsz = (G_symbolpct * ramsz) / 100;
+    symbolsz = (symbolsz-3) & 0xFFFFFFFC; /* round down and align */
 }
 
+#define TEXT_ALLOC    99000000
+#define DATA_ALLOC    98000000
+#define STACK_ALLOC   97000000
+#define SYMBOLS_ALLOC 96000000
 void init_interpreter()
 {
     int i, fd;
+    char dbuffer[9];
 
     text=0;
     stack=0;
@@ -1597,19 +1606,48 @@ void init_interpreter()
 
     interpreter_memset();
 
+
+    hexDump((unsigned int)ta_heap_start, dbuffer);
+    echoUSB("heap start\r\n"); echoUSB(dbuffer); echoUSB("\r\n");
+
+    hexDump((unsigned int)ta_heap_limit, dbuffer);
+    echoUSB("heap limit\r\n"); echoUSB(dbuffer); echoUSB("\r\n");
+
+    echoUSB("before init\r\n"); 
     /* init tinyalloc */
     ta_init();
+    echoUSB("after\r\n");
 
-    textbase = text = ta_alloc(textsz);
+    textbase = text = (int *)((unsigned int)(ta_alloc(textsz)+3) & 0xFFFFFFFC);
+    if (text == 0) longjmp(error_exit, TEXT_ALLOC);
+    hexDump((unsigned int)text, dbuffer);
+    echoUSB("text\r\n"); echoUSB(dbuffer); echoUSB("\r\n");
+    hexDump((unsigned int)textsz, dbuffer);
+    echoUSB("textsz\r\n"); echoUSB(dbuffer); echoUSB("\r\n");
     memset(textbase, 0, textsz);
 
-    database = data = ta_alloc(datasz);
+    database = data = (char *)((unsigned int)(ta_alloc(datasz)+3) & 0xFFFFFFFC);
+    if (data == 0) longjmp(error_exit, DATA_ALLOC);
+    hexDump((unsigned int)data, dbuffer);
+    echoUSB("data\r\n"); echoUSB(dbuffer); echoUSB("\r\n");
+    hexDump((unsigned int)datasz, dbuffer);
+    echoUSB("datasz\r\n"); echoUSB(dbuffer); echoUSB("\r\n");
     memset(database, 0, datasz);
 
-    stackbase = stack = ta_alloc(stacksz);
+    stackbase = stack = (int *)((unsigned int)(ta_alloc(stacksz)+3) & 0xFFFFFFFC);
+    if (stack == 0) longjmp(error_exit, STACK_ALLOC);
+    hexDump((unsigned int)stack, dbuffer);
+    echoUSB("stack\r\n"); echoUSB(dbuffer); echoUSB("\r\n");
+    hexDump((unsigned int)stacksz, dbuffer);
+    echoUSB("stacksz\r\n"); echoUSB(dbuffer); echoUSB("\r\n");
     memset(stackbase, 0, stacksz);
 
-    symbolbase = symbols = ta_alloc(symbolsz);
+    symbolbase = symbols = (int *)((unsigned int)(ta_alloc(symbolsz)+3) & 0xFFFFFFFC);
+    if (symbols == 0) longjmp(error_exit, SYMBOLS_ALLOC);
+    hexDump((unsigned int)symbols, dbuffer);
+    echoUSB("sumbols\r\n"); echoUSB(dbuffer); echoUSB("\r\n");
+    hexDump((unsigned int)symbolsz, dbuffer);
+    echoUSB("sumbolsz\r\n"); echoUSB(dbuffer); echoUSB("\r\n");
     memset(symbolbase, 0, symbolsz);
 
     idmain = 0;
@@ -1727,7 +1765,7 @@ int interpreter_catcher(char *prog)
 
    /* in case of error */
    if (r = setjmp(error_exit)) {
-	if (r != RESTART) r += 100000; /* indicate error with offset */
+	r += 100000; /* indicate error with offset */
    }
    else {
 	init_interpreter();
@@ -1757,13 +1795,6 @@ int interpreter_main(char *prog)
 #endif
     int r=0;
 
-    alloc_done=0;
-
-    if ((r = interpreter_catcher(prog)) == RESTART) {
-	alloc_done = 1; /* only restart once */
-	r = interpreter_catcher(prog);
-	r += 200000; /* indicate restart with offset */
-    }
-
+    r = interpreter_catcher(prog);
     return r;
 }
