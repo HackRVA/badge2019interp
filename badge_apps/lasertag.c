@@ -18,8 +18,6 @@ code must run in.
 int argcount;
 char **arguments;
 
-#define SETUP_IR_SENSOR do { setup_ir_sensor(argcount, arguments); } while (0)
-
 #else
 
 #include "colors.h"
@@ -43,8 +41,6 @@ extern char *strcat(char *dest, const char *src);
 /* TODO: Is there a canonical header I should include to get the screen dimensions? */
 #define SCREEN_XDIM 132
 #define SCREEN_YDIM 132
-
-#define SETUP_IR_SENSOR
 
 static int get_badge_id(void)
 {
@@ -397,7 +393,6 @@ static void unregister_ir_packet_callback(void)
 static void initial_state(void)
 {
 	FbInit();
-	SETUP_IR_SENSOR;
 	register_ir_packet_callback(ir_packet_callback);
 	queue_in = 0;
 	queue_out = 0;
@@ -717,6 +712,10 @@ int main(int argc, char *argv[])
 	argcount = argc;
 	arguments = argv;
 
+#define IRXMIT_UDP_PORT 12345
+#define LASERTAG_UDP_PORT 12346
+
+	setup_linux_ir_simulator(IRXMIT_UDP_PORT, LASERTAG_UDP_PORT);
 	start_gtk(&argc, &argv, lasertag_cb, 30);
 	return 0;
 }
