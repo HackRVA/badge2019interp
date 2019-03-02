@@ -287,7 +287,7 @@ static void draw_menu(void)
 	FbColor(color);
 	if (game_variant != GAME_VARIANT_NONE) {
 		FbMove(10, 10);
-		strcpy(str2, game_type[game_variant % 4]);
+		strcpy(str2, game_type[game_variant % ARRAYSIZE(game_type)]);
 		FbWriteLine(str2);
 	}
 	if (team >= 0) {
@@ -600,7 +600,7 @@ static void process_packet(unsigned int packet)
 		screen_changed = 1;
 		break;
 	case OPCODE_SET_GAME_VARIANT:
-		game_variant = payload & 0x0f; /* TODO sanity check this better. */
+		game_variant = (payload & 0x0f) % ARRAYSIZE(game_type);
 		screen_changed = 1;
 		break;
 	case OPCODE_GAME_ID:
