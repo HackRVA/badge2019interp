@@ -25,11 +25,6 @@ extern char *strncpy(char *dest, const char *src, size_t n);
 extern void *memset(void *s, int c, size_t n);
 extern char *strcat(char *dest, const char *src);
 
-static unsigned short get_badge_id(void)
-{
-	return G_sysData.badgeId;
-}
-
 #endif
 
 #define INIT_APP_STATE 0
@@ -160,7 +155,7 @@ static void send_hit(void)
 	team_id = 5;
 
 	send_a_packet(build_packet(1, 1, BADGE_IR_GAME_ADDRESS, BADGE_IR_BROADCAST_ID,
-		(OPCODE_HIT << 12) | (get_badge_id() << 4) | team_id));
+		(OPCODE_HIT << 12) | (G_sysData.badgeId << 4) | team_id));
 	app_state = CHECK_THE_BUTTONS;
 }
 
