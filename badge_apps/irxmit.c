@@ -8,10 +8,6 @@
 #include "../linux/linuxcompat.h"
 #include "lasertag-protocol.h"
 
-static const struct gsysdata {
-	unsigned short badgeId;
-} G_sysData = { 99 };
-
 #else
 
 #include "colors.h"
