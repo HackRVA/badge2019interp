@@ -45,11 +45,6 @@ extern char *strcat(char *dest, const char *src);
 #define SCREEN_XDIM 132
 #define SCREEN_YDIM 132
 
-static int get_badge_id(void)
-{
-	return G_sysData.badgeId & 0x1ff; /* TODO: Is this right? */
-}
-
 #define DISABLE_INTERRUPTS
 #define ENABLE_INTERRUPTS
 
@@ -715,7 +710,7 @@ static void game_shoot(void)
 	unsigned int packet;
 	unsigned short payload;
 
-	payload = (OPCODE_HIT << 12) | (get_badge_id() << 4) | (team & 0x0f);
+	payload = (OPCODE_HIT << 12) | ((G_sysData.badgeId & 0x1ff) << 4) | (team & 0x0f);
 	packet = build_ir_packet(0, 1, BADGE_IR_GAME_ADDRESS, BADGE_IR_BROADCAST_ID, payload);
 	send_ir_packet(packet);
 
