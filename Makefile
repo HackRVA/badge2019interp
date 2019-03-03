@@ -50,7 +50,23 @@ BDGOBJ = $(addprefix $(BUILD)/, $(SRC_BADGE_C:.c=.o) $(SRC_BADGE_S:.s=.o))
 
 USBOBJ = $(addprefix $(BUILD)/, $(SRC_USB_C:.c=.o) $(SRC_USB_S:.s=.o))
 
+# Docker stuff
+TAG_COMPILER=badge-compiler:latest
+TAG_IDE=badge-ide:latest
+XAUTH=/tmp/.docker.xauth
+DOCKER_RUN=docker run -v `pwd`:/work -w /work -u `id -u $$USER`:`id -g $$USER`
+DOCKER_IDE_OPTS= --privileged -v /dev/bus/usb:/dev/bus/usb -v /tmp/.X11-unix:/tmp/.X11-unix -e HOME:/work -e DISPLAY=:0 -v ${XAUTH}:${XAUTH} -e XAUTHORITY=${XAUTH} -v `pwd`/docker/home:/home/build
+
 all: $(BUILD)/firmware.elf $(BUILD)/firmware.hex
+
+all-docker: docker-build-compiler
+	${DOCKER_RUN} -it ${TAG_COMPILER} make clean all
+
+ide: docker-build-ide $(XAUTH)
+	${DOCKER_RUN} ${DOCKER_IDE_OPTS} ${TAG_IDE}
+
+install: all
+	sudo ./tools/bootloadit
 
 $(APPOBJ): $(SRC_APPS_C)
 	mkdir -p $(BUILD)/badge_apps
@@ -86,3 +102,21 @@ romsyms:	build/firmware.elf
 clean:
 	find build -type f -exec rm -f \{\} \;
 
+# DOCKER
+docker-build-compiler:
+	docker build --compress -t ${TAG_COMPILER} ./docker/badge-compiler/
+
+docker-build-ide: docker-build-compiler
+	docker build --compress -t ${TAG_IDE} ./docker/badge-ide/
+
+$(XAUTH):
+	xauth nlist :0 | sed -e 's/^..../ffff/' | xauth -f ${XAUTH} nmerge -
+
+docker-kill:
+	$(eval images := `docker container ls | grep "badge-" | awk '{print $$1}'`)
+	if [ "$($images)" != "" ] ; then docker kill $($images); fi
+
+docker-clean:
+	docker rmi -f ${TAG_COMPILER}
+	docker rmi -f ${TAG_IDE}
+	docker image ls | grep none | awk '{print $$3}' | xargs docker rmi -f
