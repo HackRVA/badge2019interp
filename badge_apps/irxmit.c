@@ -247,14 +247,89 @@ static void check_the_buttons(void)
         return;
 }
 
+static void ir_packet_callback(struct IRpacket_t packet)
+{
+	static int recordnum = 0;
+	static int recordcount = 0;
+	/* Interrupts will be already disabled when this is called. */
+#ifdef __linux__
+	unsigned int v = packet.v;
+	int opcode = ((v >> 12) & 0x0f);
+	switch (opcode) {
+	case OPCODE_SET_GAME_START_TIME:
+	case OPCODE_SET_GAME_DURATION:
+	case OPCODE_HIT:
+	case OPCODE_REQUEST_BADGE_DUMP:
+ 		/* 1. Base station requests info from badge: OPCODE_REQUEST_BADGE_DUMP
+ 		 * 2. Badge respondes with OPCODE_BADGE_IDENTITY
+ 		 * 3. Badge responds with OPCODE_GAME_ID
+ 		 * 4. Badge responds with OPCODE_BADGE_RECORD_COUNT
+ 		 * 5. Badge responds with triplets of OPCODE_BADGE_UPLOAD_HIT_RECORD_BADGE_ID,
+ 		 *    OPCODE_BADGE_UPLOAD_HIT_RECORD_TIMESTAMP, and OPCODE_SET_BADGE_TEAM.
+ 		 */
+	case OPCODE_SET_GAME_VARIANT:
+		fprintf(stderr, "Received recognized but inappropriate opcode: %d\n", opcode);
+		break;
+	case OPCODE_BADGE_IDENTITY:
+		fprintf(stderr, "dump: BADGE IDENTITY: 0x%08x\n", opcode & 0x01ff);
+		break;
+	case OPCODE_GAME_ID:
+		fprintf(stderr, "dump: GAME ID: 0x%08x\n", (opcode & 0x0fff));
+		break;
+	case OPCODE_BADGE_RECORD_COUNT:
+		fprintf(stderr, "dump: RECORD COUNT: 0x%08x\n", (opcode & 0x0fff));
+		recordcount = opcode & 0x0fff;
+		break;
+	case OPCODE_BADGE_UPLOAD_HIT_RECORD_BADGE_ID:
+		fprintf(stderr, "%c %d: BADGE_ID 0x%08x", recordnum >= recordcount ? '+' : '-',
+				recordnum, (opcode & 0x01ff));
+		break;
+	case OPCODE_BADGE_UPLOAD_HIT_RECORD_TIMESTAMP:
+		fprintf(stderr, "TIME 0x%08x", (opcode & 0x0ffff));
+		break;
+	case OPCODE_SET_BADGE_TEAM:
+		fprintf(stderr, "TEAM 0x%08x\n", (opcode & 0x0f));
+		recordnum++;
+		break;
+	default:
+		fprintf(stderr, "Unrecognized opcode: 0x%08x, packet = 0x%08x\n", opcode, v);
+		break;
+	}
+#endif
+}
+
+#ifndef __linux__
+static void (*old_callback)(struct IRpacket_t) = 0;
+static void register_ir_packet_callback(void (*callback)(struct IRpacket_t))
+{
+	/* This is pretty gross.  Ideally there should be some registration,
+	 * unregistration functions provided by ir.[ch] and I shouldn't touch
+	 * IRcallbacks[] directly myself, and all those hardcoded ir_app[1-7]()
+	 * functions should disappear.
+	 * Also, if an interrupt happens in the midst of the assignment we'll
+	 * be in trouble.  I expect the assignment is probably atomic though.
+	 */
+	old_callback = IRcallbacks[BADGE_IR_GAME_ADDRESS].handler;
+	IRcallbacks[BADGE_IR_GAME_ADDRESS].handler = callback;
+}
+
+static void unregister_ir_packet_callback(void)
+{
+	/* Gross. */
+	IRcallbacks[BADGE_IR_GAME_ADDRESS].handler = old_callback;
+}
+#endif
+
 static void exit_app(void)
 {
+	unregister_ir_packet_callback();
 	app_state = INIT_APP_STATE;
 	returnToMenus();
 }
 
 static void app_init(void)
 {
+	register_ir_packet_callback(ir_packet_callback);
 	FbInit();
 	app_state = INIT_APP_STATE;
 	something_changed = 1;
