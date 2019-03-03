@@ -42,14 +42,13 @@ static unsigned short get_badge_id(void)
 #define CHECK_THE_BUTTONS 3
 #define EXIT_APP 4
 #define SENDHIT 5
-#define SENDSTARTTIME 6
-#define SENDDURATION 7
-#define SENDVARIANT 8
-#define SENDTEAM 9
-#define SENDID 10
-#define SENDDUMP 11
-#define SENDNEWGAME 12
-#define INITGAMEDATA 13
+#define SENDDUMP 6 
+#define FREEFORALL 7
+#define TEAMBATTLE 8
+#define ZOMBIES 9
+#define CAPTUREBADGE 10
+#define SENDNEWGAME 11 
+#define INITGAMEDATA 12 
 
 static void app_init(void);
 static void render_screen(void);
@@ -57,12 +56,11 @@ static void check_the_buttons(void);
 static void draw_menu(void);
 static void exit_app(void);
 static void send_hit(void);
-static void send_start_time(void);
-static void send_duration(void);
-static void send_variant(void);
-static void send_team(void);
-static void send_id(void);
 static void send_dump(void);
+static void free_for_all_game(void);
+static void team_battle_game(void);
+static void zombies_game(void);
+static void capture_the_badge_game(void);
 static void send_new_game(void);
 static void init_game_data(void);
 
@@ -75,12 +73,11 @@ static state_to_function_map_fn_type state_to_function_map[] = {
 	check_the_buttons,
 	exit_app,
 	send_hit,
-	send_start_time,
-	send_duration,
-	send_variant,
-	send_team,
-	send_id,
 	send_dump,
+	free_for_all_game,
+	team_battle_game,
+	zombies_game,
+	capture_the_badge_game,
 	send_new_game,
 	init_game_data,
 };
@@ -118,12 +115,11 @@ struct menu_item {
 
 static struct menu_item m[] = {
 	{ "HIT", SENDHIT },
-	{ "GAME STRT TIME", SENDSTARTTIME },
-	{ "GAME DURATION", SENDDURATION },
-	{ "GAME VARIANT", SENDVARIANT },
-	{ "TEAM", SENDTEAM },
-	{ "ID", SENDID },
 	{ "REQUEST DUMP", SENDDUMP },
+        { "FREE FOR ALL", FREEFORALL },
+        { "TEAM BATTLE", TEAMBATTLE },
+        { "ZOMBIES!", ZOMBIES },
+        { "CAPTURE BADGE", CAPTUREBADGE },
 	{ "SEND NEW GAME", SENDNEWGAME },
 	{ "INIT GAME DATA", INITGAMEDATA  },
 	{ "EXIT\n", EXIT_APP },
@@ -183,35 +179,30 @@ static void send_start_time(void)
 #endif
 	send_a_packet(build_packet(1, 1, BADGE_IR_GAME_ADDRESS, BADGE_IR_BROADCAST_ID,
 			(OPCODE_SET_GAME_START_TIME << 12) | start_time));
-	app_state = CHECK_THE_BUTTONS;
 }
 
 static void send_duration(void)
 {
 	send_a_packet(build_packet(1, 1, BADGE_IR_GAME_ADDRESS, BADGE_IR_BROADCAST_ID,
 		(OPCODE_SET_GAME_DURATION << 12) | game_data.duration));
-	app_state = CHECK_THE_BUTTONS;
 }
 
 static void send_variant(void)
 {
 	send_a_packet(build_packet(1, 1, BADGE_IR_GAME_ADDRESS, BADGE_IR_BROADCAST_ID,
 		(OPCODE_SET_GAME_VARIANT << 12) | game_data.game_variant));
-	app_state = CHECK_THE_BUTTONS;
 }
 
 static void send_team(void)
 {
 	send_a_packet(build_packet(1, 1, BADGE_IR_GAME_ADDRESS, BADGE_IR_BROADCAST_ID,
 		(OPCODE_SET_BADGE_TEAM << 12) | game_data.team));
-	app_state = CHECK_THE_BUTTONS;
 }
 
 static void send_id(void)
 {
 	send_a_packet(build_packet(1, 1, BADGE_IR_GAME_ADDRESS, BADGE_IR_BROADCAST_ID,
 		(OPCODE_GAME_ID << 12) | game_data.game_id));
-	app_state = CHECK_THE_BUTTONS;
 }
 
 static void send_dump(void)
@@ -249,9 +240,31 @@ static void send_new_game(void)
 	if (step_number > 4) {
 		step_number = 0;
 		app_state = CHECK_THE_BUTTONS;
-	} else {
-		app_state = SENDNEWGAME; /* all those send_xxx functions set app_state to CHECK_THE_BUTTONS */
 	}
+}
+
+static void free_for_all_game(void)
+{
+	game_data.game_variant = 0;
+	app_state = CHECK_THE_BUTTONS;
+}
+
+static void team_battle_game(void)
+{
+	game_data.game_variant = 1;
+	app_state = CHECK_THE_BUTTONS;
+}
+
+static void zombies_game(void)
+{
+	game_data.game_variant = 2;
+	app_state = CHECK_THE_BUTTONS;
+}
+
+static void capture_the_badge_game(void)
+{
+	game_data.game_variant = 3;
+	app_state = CHECK_THE_BUTTONS;
 }
 
 static void init_game_data(void)
@@ -264,7 +277,6 @@ static void init_game_data(void)
 #else
 	game_data.absolute_start_time = wclock.hour * 3600 + wclock.min * 60 + wclock.sec + 120;
 #endif
-	game_data.game_variant = (game_data.game_variant + 1) % 4;
 	game_data.team = (game_data.team + 1) % 4;
 	game_data.duration = 120;
 	game_data.game_id = (game_data.game_id + 1) % 1024;
