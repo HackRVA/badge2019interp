@@ -230,12 +230,12 @@ static void check_the_buttons(void)
 	if (UP_BTN_AND_CONSUME) {
 		menu_choice--;
 		if (menu_choice < 0)
-			menu_choice = 0;
+			menu_choice = MAX_MENU_CHOICES - 1;
 		something_changed = 1;
 	} else if (DOWN_BTN_AND_CONSUME) {
 		menu_choice++;
 		if (menu_choice >= MAX_MENU_CHOICES)
-			menu_choice = MAX_MENU_CHOICES - 1;
+			menu_choice = 0;
 		something_changed = 1;
 	} else if (LEFT_BTN_AND_CONSUME) {
 	} else if (RIGHT_BTN_AND_CONSUME) {
