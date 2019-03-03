@@ -13,7 +13,7 @@ code must run in.
 #include <stdlib.h>
 #include <sys/time.h>
 
-#include "linuxcompat.h"
+#include "../linux/linuxcompat.h"
 
 int argcount;
 char **arguments;
