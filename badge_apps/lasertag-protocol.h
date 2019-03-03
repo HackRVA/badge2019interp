@@ -30,6 +30,14 @@
 /* Low 4 bits of payload are the team ID */
 
 #define OPCODE_REQUEST_BADGE_DUMP 0x04
+/*
+ * 1. Base station requests info from badge: OPCODE_REQUEST_BADGE_DUMP
+ * 2. Badge respondes with OPCODE_BADGE_IDENTITY
+ * 3. Badge responds with OPCODE_GAME_ID
+ * 4. Badge responds with OPCODE_BADGE_RECORD_COUNT
+ * 5. Badge responds with triplets of OPCODE_BADGE_UPLOAD_HIT_RECORD_BADGE_ID,
+ *    OPCODE_BADGE_UPLOAD_HIT_RECORD_TIMESTAMP, and OPCODE_SET_BADGE_TEAM.
+ */
 
 /* Set game variant.  Low 4 bits of payload contain game variant. */
 #define OPCODE_SET_GAME_VARIANT 0x05
@@ -45,11 +53,14 @@
 #define OPCODE_BADGE_UPLOAD_HIT_RECORD_BADGE_ID 0x08
 /* low 9 bits contain badge id of shooter */
 
+#define OPCODE_BADGE_UPLOAD_HIT_RECORD_TIMESTAMP 0x09
+/* 16 bits timestamp of hit, seconds since game start */
+
 #define OPCODE_GAME_ID 0x0a
 /* payload is 16 bit unique game ID.  This opcode is bidirectional.  Base
  * station transmits this to the badge at the beginning of a game, and the
  * badge transmits it back to the base station when syncing. */
 
-#define OPCODE_BADGE_UPLOAD_HIT_RECORD_TIMESTAMP 0x09
-/* 16 bits timestamp of hit, seconds since game start */
+#define OPCODE_BADGE_IDENTITY 0x0b
+/* low 9 bits contain badge id of this badge that is uploading to the base station */
 

@@ -545,9 +545,10 @@ static void dump_badge_to_base_station(void)
 
 	/*
 	* 1. Base station requests info from badge: OPCODE_REQUEST_BADGE_DUMP
-	* 2. Badge responds with OPCODE_GAME_ID
-	* 3. Badge responds with OPCODE_BADGE_RECORD_COUNT
-	* 4. Badge responds with triplets of OPCODE_BADGE_UPLOAD_HIT_RECORD_BADGE_ID,
+	* 2. Badge respondes with OPCODE_BADGE_IDENTITY
+	* 3. Badge responds with OPCODE_GAME_ID
+	* 4. Badge responds with OPCODE_BADGE_RECORD_COUNT
+	* 5. Badge responds with triplets of OPCODE_BADGE_UPLOAD_HIT_RECORD_BADGE_ID,
 	*    OPCODE_BADGE_UPLOAD_HIT_RECORD_TIMESTAMP, and OPCODE_SET_BADGE_TEAM.
 	*/
 
