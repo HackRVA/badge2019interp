@@ -46,6 +46,7 @@ static unsigned short get_badge_id(void)
 #define SENDTEAM 9
 #define SENDID 10
 #define SENDDUMP 11
+#define SENDNEWGAME 12
 
 static void app_init(void);
 static void render_screen(void);
@@ -59,6 +60,7 @@ static void send_variant(void);
 static void send_team(void);
 static void send_id(void);
 static void send_dump(void);
+static void send_new_game(void);
 
 typedef void (*state_to_function_map_fn_type)(void);
 
@@ -75,6 +77,7 @@ static state_to_function_map_fn_type state_to_function_map[] = {
 	send_team,
 	send_id,
 	send_dump,
+	send_new_game,
 };
 
 static int app_state = INIT_APP_STATE;
@@ -98,6 +101,7 @@ static struct menu_item m[] = {
 	{ "TEAM", SENDTEAM },
 	{ "ID", SENDID },
 	{ "REQUEST DUMP", SENDDUMP },
+	{ "SEND NEW GAME", SENDNEWGAME },
 	{ "EXIT\n", EXIT_APP },
 };
 
@@ -197,6 +201,39 @@ static void send_dump(void)
 	send_a_packet(build_packet(1, 1, BADGE_IR_GAME_ADDRESS, BADGE_IR_BROADCAST_ID,
 		(OPCODE_REQUEST_BADGE_DUMP << 12)));
 	app_state = CHECK_THE_BUTTONS;
+}
+
+static void send_new_game(void)
+{
+	/* Send new game info to the badge */
+	static int step_number = 0;
+
+	switch (step_number) {
+	case 0:
+		send_duration();
+		break;
+	case 1:
+		send_variant();
+		break;
+	case 2:
+		send_team();
+		break;
+	case 3:
+		send_id();
+		break;
+	case 4:
+		send_start_time();
+		break;
+	default:
+		break;
+	}
+	step_number++;
+	if (step_number > 4) {
+		step_number = 0;
+		app_state = CHECK_THE_BUTTONS;
+	} else {
+		app_state = SENDNEWGAME; /* all those send_xxx functions set app_state to CHECK_THE_BUTTONS */
+	}
 }
 
 static void draw_menu(void)
