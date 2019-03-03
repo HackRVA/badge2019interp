@@ -157,6 +157,8 @@ static void send_hit(void)
 {
 	unsigned int team_id;
 
+	team_id = 5;
+
 	send_a_packet(build_packet(1, 1, BADGE_IR_GAME_ADDRESS, BADGE_IR_BROADCAST_ID,
 		(OPCODE_HIT << 12) | (get_badge_id() << 4) | team_id));
 	app_state = CHECK_THE_BUTTONS;
