@@ -18,6 +18,9 @@ code must run in.
 int argcount;
 char **arguments;
 
+#define DISABLE_INTERRUPTS do { disable_interrupts(); } while (0)
+#define ENABLE_INTERRUPTS do { enable_interrupts(); } while (0)
+
 #else
 
 #include "colors.h"
@@ -46,6 +49,9 @@ static int get_badge_id(void)
 {
 	return G_sysData.badgeId & 0x1ff; /* TODO: Is this right? */
 }
+
+#define DISABLE_INTERRUPTS
+#define ENABLE_INTERRUPTS
 
 #endif
 
@@ -140,6 +146,7 @@ static void game_screen_render(void);
 static void game_shoot(void);
 static void game_confirm_exit(void);
 static void game_exit_abandoned(void);
+static void game_dump_data(void);
 
 static enum game_state_type {
 	INITIAL_STATE = 0,
@@ -149,7 +156,8 @@ static enum game_state_type {
 	GAME_SCREEN_RENDER = 4,
 	GAME_SHOOT = 5,
 	GAME_CONFIRM_EXIT = 6,
-	GAME_EXIT_ABANDONED = 7
+	GAME_EXIT_ABANDONED = 7,
+	GAME_DUMP_DATA = 8
 } game_state = INITIAL_STATE;
 
 /* Note, game_state_fn[] array must have an entry for every value
@@ -163,6 +171,7 @@ static game_state_function game_state_fn[] = {
 	game_shoot,
 	game_confirm_exit,
 	game_exit_abandoned,
+	game_dump_data,
 };
 
 struct menu_item {
@@ -509,6 +518,12 @@ static void send_ir_packet(unsigned int packet)
 	IRqueueSend(p);
 }
 
+static void send_badge_identity_packet(void)
+{
+	send_ir_packet(build_ir_packet(1, 1, BADGE_IR_GAME_ADDRESS, BADGE_IR_BROADCAST_ID,
+		(OPCODE_BADGE_IDENTITY << 12) | (G_sysData.badgeId & 0x01ff)));
+}
+
 static void send_game_id_packet(unsigned int game_id)
 {
 	send_ir_packet(build_ir_packet(1, 1, BADGE_IR_GAME_ADDRESS, BADGE_IR_BROADCAST_ID,
@@ -518,7 +533,7 @@ static void send_game_id_packet(unsigned int game_id)
 static void send_badge_record_count(unsigned int nhits)
 {
 	send_ir_packet(build_ir_packet(1, 1, BADGE_IR_GAME_ADDRESS, BADGE_IR_BROADCAST_ID,
-		(OPCODE_GAME_ID << 12) | (nhits & 0x0fff)));
+		(OPCODE_BADGE_RECORD_COUNT << 12) | (nhits & 0x0fff)));
 }
 
 static void send_badge_upload_hit_record_badge_id(struct hit_table_entry *h)
@@ -539,9 +554,9 @@ static void send_badge_upload_hit_record_team(struct hit_table_entry *h)
 		(OPCODE_SET_BADGE_TEAM << 12) | (h->team & 0x0fff)));
 }
 
-static void dump_badge_to_base_station(void)
+static void game_dump_data(void)
 {
-	int i;
+	static int record_num = 0;
 
 	/*
 	* 1. Base station requests info from badge: OPCODE_REQUEST_BADGE_DUMP
@@ -552,14 +567,28 @@ static void dump_badge_to_base_station(void)
 	*    OPCODE_BADGE_UPLOAD_HIT_RECORD_TIMESTAMP, and OPCODE_SET_BADGE_TEAM.
 	*/
 
-	send_game_id_packet(game_id);
-	send_badge_record_count(nhits);
-
-	for (i = 0; i < nhits; i++) {
-		send_badge_upload_hit_record_badge_id(&hit_table[i]);
-		send_badge_upload_hit_record_timestamp(&hit_table[i]);
-		send_badge_upload_hit_record_team(&hit_table[i]);
+	/* This check is probably racy */
+	if (((IRpacketOutNext+1) % MAXPACKETQUEUE) == IRpacketOutCurr) {
+		return;
 	}
+
+	if (record_num == 0) {
+		send_badge_identity_packet();
+	} else if (record_num == 1) {
+		send_game_id_packet(game_id);
+	} else if (record_num == 2) {
+		send_badge_record_count(nhits);
+	} else if (record_num < nhits + 3) {
+		send_badge_upload_hit_record_badge_id(&hit_table[record_num - 2]);
+		send_badge_upload_hit_record_timestamp(&hit_table[record_num - 2]);
+		send_badge_upload_hit_record_team(&hit_table[record_num - 2]);
+	} else {
+		record_num = 0;
+		game_state = GAME_PROCESS_BUTTON_PRESSES;
+		return;
+	}
+	record_num++;
+	return;
 }
 
 static void process_packet(unsigned int packet)
@@ -594,7 +623,7 @@ static void process_packet(unsigned int packet)
 		process_hit(packet);
 		break;
 	case OPCODE_REQUEST_BADGE_DUMP:
-		dump_badge_to_base_station();
+		game_state = GAME_DUMP_DATA;
 		break;
 	case OPCODE_SET_BADGE_TEAM:
 		team = payload & 0x0f; /* TODO sanity check this better. */
@@ -611,15 +640,6 @@ static void process_packet(unsigned int packet)
 		break;
 	}
 }
-
-#ifdef __linux__
-#define DISABLE_INTERRUPTS do { disable_interrupts(); } while (0)
-#define ENABLE_INTERRUPTS do { enable_interrupts(); } while (0)
-#else
-#define DISABLE_INTERRUPTS
-#define ENABLE_INTERRUPTS
-#endif
-
 
 static void check_for_incoming_packets(void)
 {
