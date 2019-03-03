@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <sys/time.h>
 
 #include "../linux/linuxcompat.h"
 #include "lasertag-protocol.h"
@@ -19,6 +20,7 @@ static const struct gsysdata {
 #include "ir.h"
 #include "lasertag-protocol.h"
 #include "flash.h"
+#include "timer1_int.h" /* for wclock */
 
 /* TODO: I shouldn't have to declare these myself. */
 #define size_t int
@@ -47,6 +49,7 @@ static unsigned short get_badge_id(void)
 #define SENDID 10
 #define SENDDUMP 11
 #define SENDNEWGAME 12
+#define INITGAMEDATA 13
 
 static void app_init(void);
 static void render_screen(void);
@@ -61,6 +64,7 @@ static void send_team(void);
 static void send_id(void);
 static void send_dump(void);
 static void send_new_game(void);
+static void init_game_data(void);
 
 typedef void (*state_to_function_map_fn_type)(void);
 
@@ -78,6 +82,25 @@ static state_to_function_map_fn_type state_to_function_map[] = {
 	send_id,
 	send_dump,
 	send_new_game,
+	init_game_data,
+};
+
+static struct game_data {
+#ifdef __linux__
+	unsigned long absolute_start_time;
+#else
+	int absolute_start_time;
+#endif
+	unsigned char game_variant;
+	unsigned int duration;
+	unsigned int team;
+	unsigned int game_id;
+} game_data = {
+	0,
+	4,
+	120,
+	1,
+	0,
 };
 
 static int app_state = INIT_APP_STATE;
@@ -102,6 +125,7 @@ static struct menu_item m[] = {
 	{ "ID", SENDID },
 	{ "REQUEST DUMP", SENDDUMP },
 	{ "SEND NEW GAME", SENDNEWGAME },
+	{ "INIT GAME DATA", INITGAMEDATA  },
 	{ "EXIT\n", EXIT_APP },
 };
 
@@ -149,8 +173,14 @@ static void send_hit(void)
 static void send_start_time(void)
 {
 	unsigned int start_time;
+#ifdef __linux__
+	struct timeval tv;
 
-	start_time = 30;
+	gettimeofday(&tv, NULL);
+	start_time = game_data.absolute_start_time - tv.tv_sec;
+#else
+	start_time = game_data.absolute_start_time - wclock.hour * 3600 - wclock.min * 60 - wclock.sec; 
+#endif
 	send_a_packet(build_packet(1, 1, BADGE_IR_GAME_ADDRESS, BADGE_IR_BROADCAST_ID,
 			(OPCODE_SET_GAME_START_TIME << 12) | start_time));
 	app_state = CHECK_THE_BUTTONS;
@@ -158,41 +188,29 @@ static void send_start_time(void)
 
 static void send_duration(void)
 {
-	unsigned int duration;
-
-	duration = 60;
 	send_a_packet(build_packet(1, 1, BADGE_IR_GAME_ADDRESS, BADGE_IR_BROADCAST_ID,
-		(OPCODE_SET_GAME_DURATION << 12) | duration));
+		(OPCODE_SET_GAME_DURATION << 12) | game_data.duration));
 	app_state = CHECK_THE_BUTTONS;
 }
 
 static void send_variant(void)
 {
-	unsigned int game_variant;
-
-	game_variant = 4;
 	send_a_packet(build_packet(1, 1, BADGE_IR_GAME_ADDRESS, BADGE_IR_BROADCAST_ID,
-		(OPCODE_SET_GAME_VARIANT << 12) | game_variant));
+		(OPCODE_SET_GAME_VARIANT << 12) | game_data.game_variant));
 	app_state = CHECK_THE_BUTTONS;
 }
 
 static void send_team(void)
 {
-	unsigned int team_id;
-
-	team_id = 1;
 	send_a_packet(build_packet(1, 1, BADGE_IR_GAME_ADDRESS, BADGE_IR_BROADCAST_ID,
-		(OPCODE_SET_BADGE_TEAM << 12) | team_id));
+		(OPCODE_SET_BADGE_TEAM << 12) | game_data.team));
 	app_state = CHECK_THE_BUTTONS;
 }
 
 static void send_id(void)
 {
-	unsigned int game_id;
-
-	game_id = 99;
 	send_a_packet(build_packet(1, 1, BADGE_IR_GAME_ADDRESS, BADGE_IR_BROADCAST_ID,
-		(OPCODE_GAME_ID << 12) | game_id));
+		(OPCODE_GAME_ID << 12) | game_data.game_id));
 	app_state = CHECK_THE_BUTTONS;
 }
 
@@ -234,6 +252,23 @@ static void send_new_game(void)
 	} else {
 		app_state = SENDNEWGAME; /* all those send_xxx functions set app_state to CHECK_THE_BUTTONS */
 	}
+}
+
+static void init_game_data(void)
+{
+#ifdef __linux__
+	struct timeval tv;
+
+	gettimeofday(&tv, NULL);
+	game_data.absolute_start_time = tv.tv_sec + 120;
+#else
+	game_data.absolute_start_time = wclock.hour * 3600 + wclock.min * 60 + wclock.sec + 120;
+#endif
+	game_data.game_variant = (game_data.game_variant + 1) % 4;
+	game_data.team = (game_data.team + 1) % 4;
+	game_data.duration = 120;
+	game_data.game_id = (game_data.game_id + 1) % 1024;
+	app_state = CHECK_THE_BUTTONS;
 }
 
 static void draw_menu(void)
