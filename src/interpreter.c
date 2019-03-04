@@ -4,6 +4,7 @@
 #include <setjmp.h>
 
 #include <plib.h>
+#include "interpreter.h"
 #include "badge.h"
 #include "ir.h"
 #include "assets.h"
