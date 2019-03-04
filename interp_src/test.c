@@ -1,8 +1,18 @@
+main()
+{
+    setAlloc(48, 30, 5, 5, 60);
+}
+
+main()
+{
+    setAlloc(32, 50, 6, 6, 38);
+}
+
+
 int main()
 {
     int i;
 
-    interpAlloc(50, 6, 6, 38);
 
     i=0;
     while (i <= 255) {
@@ -55,20 +65,38 @@ int main()
 
 int main()
 {
-    int d;
-
-    interpAlloc(50, 6, 6, 38);
-    d = getDPAD();
-    return d;
+   setAlloc(32, 38,6,6,50);
 }
 
 int main()
 {
     int d;
 
-    interpAlloc(30, 6, 6, 58);
     d = getDPAD();
     return d;
+}
+
+int main()
+{
+   setAlloc(32, 38,6,6,50);
+}
+
+int main()
+{
+   setAlloc(0, 38,6,6,50);
+}
+
+int main()
+{
+    int d;
+
+    d = getDPAD();
+    return d;
+}
+
+int main()
+{
+   setAlloc(64, 38,6,6,50);
 }
 
 int main()
@@ -77,10 +105,6 @@ int main()
     b = getButton();
     return b;
 }
-
-
-
-
 
 
 int main()
@@ -116,7 +140,7 @@ run
 int main() {
  FbMove(10, 0);
  FbWrite("hello world");
- flareled(100, 10, 200);
+ flareled(150, 100, 200);
  led(0, 0, 100);
  return 123;
 }

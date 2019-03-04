@@ -262,7 +262,6 @@ static unsigned char textBuffer[TEXTBUFFERSIZE], textBufPtr=0;
 #define SOURCEBUFFERSIZE 2048
 char sourceBuffer[SOURCEBUFFERSIZE];
 
-void interp_stats();
 /*
   process one line of input
 */
@@ -276,7 +275,7 @@ void doLine()
 	strcpy(&(lineOutBuffer[lineOutBufPtr]), "\r\n"); 
 	lineOutBufPtr += 2;
 
-	r = interpreter_main(sourceBuffer); 
+	r = interpreterMain(sourceBuffer); 
 
 	lineOutBufPtr = 0; 
 	lineOutBuffer[lineOutBufPtr] = 0; 
@@ -287,17 +286,16 @@ void doLine()
 	decDump(r, &(lineOutBuffer[lineOutBufPtr]));
 	lineOutBufPtr += 8; /* always converts 8 digits */
 
-        interp_stats();
+        interpreterStats();
 
 	lineOutBufPtr = 0; 
 	lineOutBuffer[lineOutBufPtr] = 0; 
 	//memset(sourceBuffer, 0, SOURCEBUFFERSIZE);
     }
-    else if (strncmp(textBuffer,"usefb",5) == 0) {
-	interpreter_use_fb(1);
-    } 
-    else if (strncmp(textBuffer,"useram",6) == 0) {
-	interpreter_use_fb(0);
+    else if (strncmp(textBuffer,"reset",5) == 0) {
+	interpreterInit0();
+	setAlloc(0, 38, 6, 6, 50);
+	interpreterAlloc();
     } 
     else if (strncmp(textBuffer,"new",3) == 0) {
 	    memset(sourceBuffer, 0, SOURCEBUFFERSIZE);
@@ -305,7 +303,6 @@ void doLine()
     else if (strncmp(textBuffer,"list",4) == 0) {
 	char *startS, *endS;
 
-	echoUSB("\r\nlisting\r\n");
 	startS = sourceBuffer;
 
 	lineOutBufPtr = 0; 
@@ -344,22 +341,12 @@ void check_usb_output(int *outp, int force)
   }
 }
 
-#define CHECK_USB_OUTPUT \
-  if (outp == (CDC_DATA_OUT_EP_SIZE-1)) { \
-	USB_Out_Buffer[outp] = 0; \
-	outp = 0; \
-	flushUSB(); \
-	flushUSB(); \
-  };
-
 static unsigned char writeLOCK=0;
 void ProcessIO(void)
 {
     unsigned char nread=0;
     static int doInterpreter = 0;
     int i;
-
-    if (mchipUSBnotReady()) return;
 
     /*
 	this ProcessIO() is the badge main loop
@@ -370,6 +357,8 @@ void ProcessIO(void)
     IRhandler(); /* do any pending IR callbacks */
     menus();
     FbPushBuffer();
+
+    if (mchipUSBnotReady()) return;
 
 
     if (writeLOCK == 0) {

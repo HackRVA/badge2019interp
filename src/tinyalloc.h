@@ -36,12 +36,9 @@ typedef struct {
 
 extern Heap ta_heap;
 
-extern unsigned char *ta_base;
 extern unsigned char *ta_heap_start;
 extern unsigned char *ta_heap_limit;
 
-
-#define TA_BASE *ta_base
 #define TA_HEAP_START ta_heap_start
 #define TA_HEAP_LIMIT ta_heap_limit
 

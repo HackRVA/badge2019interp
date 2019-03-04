@@ -60,7 +60,7 @@ void QC_cb()
 	case RUN:
         // Received a QC ping
         if(QC_IR == 1){
-            setNote(77, 1024);
+            setNote(80, 4096);
             FbMove(10, 40);
             FbColor(GREEN);
             //FbFilledRectangle(20, 20);
@@ -73,7 +73,7 @@ void QC_cb()
         }
         // Received a QC ping 
         else if(QC_IR == 2){
-            setNote(99, 2048);
+            setNote(60, 2048);
             FbMove(10, 50);
             FbColor(YELLOW);
             //FbFilledRectangle(20, 20);
@@ -104,7 +104,7 @@ void QC_cb()
             redraw = 1;
         }
         
-        if(G_button_cnt > 100){
+        if(G_button_cnt > 5000){
             FbMove(16, 26);
             FbWriteLine("EXITING");
             FbSwapBuffers();
