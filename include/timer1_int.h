@@ -21,6 +21,8 @@ void led(unsigned char r, unsigned char g, unsigned char b);
 void backlight(unsigned char bright) ;
 void led_input_hack(unsigned char OnOff) ; // use LEDs as inputs
 void no_LED_PWM(unsigned char onOff) ;
+void flareled(unsigned char r_pwm, unsigned char g_pwm, unsigned char b_pwm);
+
 
 void timerInit();
 

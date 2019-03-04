@@ -1,11 +1,11 @@
 main()
 {
-    interpAlloc(124, 30, 5, 5, 60);
+    setAlloc(48, 30, 5, 5, 60);
 }
 
 main()
 {
-    interpAlloc(32, 50, 6, 6, 38);
+    setAlloc(32, 50, 6, 6, 38);
 }
 
 
@@ -65,7 +65,7 @@ int main()
 
 int main()
 {
-   interpAlloc(32, 38,6,6,50);
+   setAlloc(32, 38,6,6,50);
 }
 
 int main()
@@ -78,12 +78,12 @@ int main()
 
 int main()
 {
-   interpAlloc(32, 38,6,6,50);
+   setAlloc(32, 38,6,6,50);
 }
 
 int main()
 {
-   interpAlloc(0, 38,6,6,50);
+   setAlloc(0, 38,6,6,50);
 }
 
 int main()
@@ -96,7 +96,7 @@ int main()
 
 int main()
 {
-   interpAlloc(64, 38,6,6,50);
+   setAlloc(64, 38,6,6,50);
 }
 
 int main()
@@ -125,7 +125,6 @@ int main()
 }
 
 int main() {
-    FbClear(10, 0);
     FbMove(10, 0);
     FbWrite("hello world");
 }
@@ -141,7 +140,7 @@ run
 int main() {
  FbMove(10, 0);
  FbWrite("hello world");
- flareled(100, 10, 200);
+ flareled(150, 100, 200);
  led(0, 0, 100);
  return 123;
 }
