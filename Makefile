@@ -31,7 +31,8 @@ SRC_BADGE_C = \
 	src/microchip.c src/assets.c src/assetList.c src/ir.c \
 	src/timer1_int.c src/interpreter.c src/pic32config.c \
 	src/buttons.c src/settings.c src/menu.c src/adc_int.c \
-        src/LCDcolor.c src/S6B33.c src/badge.c src/fb.c src/tinyalloc.c
+        src/LCDcolor.c src/S6B33.c src/badge.c src/fb.c src/tinyalloc.c \
+	src/achievements.c
 
 #        src/LCDcolor.c src/S6B33.c src/badge.c src/fb.c src/schedule.c
 
