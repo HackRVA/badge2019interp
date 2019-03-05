@@ -241,4 +241,22 @@ main()
    return *x;
 }
 
+main()
+{
+    // 30+5+5+40 = 80% used, 20% malloc
+    setAlloc(48, 30, 5, 5, 40);
+}
+
+run
+
+new
+
+main()
+{
+   int *x;
+   x = malloc(64);
+
+   return x;
+}
+
 

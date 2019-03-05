@@ -286,6 +286,12 @@ void doLine()
 	decDump(r, &(lineOutBuffer[lineOutBufPtr]));
 	lineOutBufPtr += 8; /* always converts 8 digits */
 
+	strcpy(&(lineOutBuffer[lineOutBufPtr]), "  ");
+	lineOutBufPtr += 2;
+
+	hexDump(r, &(lineOutBuffer[lineOutBufPtr]));
+	lineOutBufPtr += 8; /* always converts 8 digits */
+
         interpreterStats();
 
 	lineOutBufPtr = 0; 

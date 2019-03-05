@@ -18,7 +18,7 @@ INC += -DPAULSHACKEDBADGE
 
 #BADGE_CFLAGS = $(INC) -x c -c -mprocessor=32MX270F256D -Os
 #BADGE_CFLAGS = $(INC) -S -c -mprocessor=32MX270F256D -O0 -g
-BADGE_CFLAGS = $(INC) -c -mprocessor=32MX270F256D -O0 -g
+BADGE_CFLAGS = $(INC) -c -mprocessor=32MX270F256D -O1
 
 LIBS = /opt/microchip/xc32/v1.34/pic32mx/lib/libmchp_peripheral_32MX270F256D.a
 
@@ -74,11 +74,11 @@ $(BUILD)/firmware.hex: $(BUILD)/firmware.elf
 	$(CROSS_COMPILE)bin2hex $(BUILD)/firmware.elf
 
 ramsyms:	build/firmware.elf
-	nm -S build/firmware.elf | grep ^a00 | sort -r -t\  -k2
+	$(CROSS_COMPILE)nm -S build/firmware.elf | grep ^a00 | sort -r -t\  -k2
 
 #vfprintf routines are huge- 8k
 romsyms:	build/firmware.elf
-	nm -S build/firmware.elf | grep ^9d0 | sed -e '/ t /d' -e '/ [Aa] /d' | sort -r -t\  -k2
+	$(CROSS_COMPILE)nm -S build/firmware.elf | grep ^9d0 | sed -e '/ t /d' -e '/ [Aa] /d' | sort -r -t\  -k2
 
 # more fine grain symbols filtering. see man nm
 #	nm -S build/firmware.elf | sed -e '/ W /d' -e ' r /d' -e '/ D /d' -e '/ R /d' -e '/ T /d' -e '/ [Aa] /d' -e '/ N /d' -e '/ t /d' -e '/^    /d' | sort -r -t\  -k2

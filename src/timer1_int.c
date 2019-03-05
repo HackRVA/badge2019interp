@@ -5,11 +5,6 @@
 #include "timer1_int.h"
 
 /*
-    38khz IR timer code and interupt code
-    120 fps timer interupt code
-    LED PWM
-    backlight PWM
-
     Author: Paul Bruggeman
     paul@killercats.com
     4/2015
@@ -18,20 +13,13 @@
 /*
     2018 reworked high -> low priority
 
-    priority 6 = external int 4. IR recv. started
-    // EXT4 int enabled when IR recv is 0 otherwise 1+
-    priority 5 = timer2 IR send/recv
+    priority 6 = external interupts 4. Indicates IR recv. started
+    priority 5 = timer2 IR send/recv 38khz
     priority 4 = ADC analog/digital converter
-    priority 3 = timer4 audio PWM
-    priority 2 = timer3 LED PWM
+    priority 3 = timer4 audio PWM 38khz
+    priority 2 = timer3 LED PWM  40khz divides into 40mhz evenly
 
 */
-
-// timer4 is PWM and audio and has priority 1 (low)
-// timer2 is IR send and has priority 2
-// ADC priority 5
-// external interrupt 4 has priority 6  (high)
-
 
 
 /*
@@ -495,6 +483,7 @@ void __ISR(_TIMER_3_VECTOR, IPL2SOFT) Timer3Handler(void)
 	    wclock.sec = 0;
 	    if (wclock.min == 60) {
 		wclock.hour++;
+		if(wclock.hour == 24) wclock.hour = 0; /* it could happen */
 		wclock.min = 0;;
 	    }
 	}
@@ -622,6 +611,7 @@ void flarePWM()
 #ifdef PAULSHACKEDBADGE
     static int onled=0;
     /*
+	because of hardware design (shared ground)
 	only one led can be on at a time
     */
     switch (onled) {

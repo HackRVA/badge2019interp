@@ -25,10 +25,6 @@ static jmp_buf error_exit;
 
 */
 
-void backlight(char b)
-{
-}
-
 union IRpacket_u G_hack;
 
 void echoUSB(char *str) {
@@ -63,12 +59,13 @@ int token; // current token
 */
 
 enum { LEA, IMM, JMP, CALL, JZ, JNZ, ENT, ADJ, LEV, LI, LC, SI, SC, PUSH,
-       OR, XOR, AND, EQ, NE, LT, GT, LE, GE, SHL, SHR, ADD, SUB, MUL, DIV, MOD, 
-       PRT, PRTD, PRTX, MALC, MSET, MCMP,
-       FLARELED, LED, FBMOVE, FBWRITE, BACKLIGHT,
-       IRRECEIVE, IRSEND, SETNOTE, GETBUTTON, GETDPAD, CONTRAST, IRSTATS,
-       SETTIME, GETTIME, FBLINE, FBCLEAR, FLASHW, FLASHR, IALLOC,
-       EXIT
+	OR, XOR, AND, EQ, NE, LT, GT, LE, GE, SHL, SHR, ADD, SUB, MUL, DIV, MOD, 
+	PRT, PRTD, PRTX, MALC, MSET, MCMP,
+	FLARELED, LED, FBMOVE, FBWRITE, 
+	IRRECEIVE, IRSEND, SETNOTE, GETBUTTON, GETDPAD, 
+	IRSTATS, SETTIME, GETTIME, FBLINE, FBCLEAR, 
+	FLASHW, FLASHR, IALLOC,
+	EXIT
 };
 
 /* these map to above
@@ -123,12 +120,6 @@ int expr_type;   // the type of an expression
    add opcode check eg: /else if (op == MCMP)/
    add function call below
 */
-
-void contrast(unsigned char con)
-{
-    S6B33_send_command(CONTRAST_CONTROL1); 
-    S6B33_send_command(con);
-}
 
 void IRstats()
 {
@@ -1463,23 +1454,18 @@ int eval() {
                 echoUSB("\r\n");
                 ax = 0;
 	}
-        //else if (op == MALC) { ax = (int)malloc(*sp);}
-        else if (op == MALC) { }
-        //else if (op == MSET) { ax = (int)memset((char *)sp[2], sp[1], *sp);}
-        else if (op == MSET) { }
-        //else if (op == MCMP) { ax = memcmp((char *)sp[2], (char *)sp[1], *sp);}
-        else if (op == MCMP) { }
+        else if (op == MALC) { ax = (int)ta_alloc(*sp);}
+        else if (op == MSET) { ax = (int)memset((char *)sp[2], sp[1], *sp);}
+        else if (op == MCMP) { ax = memcmp((char *)sp[2], (char *)sp[1], *sp);}
         else if (op == FLARELED) { flareled((char)sp[2], (char)sp[1], (char)sp[0]); }
         else if (op == LED) { led((char)sp[2], (char)sp[1], (char)sp[0]); }
         else if (op == FBMOVE) { FbMove((char)sp[1], (char)sp[0]); }
         else if (op == FBWRITE) { FbWriteLine((char *)sp[0]); }
-        else if (op == BACKLIGHT) { backlight((char)sp[0]); }
         else if (op == IRRECEIVE) { ax = (unsigned int)IRreceive(); }
         else if (op == IRSEND) { IRsend((int)sp[0]); }
         else if (op == SETNOTE) { setNote((int)sp[1], (int)sp[0]); }
         else if (op == GETBUTTON) { ax = (int)getButton(); } /* return button bitmask */
         else if (op == GETDPAD) { ax = (int)getDPAD(); }  /* return button bitmask */
-        else if (op == CONTRAST) { contrast((char)sp[0]); }
         else if (op == IRSTATS) { IRstats(); }
         else if (op == SETTIME) { setTime((char)sp[2], (char)sp[1], (char)sp[0]); }
         else if (op == GETTIME) { ax = (int)getTime(); }
@@ -1497,9 +1483,10 @@ int eval() {
 
 const char Csrc[] = "char else enum if int return sizeof while "
           "print printd printx malloc memset memcmp "
-	  "flareled led FbMove FbWrite backlight "
-	  "IRreceive IRsend setNote getButton getDPAD contrast "
-	  "IRstats setTime getTime FbLine FbClear flashWrite flashRead setAlloc "
+	  "flareled led FbMove FbWrite "
+	  "IRreceive IRsend setNote getButton getDPAD "
+	  "IRstats setTime getTime FbLine FbClear "
+	  "flashWrite flashRead setAlloc "
 	  "exit void main";
 
 #define TEXTSZ (2048+1024)
@@ -1589,8 +1576,8 @@ void interpreterAlloc()
 	FbClear(); 
 	FbMove(0,0); /* in case user forgets */
     }
-    ta_heap_start = (char *)(((unsigned int)ta_heap_start+3) & 0xFFFFFFFC); /* round up and align */
-    ta_heap_limit = (char *)(((unsigned int)ta_heap_limit-3) & 0xFFFFFFFC); /* round down and align */
+    ta_heap_start = (char *)(((unsigned int)ta_heap_start+3) & 0xFFFFFFFC); /* round up (into heap) and align */
+    ta_heap_limit = (char *)(((unsigned int)ta_heap_limit-3) & 0xFFFFFFFC); /* round down (into heap) and align */
 
     ramsz = (ta_heap_limit - ta_heap_start) ; /* overhead for alignment */
 
@@ -1769,7 +1756,7 @@ int interpreterCatcher(char *prog)
 
    /* in case of error */
    if (r = setjmp(error_exit)) {
-	r += 100000; /* indicate error with offset */
+	r += 100000; /* returned error, add val to indicate error with offset */
    }
    else {
 	interpreterInit();
