@@ -29,6 +29,7 @@
 #include "colors.h"
 #include "menu.h"
 #include "buttons.h"
+#include "achievements.h"
 
 /* TODO: I shouldn't have to declare these myself. */
 #define size_t int
@@ -1009,6 +1010,7 @@ static int check_for_encounter(unsigned char newx, unsigned char newy)
                 }
                 break;
             case MAZE_OBJECT_CHALICE:
+		add_achievement(ACHIEVEMENT_MAZE_CHALICE_FOUND, 1);
                 encounter_text = "YOU FOUND THE";
                 encounter_adjective = "CHALICE OF";
                 encounter_name = "OBFUSCATION!";
@@ -1155,6 +1157,8 @@ static void move_player_one_step(int direction)
            combatant.hitpoints = hp;
            if (combatant.hitpoints == 0) {
                maze_program_state = MAZE_STATE_PLAYER_DEFEATS_MONSTER;
+               if (strcmp(maze_object_template[maze_object[encounter_object].type].name, "DRAGON") == 0)
+                   add_achievement(ACHIEVEMENT_MAZE_DRAGONS_SLAIN, 1);
                combat_mode = 0;
                maze_object[encounter_object].x = 255; /* Move it off the board */
            }
@@ -1675,6 +1679,7 @@ static void maze_game_init(void)
     if (xorshift_state == 0)
         xorshift_state = 0xa5a5a5a5;
 
+    maybe_load_achievements_from_flash();
     init_seeds();
     player_init();
     potions_init();
@@ -1880,6 +1885,7 @@ static void maze_win_condition(void)
     maze_previous_level = -1;
     maze_player_initial_placement = MAZE_PLACE_PLAYER_BENEATH_UP_LADDER;
     maze_program_state = MAZE_SCREEN_RENDER;
+    add_achievement(ACHIEVEMENT_MAZE_CHALICE_RECOVERED, 1);
 }
 
 static void maze_drop_object(void)
