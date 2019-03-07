@@ -13,12 +13,13 @@ code must run in.
 #include <stdlib.h>
 #include <sys/time.h>
 
-#include "linuxcompat.h"
+#include "../linux/linuxcompat.h"
 
 int argcount;
 char **arguments;
 
-#define SETUP_IR_SENSOR do { setup_ir_sensor(argcount, arguments); } while (0)
+#define DISABLE_INTERRUPTS do { disable_interrupts(); } while (0)
+#define ENABLE_INTERRUPTS do { enable_interrupts(); } while (0)
 
 #else
 
@@ -44,12 +45,8 @@ extern char *strcat(char *dest, const char *src);
 #define SCREEN_XDIM 132
 #define SCREEN_YDIM 132
 
-#define SETUP_IR_SENSOR
-
-static int get_badge_id(void)
-{
-	return G_sysData.badgeId & 0x1ff; /* TODO: Is this right? */
-}
+#define DISABLE_INTERRUPTS
+#define ENABLE_INTERRUPTS
 
 #endif
 
@@ -93,7 +90,7 @@ static int nhits = 0;
  * 1 bit for start
  * 1 bit for cmd,
  * 5 bits for addr
- * 9 bits for badge_id,
+ * 9 bits for badge_id of recipient, or 0 for broadcast,
  * 16 bits for payload
  */
 static unsigned int build_ir_packet(unsigned char start, unsigned char cmd,
@@ -124,9 +121,9 @@ static unsigned char __attribute__((unused)) get_addr_bits(unsigned int packet)
 	return (unsigned char) ((packet >> 25) & 0x01f);
 }
 
-static unsigned char __attribute__((unused)) get_badge_id_bits(unsigned int packet)
+static unsigned char get_shooter_badge_id_bits(unsigned int packet)
 {
-	return (unsigned char) ((packet >> 16) & 0x01f);
+	return (unsigned char) ((packet >> 4) & 0x1ff);
 }
 
 static unsigned short get_payload(unsigned int packet)
@@ -144,6 +141,7 @@ static void game_screen_render(void);
 static void game_shoot(void);
 static void game_confirm_exit(void);
 static void game_exit_abandoned(void);
+static void game_dump_data(void);
 
 static enum game_state_type {
 	INITIAL_STATE = 0,
@@ -153,7 +151,8 @@ static enum game_state_type {
 	GAME_SCREEN_RENDER = 4,
 	GAME_SHOOT = 5,
 	GAME_CONFIRM_EXIT = 6,
-	GAME_EXIT_ABANDONED = 7
+	GAME_EXIT_ABANDONED = 7,
+	GAME_DUMP_DATA = 8
 } game_state = INITIAL_STATE;
 
 /* Note, game_state_fn[] array must have an entry for every value
@@ -167,6 +166,7 @@ static game_state_function game_state_fn[] = {
 	game_shoot,
 	game_confirm_exit,
 	game_exit_abandoned,
+	game_dump_data,
 };
 
 struct menu_item {
@@ -291,7 +291,7 @@ static void draw_menu(void)
 	FbColor(color);
 	if (game_variant != GAME_VARIANT_NONE) {
 		FbMove(10, 10);
-		strcpy(str2, game_type[game_variant % 4]);
+		strcpy(str2, game_type[game_variant % ARRAYSIZE(game_type)]);
 		FbWriteLine(str2);
 	}
 	if (team >= 0) {
@@ -397,7 +397,6 @@ static void unregister_ir_packet_callback(void)
 static void initial_state(void)
 {
 	FbInit();
-	SETUP_IR_SENSOR;
 	register_ir_packet_callback(ir_packet_callback);
 	queue_in = 0;
 	queue_out = 0;
@@ -442,6 +441,7 @@ static void button_pressed()
 	}
 }
 
+#ifndef __linux__
 static int get_time(void)
 {
 #if LASERTAG_DISPLAY_CURRENT_TIME
@@ -454,6 +454,7 @@ static int get_time(void)
 #endif
 	return 3600 * (int) wclock.hour + 60 * (int) wclock.min + (int) wclock.sec;
 }
+#endif
 
 static void set_game_start_timestamp(int time)
 {
@@ -471,7 +472,7 @@ static void process_hit(unsigned int packet)
 {
 	int timestamp;
 	unsigned char shooter_team = (get_payload(packet) | 0x0f);
-	unsigned short badgeid = get_badge_id_bits(packet);
+	unsigned short badgeid = get_shooter_badge_id_bits(packet);
 	timestamp = current_time - game_start_timestamp;
 	if (timestamp < 0) /* game has not started yet  */
 		return;
@@ -514,56 +515,77 @@ static void send_ir_packet(unsigned int packet)
 	IRqueueSend(p);
 }
 
+static void send_badge_identity_packet(void)
+{
+	send_ir_packet(build_ir_packet(1, 1, BADGE_IR_GAME_ADDRESS, BADGE_IR_BROADCAST_ID,
+		(OPCODE_BADGE_IDENTITY << 12) | (G_sysData.badgeId & 0x01ff)));
+}
+
 static void send_game_id_packet(unsigned int game_id)
 {
-	send_ir_packet(build_ir_packet(1, 1, BADGE_IR_GAME_ADDRESS, get_badge_id(),
+	send_ir_packet(build_ir_packet(1, 1, BADGE_IR_GAME_ADDRESS, BADGE_IR_BROADCAST_ID,
 		(OPCODE_GAME_ID << 12) | (game_id & 0x0fff)));
 }
 
 static void send_badge_record_count(unsigned int nhits)
 {
-	send_ir_packet(build_ir_packet(1, 1, BADGE_IR_GAME_ADDRESS, get_badge_id(),
-		(OPCODE_GAME_ID << 12) | (nhits & 0x0fff)));
+	send_ir_packet(build_ir_packet(1, 1, BADGE_IR_GAME_ADDRESS, BADGE_IR_BROADCAST_ID,
+		(OPCODE_BADGE_RECORD_COUNT << 12) | (nhits & 0x0fff)));
 }
 
 static void send_badge_upload_hit_record_badge_id(struct hit_table_entry *h)
 {
-	send_ir_packet(build_ir_packet(1, 1, BADGE_IR_GAME_ADDRESS, get_badge_id(),
+	send_ir_packet(build_ir_packet(1, 1, BADGE_IR_GAME_ADDRESS, BADGE_IR_BROADCAST_ID,
 		(OPCODE_BADGE_UPLOAD_HIT_RECORD_BADGE_ID << 12) | (h->badgeid & 0x01ff)));
 }
 
 static void send_badge_upload_hit_record_timestamp(struct hit_table_entry *h)
 {
-	send_ir_packet(build_ir_packet(1, 1, BADGE_IR_GAME_ADDRESS, get_badge_id(),
+	send_ir_packet(build_ir_packet(1, 1, BADGE_IR_GAME_ADDRESS, BADGE_IR_BROADCAST_ID,
 		(OPCODE_BADGE_UPLOAD_HIT_RECORD_TIMESTAMP << 12) | (h->timestamp & 0x0fff)));
 }
 
 static void send_badge_upload_hit_record_team(struct hit_table_entry *h)
 {
-	send_ir_packet(build_ir_packet(1, 1, BADGE_IR_GAME_ADDRESS, get_badge_id(),
+	send_ir_packet(build_ir_packet(1, 1, BADGE_IR_GAME_ADDRESS, BADGE_IR_BROADCAST_ID,
 		(OPCODE_SET_BADGE_TEAM << 12) | (h->team & 0x0fff)));
 }
 
-static void dump_badge_to_base_station(void)
+static void game_dump_data(void)
 {
-	int i;
+	static int record_num = 0;
 
 	/*
 	* 1. Base station requests info from badge: OPCODE_REQUEST_BADGE_DUMP
-	* 2. Badge responds with OPCODE_GAME_ID
-	* 3. Badge responds with OPCODE_BADGE_RECORD_COUNT
-	* 4. Badge responds with triplets of OPCODE_BADGE_UPLOAD_HIT_RECORD_BADGE_ID,
+	* 2. Badge respondes with OPCODE_BADGE_IDENTITY
+	* 3. Badge responds with OPCODE_GAME_ID
+	* 4. Badge responds with OPCODE_BADGE_RECORD_COUNT
+	* 5. Badge responds with triplets of OPCODE_BADGE_UPLOAD_HIT_RECORD_BADGE_ID,
 	*    OPCODE_BADGE_UPLOAD_HIT_RECORD_TIMESTAMP, and OPCODE_SET_BADGE_TEAM.
 	*/
 
-	send_game_id_packet(game_id);
-	send_badge_record_count(nhits);
-
-	for (i = 0; i < nhits; i++) {
-		send_badge_upload_hit_record_badge_id(&hit_table[i]);
-		send_badge_upload_hit_record_timestamp(&hit_table[i]);
-		send_badge_upload_hit_record_team(&hit_table[i]);
+	/* This check is probably racy */
+	if (((IRpacketOutNext+1) % MAXPACKETQUEUE) == IRpacketOutCurr) {
+		return;
 	}
+
+	if (record_num == 0) {
+		send_badge_identity_packet();
+	} else if (record_num == 1) {
+		send_game_id_packet(game_id);
+	} else if (record_num == 2) {
+		send_badge_record_count(nhits);
+	} else if (record_num < nhits + 3) {
+		send_badge_upload_hit_record_badge_id(&hit_table[record_num - 2]);
+		send_badge_upload_hit_record_timestamp(&hit_table[record_num - 2]);
+		send_badge_upload_hit_record_team(&hit_table[record_num - 2]);
+	} else {
+		record_num = 0;
+		game_state = GAME_PROCESS_BUTTON_PRESSES;
+		return;
+	}
+	record_num++;
+	return;
 }
 
 static void process_packet(unsigned int packet)
@@ -598,14 +620,14 @@ static void process_packet(unsigned int packet)
 		process_hit(packet);
 		break;
 	case OPCODE_REQUEST_BADGE_DUMP:
-		dump_badge_to_base_station();
+		game_state = GAME_DUMP_DATA;
 		break;
 	case OPCODE_SET_BADGE_TEAM:
 		team = payload & 0x0f; /* TODO sanity check this better. */
 		screen_changed = 1;
 		break;
 	case OPCODE_SET_GAME_VARIANT:
-		game_variant = payload & 0x0f; /* TODO sanity check this better. */
+		game_variant = (payload & 0x0f) % ARRAYSIZE(game_type);
 		screen_changed = 1;
 		break;
 	case OPCODE_GAME_ID:
@@ -615,15 +637,6 @@ static void process_packet(unsigned int packet)
 		break;
 	}
 }
-
-#ifdef __linux__
-#define DISABLE_INTERRUPTS do { disable_interrupts(); } while (0)
-#define ENABLE_INTERRUPTS do { enable_interrupts(); } while (0)
-#else
-#define DISABLE_INTERRUPTS
-#define ENABLE_INTERRUPTS
-#endif
-
 
 static void check_for_incoming_packets(void)
 {
@@ -688,7 +701,7 @@ static void game_screen_render(void)
 	game_state = GAME_PROCESS_BUTTON_PRESSES;
 	if (!screen_changed)
 		return;
-	FbSwapBuffers();
+	FbPushBuffer();
 	screen_changed = 0;
 }
 
@@ -697,8 +710,8 @@ static void game_shoot(void)
 	unsigned int packet;
 	unsigned short payload;
 
-	payload = (OPCODE_HIT << 12) | (team & 0x0f);
-	packet = build_ir_packet(0, 1, BADGE_IR_GAME_ADDRESS, get_badge_id(), payload);
+	payload = (OPCODE_HIT << 12) | ((G_sysData.badgeId & 0x1ff) << 4) | (team & 0x0f);
+	packet = build_ir_packet(0, 1, BADGE_IR_GAME_ADDRESS, BADGE_IR_BROADCAST_ID, payload);
 	send_ir_packet(packet);
 
 	game_state = GAME_MAIN_MENU;
@@ -717,6 +730,10 @@ int main(int argc, char *argv[])
 	argcount = argc;
 	arguments = argv;
 
+#define IRXMIT_UDP_PORT 12345
+#define LASERTAG_UDP_PORT 12346
+
+	setup_linux_ir_simulator(IRXMIT_UDP_PORT, LASERTAG_UDP_PORT);
 	start_gtk(&argc, &argv, lasertag_cb, 30);
 	return 0;
 }

@@ -31,17 +31,13 @@ SRC_BADGE_C = \
 	src/microchip.c src/assets.c src/assetList.c src/ir.c \
 	src/timer1_int.c src/interpreter.c src/pic32config.c \
 	src/buttons.c src/settings.c src/menu.c src/adc_int.c \
-        src/LCDcolor.c src/S6B33.c src/badge.c src/fb.c src/tinyalloc.c \
-	src/flash.c
-
-#        src/LCDcolor.c src/S6B33.c src/badge.c src/fb.c src/schedule.c
+        src/LCDcolor.c src/S6B33.c src/badge.c src/fb.c src/tinyalloc.c
+	src/achievements.c src/flash.c
 
 SRC_APPS_C = \
 	badge_apps/adc.c badge_apps/maze.c badge_apps/xorshift.c \
 	badge_apps/blinkenlights.c badge_apps/conductor.c \
-	badge_apps/lasertag.c badge_apps/QC.c
-
-#	badge_apps/QC.c badge_apps/lasertag.c
+	badge_apps/lasertag.c badge_apps/QC.c badge_apps/irxmit.c
 
 SRC_USB_C = USB/usb_device.c  USB/usb_function_cdc.c USB/usb_descriptors.c
 
@@ -51,7 +47,23 @@ BDGOBJ = $(addprefix $(BUILD)/, $(SRC_BADGE_C:.c=.o) $(SRC_BADGE_S:.s=.o))
 
 USBOBJ = $(addprefix $(BUILD)/, $(SRC_USB_C:.c=.o) $(SRC_USB_S:.s=.o))
 
+# Docker stuff
+TAG_COMPILER=badge-compiler:latest
+TAG_IDE=badge-ide:latest
+XAUTH=/tmp/.docker.xauth
+DOCKER_RUN=docker run -v `pwd`:/work -w /work -u `id -u $$USER`:`id -g $$USER`
+DOCKER_IDE_OPTS= --privileged -v /dev/bus/usb:/dev/bus/usb -v /tmp/.X11-unix:/tmp/.X11-unix -e HOME:/work -e DISPLAY=:0 -v ${XAUTH}:${XAUTH} -e XAUTHORITY=${XAUTH} -v `pwd`/docker/home:/home/build
+
 all: $(BUILD)/firmware.elf $(BUILD)/firmware.hex
+
+all-docker: docker-build-compiler
+	${DOCKER_RUN} -it ${TAG_COMPILER} make clean all
+
+ide: docker-build-ide $(XAUTH)
+	${DOCKER_RUN} ${DOCKER_IDE_OPTS} ${TAG_IDE}
+
+install: all
+	sudo ./tools/bootloadit
 
 $(APPOBJ): $(SRC_APPS_C)
 	mkdir -p $(BUILD)/badge_apps
@@ -87,3 +99,21 @@ romsyms:	build/firmware.elf
 clean:
 	find build -type f -exec rm -f \{\} \;
 
+# DOCKER
+docker-build-compiler:
+	docker build --compress -t ${TAG_COMPILER} ./docker/badge-compiler/
+
+docker-build-ide: docker-build-compiler
+	docker build --compress -t ${TAG_IDE} ./docker/badge-ide/
+
+$(XAUTH):
+	xauth nlist :0 | sed -e 's/^..../ffff/' | xauth -f ${XAUTH} nmerge -
+
+docker-kill:
+	$(eval images := `docker container ls | grep "badge-" | awk '{print $$1}'`)
+	if [ "$($images)" != "" ] ; then docker kill $($images); fi
+
+docker-clean:
+	docker rmi -f ${TAG_COMPILER}
+	docker rmi -f ${TAG_IDE}
+	docker image ls | grep none | awk '{print $$3}' | xargs docker rmi -f
