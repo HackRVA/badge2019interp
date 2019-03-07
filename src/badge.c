@@ -6,6 +6,8 @@
 #include "menu.h"
 #include "interpreter.h"
 #include "buttons.h"
+#include "timer1_int.h"
+#include "assets.h"
 
 #include "USB/usb_config.h" // for buffer size/CDC_DATA_IN_EP_SIZE
 
@@ -341,15 +343,22 @@ void doLine()
 */
 void check_usb_output(int *outp, int force)
 {
-  if (force || (*outp == (CDC_DATA_OUT_EP_SIZE-1))) {
+    if (force || (*outp == (CDC_DATA_OUT_EP_SIZE-1))) {
 	USB_Out_Buffer[*outp] = 0;
 	*outp = 0; 
 	flushUSB();
 	flushUSB();
-  }
+    }
 }
 
-const int *p_argv[2] = {&G_up_button_cnt, &G_down_button_cnt};
+unsigned char drbob=DRBOB;
+
+const int *bindings[] = {
+    (int *)&G_button_cnt, (int *)&G_up_button_cnt, (int *)&G_down_button_cnt, (int *)&G_left_button_cnt, (int *)&G_right_button_cnt,
+    (int *)&(wclock.hour), (int *)&(wclock.min), (int *)&(wclock.sec),
+    (int *)&G_sysData.badgeId, (int *)&G_sysData.name, (int *)&flashedBadgeId, (int *)&G_flashAddr,
+    (int *)&drawLCD8, (int *)&drbob, 
+};
 
 static unsigned char writeLOCK=0;
 void ProcessIO(void)
@@ -365,7 +374,7 @@ void ProcessIO(void)
     */
     doButtons();
     IRhandler(); /* do any pending IR callbacks */
-    dopersist(2, p_argv); /* do after button and IR so we can intercept */
+    dopersist(sizeof(bindings)/4, bindings); /* do after button and IR so we can intercept */
     menus();
     FbPushBuffer();
 

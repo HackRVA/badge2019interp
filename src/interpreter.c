@@ -64,7 +64,7 @@ enum { LEA, IMM, JMP, CALL, JZ, JNZ, ENT, ADJ, LEV, LI, LC, SI, SC, PUSH,
 	FLARELED, LED, FBMOVE, FBWRITE, 
 	IRRECEIVE, IRSEND, SETNOTE, GETBUTTON, GETDPAD, 
 	IRSTATS, SETTIME, GETTIME, FBLINE, FBCLEAR, 
-	FLASHW, FLASHR, IALLOC,
+	FLASHW, FLASHR, IALLOC, CALLBACK,
 	EXIT
 };
 
@@ -1474,6 +1474,11 @@ int eval() {
         else if (op == FLASHW) { ax = (unsigned int)IflashWrite((unsigned int)sp[0]); }
         else if (op == FLASHR) { ax = IflashRead((unsigned int)sp[0]); }
         else if (op == IALLOC) { setAlloc((unsigned int)sp[4], (unsigned int)sp[3], (unsigned int)sp[2], (unsigned int)sp[1], (unsigned int)sp[0]); }
+	// (void (*)(void *))
+        else if (op == CALLBACK) { 
+		void (*f)(unsigned char , int ) = (void (*)(unsigned char, int))(sp[2]);
+		f((unsigned char)0, (int)0);
+	}
         else {
             echoUSB("unknown instruction\n");
 	    longjmp(error_exit, op);
@@ -1486,7 +1491,7 @@ const char Csrc[] = "char else enum if int return sizeof while "
 	  "flareled led FbMove FbWrite "
 	  "IRreceive IRsend setNote getButton getDPAD "
 	  "IRstats setTime getTime FbLine FbClear "
-	  "flashWrite flashRead setAlloc "
+	  "flashWrite flashRead setAlloc callback "
 	  "exit void persist main";
 
 #define TEXTSZ (2048+1024)
@@ -1687,7 +1692,7 @@ void interpreterInit()
     next(); idmain = current_id; // keep track of main
 }
 
-int dopersist(int argc, int *argv[])
+int dopersist(int argc, const int **argv)
 {
     int *tmp, r;
 
@@ -1728,8 +1733,8 @@ int run()
 	   echoUSB("main() not defined");
 	   longjmp(error_exit, 666);
 	}
-	// persist returns 0 but does not eval 
-	// first time bcs argc/argv not setup
+	// persist fall thru. returns 0 but does not eval 
+	// first time bcs argc/argv not passed in
 	return 0; 
     }
     else {
