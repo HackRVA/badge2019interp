@@ -260,3 +260,53 @@ main()
 }
 
 
+// led light show
+main()
+{
+    setAlloc(0, 35, 5, 10, 50);
+}
+run
+
+int i;
+int persist(int argc, int *argv)
+{
+   char *btn_up, *btn_down;
+
+   // casting between badge args and 
+   // here has to be preserved
+   // because of int <-> char alignment
+   // otherwise will fault and lockup badge
+   // btns are unsigned char types
+
+   if (argc != 2) return -1;
+
+   btn_up = (char *)*argv++;
+   btn_down = (char *)*argv++;
+
+   //printx((int)*btn_up);
+   //printx((int)*btn_down);
+
+   i = i + 1;
+   i = i % 5000;
+
+   if (i == 500) *btn_down = 200;
+
+   if (i<1000) 
+	led((char)i, 0, 0);
+   else 
+   if (i<2000) 
+	led(0, (char)i, 0);
+   else 
+   if (i<3000) 
+	led(0, 0, (char)i);
+   else 
+   if (i<4000) 
+	led((char)i, (char)i, (char)i);
+
+   // make butn go up
+   if (i == 4500) *btn_up = 200;
+
+   return 0;
+}
+
+

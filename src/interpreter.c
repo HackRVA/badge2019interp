@@ -97,7 +97,7 @@ enum {Global, Local};
 int *text=0, *textbase, // text segment
     *stack=0, *stackbase, *stacklow;// stack
 char *data=0, *database; // data segment
-int *idmain;
+int *idmain, *idpersist=0;
 
 char *src=0;  // pointer to source code string;
 
@@ -1458,7 +1458,7 @@ int eval() {
         else if (op == MSET) { ax = (int)memset((char *)sp[2], sp[1], *sp);}
         else if (op == MCMP) { ax = memcmp((char *)sp[2], (char *)sp[1], *sp);}
         else if (op == FLARELED) { flareled((char)sp[2], (char)sp[1], (char)sp[0]); }
-        else if (op == LED) { led((char)sp[2], (char)sp[1], (char)sp[0]); }
+        else if (op == LED) { led((unsigned char)sp[2], (unsigned char)sp[1], (unsigned char)sp[0]); }
         else if (op == FBMOVE) { FbMove((char)sp[1], (char)sp[0]); }
         else if (op == FBWRITE) { FbWriteLine((char *)sp[0]); }
         else if (op == IRRECEIVE) { ax = (unsigned int)IRreceive(); }
@@ -1487,7 +1487,7 @@ const char Csrc[] = "char else enum if int return sizeof while "
 	  "IRreceive IRsend setNote getButton getDPAD "
 	  "IRstats setTime getTime FbLine FbClear "
 	  "flashWrite flashRead setAlloc "
-	  "exit void main";
+	  "exit void persist main";
 
 #define TEXTSZ (2048+1024)
 #define DATASZ 256
@@ -1526,6 +1526,7 @@ void setAlloc(int allocScanlines, int textpct, int datapct, int stackpct, int sy
 
 void interpreterInit0()
 {
+    idpersist = 0;
     idmain = 0;
     src=0;
 
@@ -1682,7 +1683,36 @@ void interpreterInit()
     }
 
     next(); current_id[Token] = Char; // handle void type
+    next(); idpersist = current_id; // keep track of main
     next(); idmain = current_id; // keep track of main
+}
+
+int dopersist(int argc, int *argv[])
+{
+    int *tmp, r;
+
+    // no persist setup
+    if ((idpersist == 0) || (idpersist[Value] == 0)) return -1;
+
+    stacklow = sp = (int *)((int)stack + stacksz);
+    if (r = setjmp(error_exit)) {
+	r += 100000; /* returned error, add val to indicate error with offset */
+	idpersist = 0; /* error, no more calls for you */
+	echoUSB("persist error\r\n");
+    }
+    else {
+	pc = (int *)idpersist[Value];
+
+	//stacklow = sp = (int *)((int)stack + stacksz);
+	*--sp = EXIT; // call exit if main returns
+	*--sp = PUSH; tmp = sp;
+	*--sp = argc;
+	*--sp = (int)argv;
+	*--sp = (int)tmp;
+
+	r = eval();
+    }
+    return r;
 }
 
 int run()
@@ -1691,20 +1721,27 @@ int run()
     int argc=0;
     char *argv[]={""};
 
-    if (!(pc = (int *)idmain[Value])) {
-	echoUSB("main() not defined");
-	longjmp(error_exit, 666);
-    }
-
-    // setup stack
     stacklow = sp = (int *)((int)stack + stacksz);
-    *--sp = EXIT; // call exit if main returns
-    *--sp = PUSH; tmp = sp;
-    *--sp = argc;
-    *--sp = (int)argv;
-    *--sp = (int)tmp;
-
-    return eval();
+    if (!(pc = (int *)idmain[Value])) {
+	// maybe a persist function
+        if ((idpersist == 0) || (idpersist[Value] == 0)) {
+	   echoUSB("main() not defined");
+	   longjmp(error_exit, 666);
+	}
+	// persist returns 0 but does not eval 
+	// first time bcs argc/argv not setup
+	return 0; 
+    }
+    else {
+        // setup stack
+	//stacklow = sp = (int *)((int)stack + stacksz);
+        *--sp = EXIT; // call exit if main returns
+        *--sp = PUSH; tmp = sp;
+        *--sp = argc;
+        *--sp = (int)argv;
+        *--sp = (int)tmp;
+        return eval();
+    }
 }
 
 void interpreterStats()
@@ -1750,21 +1787,21 @@ void interpreterStats()
 
 int interpreterCatcher(char *prog)
 {
-   int r;
+    int r;
 
-   r=0;
+    r=0;
 
-   /* in case of error */
-   if (r = setjmp(error_exit)) {
+    /* in case of error */
+    if (r = setjmp(error_exit)) {
 	r += 100000; /* returned error, add val to indicate error with offset */
-   }
-   else {
+    }
+    else {
 	interpreterInit();
 	src = prog;
 	program();
 	r = run();
-   }
-   return r;
+    }
+    return r;
 }
 
 #ifdef MAINAPP

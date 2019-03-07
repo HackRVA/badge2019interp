@@ -4,6 +4,8 @@
 #include "flash.h"
 #include "adc.h"
 #include "menu.h"
+#include "interpreter.h"
+#include "buttons.h"
 
 #include "USB/usb_config.h" // for buffer size/CDC_DATA_IN_EP_SIZE
 
@@ -347,6 +349,8 @@ void check_usb_output(int *outp, int force)
   }
 }
 
+const int *p_argv[2] = {&G_up_button_cnt, &G_down_button_cnt};
+
 static unsigned char writeLOCK=0;
 void ProcessIO(void)
 {
@@ -361,6 +365,7 @@ void ProcessIO(void)
     */
     doButtons();
     IRhandler(); /* do any pending IR callbacks */
+    dopersist(2, p_argv); /* do after button and IR so we can intercept */
     menus();
     FbPushBuffer();
 
