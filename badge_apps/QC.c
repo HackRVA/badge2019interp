@@ -104,7 +104,7 @@ void QC_cb()
             redraw = 1;
         }
         
-        if(G_button_cnt > 5000){
+        if(G_button_cnt > 200){
             FbMove(16, 26);
             FbWriteLine("EXITING");
             FbSwapBuffers();

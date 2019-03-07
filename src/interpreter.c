@@ -25,10 +25,6 @@ static jmp_buf error_exit;
 
 */
 
-void backlight(char b)
-{
-}
-
 union IRpacket_u G_hack;
 
 void echoUSB(char *str) {
@@ -63,12 +59,13 @@ int token; // current token
 */
 
 enum { LEA, IMM, JMP, CALL, JZ, JNZ, ENT, ADJ, LEV, LI, LC, SI, SC, PUSH,
-       OR, XOR, AND, EQ, NE, LT, GT, LE, GE, SHL, SHR, ADD, SUB, MUL, DIV, MOD, 
-       PRT, PRTD, PRTX, MALC, MSET, MCMP,
-       FLARELED, LED, FBMOVE, FBWRITE, BACKLIGHT,
-       IRRECEIVE, IRSEND, SETNOTE, GETBUTTON, GETDPAD, CONTRAST, IRSTATS,
-       SETTIME, GETTIME, FBLINE, FBCLEAR, FLASHW, FLASHR, IALLOC,
-       EXIT
+	OR, XOR, AND, EQ, NE, LT, GT, LE, GE, SHL, SHR, ADD, SUB, MUL, DIV, MOD, 
+	PRT, PRTD, PRTX, MALC, MSET, MCMP,
+	FLARELED, LED, FBMOVE, FBWRITE, 
+	IRRECEIVE, IRSEND, SETNOTE, GETBUTTON, GETDPAD, 
+	IRSTATS, SETTIME, GETTIME, FBLINE, FBCLEAR, 
+	FLASHW, FLASHR, IALLOC, CALLBACK,
+	EXIT
 };
 
 /* these map to above
@@ -100,7 +97,7 @@ enum {Global, Local};
 int *text=0, *textbase, // text segment
     *stack=0, *stackbase, *stacklow;// stack
 char *data=0, *database; // data segment
-int *idmain;
+int *idmain, *idpersist=0;
 
 char *src=0;  // pointer to source code string;
 
@@ -123,12 +120,6 @@ int expr_type;   // the type of an expression
    add opcode check eg: /else if (op == MCMP)/
    add function call below
 */
-
-void contrast(unsigned char con)
-{
-    S6B33_send_command(CONTRAST_CONTROL1); 
-    S6B33_send_command(con);
-}
 
 void IRstats()
 {
@@ -1463,23 +1454,18 @@ int eval() {
                 echoUSB("\r\n");
                 ax = 0;
 	}
-        //else if (op == MALC) { ax = (int)malloc(*sp);}
-        else if (op == MALC) { }
-        //else if (op == MSET) { ax = (int)memset((char *)sp[2], sp[1], *sp);}
-        else if (op == MSET) { }
-        //else if (op == MCMP) { ax = memcmp((char *)sp[2], (char *)sp[1], *sp);}
-        else if (op == MCMP) { }
+        else if (op == MALC) { ax = (int)ta_alloc(*sp);}
+        else if (op == MSET) { ax = (int)memset((char *)sp[2], sp[1], *sp);}
+        else if (op == MCMP) { ax = memcmp((char *)sp[2], (char *)sp[1], *sp);}
         else if (op == FLARELED) { flareled((char)sp[2], (char)sp[1], (char)sp[0]); }
-        else if (op == LED) { led((char)sp[2], (char)sp[1], (char)sp[0]); }
+        else if (op == LED) { led((unsigned char)sp[2], (unsigned char)sp[1], (unsigned char)sp[0]); }
         else if (op == FBMOVE) { FbMove((char)sp[1], (char)sp[0]); }
         else if (op == FBWRITE) { FbWriteLine((char *)sp[0]); }
-        else if (op == BACKLIGHT) { backlight((char)sp[0]); }
         else if (op == IRRECEIVE) { ax = (unsigned int)IRreceive(); }
         else if (op == IRSEND) { IRsend((int)sp[0]); }
         else if (op == SETNOTE) { setNote((int)sp[1], (int)sp[0]); }
         else if (op == GETBUTTON) { ax = (int)getButton(); } /* return button bitmask */
         else if (op == GETDPAD) { ax = (int)getDPAD(); }  /* return button bitmask */
-        else if (op == CONTRAST) { contrast((char)sp[0]); }
         else if (op == IRSTATS) { IRstats(); }
         else if (op == SETTIME) { setTime((char)sp[2], (char)sp[1], (char)sp[0]); }
         else if (op == GETTIME) { ax = (int)getTime(); }
@@ -1488,6 +1474,11 @@ int eval() {
         else if (op == FLASHW) { ax = (unsigned int)IflashWrite((unsigned int)sp[0]); }
         else if (op == FLASHR) { ax = IflashRead((unsigned int)sp[0]); }
         else if (op == IALLOC) { setAlloc((unsigned int)sp[4], (unsigned int)sp[3], (unsigned int)sp[2], (unsigned int)sp[1], (unsigned int)sp[0]); }
+	// (void (*)(void *))
+        else if (op == CALLBACK) { 
+		void (*f)(unsigned char , int ) = (void (*)(unsigned char, int))(sp[2]);
+		f((unsigned char)0, (int)0);
+	}
         else {
             echoUSB("unknown instruction\n");
 	    longjmp(error_exit, op);
@@ -1497,10 +1488,11 @@ int eval() {
 
 const char Csrc[] = "char else enum if int return sizeof while "
           "print printd printx malloc memset memcmp "
-	  "flareled led FbMove FbWrite backlight "
-	  "IRreceive IRsend setNote getButton getDPAD contrast "
-	  "IRstats setTime getTime FbLine FbClear flashWrite flashRead setAlloc "
-	  "exit void main";
+	  "flareled led FbMove FbWrite "
+	  "IRreceive IRsend setNote getButton getDPAD "
+	  "IRstats setTime getTime FbLine FbClear "
+	  "flashWrite flashRead setAlloc callback "
+	  "exit void persist main";
 
 #define TEXTSZ (2048+1024)
 #define DATASZ 256
@@ -1539,6 +1531,7 @@ void setAlloc(int allocScanlines, int textpct, int datapct, int stackpct, int sy
 
 void interpreterInit0()
 {
+    idpersist = 0;
     idmain = 0;
     src=0;
 
@@ -1589,8 +1582,8 @@ void interpreterAlloc()
 	FbClear(); 
 	FbMove(0,0); /* in case user forgets */
     }
-    ta_heap_start = (char *)(((unsigned int)ta_heap_start+3) & 0xFFFFFFFC); /* round up and align */
-    ta_heap_limit = (char *)(((unsigned int)ta_heap_limit-3) & 0xFFFFFFFC); /* round down and align */
+    ta_heap_start = (char *)(((unsigned int)ta_heap_start+3) & 0xFFFFFFFC); /* round up (into heap) and align */
+    ta_heap_limit = (char *)(((unsigned int)ta_heap_limit-3) & 0xFFFFFFFC); /* round down (into heap) and align */
 
     ramsz = (ta_heap_limit - ta_heap_start) ; /* overhead for alignment */
 
@@ -1695,7 +1688,36 @@ void interpreterInit()
     }
 
     next(); current_id[Token] = Char; // handle void type
+    next(); idpersist = current_id; // keep track of main
     next(); idmain = current_id; // keep track of main
+}
+
+int dopersist(int argc, const int **argv)
+{
+    int *tmp, r;
+
+    // no persist setup
+    if ((idpersist == 0) || (idpersist[Value] == 0)) return -1;
+
+    stacklow = sp = (int *)((int)stack + stacksz);
+    if (r = setjmp(error_exit)) {
+	r += 100000; /* returned error, add val to indicate error with offset */
+	idpersist = 0; /* error, no more calls for you */
+	echoUSB("persist error\r\n");
+    }
+    else {
+	pc = (int *)idpersist[Value];
+
+	//stacklow = sp = (int *)((int)stack + stacksz);
+	*--sp = EXIT; // call exit if main returns
+	*--sp = PUSH; tmp = sp;
+	*--sp = argc;
+	*--sp = (int)argv;
+	*--sp = (int)tmp;
+
+	r = eval();
+    }
+    return r;
 }
 
 int run()
@@ -1704,20 +1726,27 @@ int run()
     int argc=0;
     char *argv[]={""};
 
-    if (!(pc = (int *)idmain[Value])) {
-	echoUSB("main() not defined");
-	longjmp(error_exit, 666);
-    }
-
-    // setup stack
     stacklow = sp = (int *)((int)stack + stacksz);
-    *--sp = EXIT; // call exit if main returns
-    *--sp = PUSH; tmp = sp;
-    *--sp = argc;
-    *--sp = (int)argv;
-    *--sp = (int)tmp;
-
-    return eval();
+    if (!(pc = (int *)idmain[Value])) {
+	// maybe a persist function
+        if ((idpersist == 0) || (idpersist[Value] == 0)) {
+	   echoUSB("main() not defined");
+	   longjmp(error_exit, 666);
+	}
+	// persist fall thru. returns 0 but does not eval 
+	// first time bcs argc/argv not passed in
+	return 0; 
+    }
+    else {
+        // setup stack
+	//stacklow = sp = (int *)((int)stack + stacksz);
+        *--sp = EXIT; // call exit if main returns
+        *--sp = PUSH; tmp = sp;
+        *--sp = argc;
+        *--sp = (int)argv;
+        *--sp = (int)tmp;
+        return eval();
+    }
 }
 
 void interpreterStats()
@@ -1763,21 +1792,21 @@ void interpreterStats()
 
 int interpreterCatcher(char *prog)
 {
-   int r;
+    int r;
 
-   r=0;
+    r=0;
 
-   /* in case of error */
-   if (r = setjmp(error_exit)) {
-	r += 100000; /* indicate error with offset */
-   }
-   else {
+    /* in case of error */
+    if (r = setjmp(error_exit)) {
+	r += 100000; /* returned error, add val to indicate error with offset */
+    }
+    else {
 	interpreterInit();
 	src = prog;
 	program();
 	r = run();
-   }
-   return r;
+    }
+    return r;
 }
 
 #ifdef MAINAPP

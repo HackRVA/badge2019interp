@@ -5,4 +5,5 @@
     void setAlloc(int allocScanlines, int textpct, int datapct, int stackpct, int symbolpct);
     void interpreterAlloc(); /* alloc struct */
     void interpreterStats(); /* dump ram distribution stats */
+    int dopersist(int argc, const int **argv); /* interp doesnt support arrays */
 #endif

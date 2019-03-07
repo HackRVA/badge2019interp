@@ -5,40 +5,6 @@ badge2019 hardware with the c interpreter working
 no microchip project file yet. use "make"
 
 
-***Interpreter***
-
-Paste one of the "main" examples from led.c into
-a screen/terminal session and then type "run"
-
-also see tools/sendbadge.py
-
-
-*example*
-
-start screen:
-screen /dev/ttyACM0
-
-You may have to paste this in 2 pieces because
-of a USB overrun error. You will know if it overruns
-if the paste result doesn't look like below.
-
-```
-int main()
-{
-   int r;
-
-   led(100, 0, 0);
-
-   IRsend(123);
-   IRreceive(&r);
-   FbWrite("IR done");
-
-   led(0, 0, 0);
-}
-
-run
-```
-
 
 ***Code overview***
 
@@ -97,7 +63,110 @@ run
                 cat file.c | python tools/sendbadge.py
 
 
-** interpreter stats **
+**Interpreter**
+
+It is no where near a full c implementation:
+
+- Arrays have to use malloc()
+- looping uses while
+- no case
+
+*Keywords*
+
+```
+char else enum if int return sizeof while
+print printd printx malloc memset memcmp
+flareled led FbMove FbWrite
+IRreceive IRsend setNote getButton getDPAD
+IRstats setTime getTime FbLine FbClear
+flashWrite flashRead setAlloc
+exit void main
+```
+
+
+*Control commands*
+```
+run   - run source buffer
+new   - clear source buffer
+list  - list source buffer
+reset - reset memory allocation to safe numbers
+```
+
+*Execution*/
+
+Note:
+The source buffer is 2K which may need need to be expanded
+
+Paste one of the "main" blocks from 
+```
+interp\_src/\*.c
+
+```
+files into a screen/terminal session and then type "run"
+
+you can also just setup to read serial out and cat:
+```
+cat /dev/ttyACMO &
+cat test.c > /dev/ttyACM0
+```
+
+a file can have multiple 'main' if the interpreter
+is cleared between each 'main':
+
+```
+main()
+{
+    // setAlloc below changes memory allocation
+    // from the default ~8k internal ram
+
+    // note: don't write into the 32 scanlines
+    // that are allocated from the LCD buffer
+    // at the bottom of the display:
+
+    //   0 - 103 display
+    // 104 - 132 interpreter ram
+
+    // parameters:
+    //  32 scanlines
+    // 50% text area (program)
+    //  6% Data (variables)
+    //  6% stack
+    // 38% symbol table
+
+    // unused % of ram will be used
+    // for the interpreter "malloc" routine
+    setAlloc(32, 50, 6, 6, 38);
+
+    // default
+    // setAlloc(0, 38, 6, 6, 50);
+}
+
+run
+
+new
+
+int main() {
+ FbMove(10, 0);
+ FbWrite("hello world");
+ flareled(150, 100, 200);
+ led(0, 0, 100);
+ return 123;
+}
+
+run
+```
+
+If you get this error:
+
+*duplicate global declaration*
+
+it usually means you forgot to do a "new"
+sometimes it means the stack overwrote
+the symbol table
+
+
+
+**Interpreter run results**
 
 ```
     R XXXXXX  - return or exit() code from interpreter main()
@@ -107,12 +176,6 @@ run
     Y XXXXXX  - symbol table
 ```
 
-current ram allocation:
+** BUGS **
 
-```
-   #define TEXTSECTION 128 // * 4 
-   #define DATASECTION 128 // * 1 
-   #define STACKSECTION 128 // * 4 
-   #define SYMBOLSECTION 512 // * 4 
-```
-
+ - yeah
