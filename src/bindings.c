@@ -2,17 +2,79 @@
 
 /*
 
-cc -m32 -I./include -o bindings src/bindings.c
+cc -m32 -DMAIN -I./include -o bindings src/bindings.c
 ./bindings
 
 
-#define MAIN
 */
-#ifdef MAIN
+
+#ifndef MAIN
+
 #include "flash.h"
 #include "buttons.h"
 #include "timer1_int.h"
-#else
+#include "assets.h"
+#include "assetList.h"
+
+// keep in sync with .h
+const char *ptrType[] = {
+    "var",
+    "func"
+};
+
+// keep in sync with .h
+const char *parmType[] = {
+    "void",
+    "char",
+    "char*",
+    "int",
+    "int*",
+};
+
+struct binding_t bindings[] = {
+    {.vf.cp  = (char *)&G_button_cnt},
+    {.vf.cp  = (char *)&G_up_button_cnt},
+    {.vf.cp  = (char *)&G_down_button_cnt},
+    {.vf.cp  = (char *)&G_left_button_cnt},
+    {.vf.cp  = (char *)&G_right_button_cnt},
+    {.vf.cp  = (char *)&(wclock.hour)},
+    {.vf.cp  = (char *)&(wclock.min)},
+    {.vf.cp  = (char *)&(wclock.sec)},
+    {.vf.ip  = (int *)&G_sysData.badgeId},
+    {.vf.cp  = (char *)G_sysData.name},
+    {.vf.ip  = (int *)&flashedBadgeId},
+    {.vf.ip  = (int *)&G_flashAddr},
+    {.vf.fun = (drawLCD8)},
+    {.vf.c   = (char)DRBOB},
+};
+
+/*
+    first is for function/variable, second for return type, third...end for parm types
+    parms types are used for listing function
+*/
+struct param_t params[] = {
+    { "MAINBUTTON",	B_VARIABLE, B_CHAR,      B_VOID,     B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID },
+    { "UPBUTTON",	B_VARIABLE, B_CHAR,      B_VOID,     B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID },
+    { "DOWNBUTTON",	B_VARIABLE, B_CHAR,      B_VOID,     B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID },
+    { "LEFTBUTTON",	B_VARIABLE, B_CHAR,      B_VOID,     B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID },
+    { "RIGHTBUTTON",	B_VARIABLE, B_CHAR,      B_VOID,     B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID },
+    { "HOUR", 		B_VARIABLE, B_CHAR,      B_VOID,     B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID },
+    { "MIN", 		B_VARIABLE, B_CHAR,      B_VOID,     B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID },
+    { "SEC", 		B_VARIABLE, B_CHAR,      B_VOID,     B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID },
+    { "BADGEID", 	B_VARIABLE, B_INT,       B_VOID,     B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID },
+    { "NAME", 		B_VARIABLE, B_CHARSTAR,  B_VOID,     B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID },
+    { "FLASHEDID", 	B_VARIABLE, B_INT,       B_VOID,     B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID },
+    { "FLASHADDR", 	B_VARIABLE, B_INT,       B_VOID,     B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID },
+    { "DRAWLCD8", 	B_FUNCTION, B_VOID,      B_CHAR,     B_INT,   B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID },
+    { "DRBOB", 		B_VARIABLE, B_CHARSTAR,  B_VOID,     B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID },
+};
+
+enum {
+    B_VAR,
+    B_FUNC
+};
+
+#ifdef MAIN
 #include <stdio.h>
 
 struct wallclock_t {
@@ -51,63 +113,6 @@ int flashedBadgeId;
 int *G_flashAddr;
 void drawLCD8(unsigned char , int);
 char drbob[32];
-
-#endif
-
-// keep in sync with .h
-const char *ptrType[] = {
-    "var",
-    "func"
-};
-
-// keep in sync with .h
-const char *parmType[] = {
-    "void",
-    "char",
-    "char*",
-    "int",
-    "int*",
-};
-
-
-struct binding_t bindings[] = {
-    {.vf.cv  = (char *)&G_button_cnt},
-    {.vf.cv  = (char *)&G_up_button_cnt},
-    {.vf.cv  = (char *)&G_down_button_cnt},
-    {.vf.cv  = (char *)&G_left_button_cnt},
-    {.vf.cv  = (char *)&G_right_button_cnt},
-    {.vf.cv  = (char *)&(wclock.hour)},
-    {.vf.cv  = (char *)&(wclock.min)},
-    {.vf.cv  = (char *)&(wclock.sec)},
-    {.vf.iv  = (int *)&G_sysData.badgeId},
-    {.vf.cv  = (char *)G_sysData.name},
-    {.vf.iv  = (int *)&flashedBadgeId},
-    {.vf.iv  = (int *)&G_flashAddr},
-    {.vf.fun = (drawLCD8)},
-    {.vf.cv  = (char *)drbob},
-};
-
-struct param_t params[] = {
-    { "MAINBUTTON",	B_VARIABLE, B_CHAR,      B_VOID,     B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID },
-    { "UPBUTTON",	B_VARIABLE, B_CHAR,      B_VOID,     B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID },
-    { "DOWNBUTTON",	B_VARIABLE, B_CHAR,      B_VOID,     B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID },
-    { "LEFTBUTTON",	B_VARIABLE, B_CHAR,      B_VOID,     B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID },
-    { "RIGHTBUTTON",	B_VARIABLE, B_CHAR,      B_VOID,     B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID },
-    { "HOUR", 		B_VARIABLE, B_CHAR,      B_VOID,     B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID },
-    { "MIN", 		B_VARIABLE, B_CHAR,      B_VOID,     B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID },
-    { "SEC", 		B_VARIABLE, B_CHAR,      B_VOID,     B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID },
-    { "BADGEID", 	B_VARIABLE, B_INT,       B_VOID,     B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID },
-    { "NAME", 		B_VARIABLE, B_CHARSTAR,  B_VOID,     B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID },
-    { "FLASHEDID", 	B_VARIABLE, B_INT,       B_VOID,     B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID },
-    { "FLASHADDR", 	B_VARIABLE, B_INT,       B_VOID,     B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID },
-    { "DRAWLCD8", 	B_FUNCTION, B_VOID,      B_CHAR,     B_INT,   B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID },
-    { "DRBOB", 		B_VARIABLE, B_CHAR,      B_CHARSTAR, B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID },
-};
-
-enum {
-    B_VAR,
-    B_FUNC
-};
 
 void listbindings()
 {
@@ -154,7 +159,6 @@ void listbindings()
     }
 }
 
-#ifdef MAIN
 void drawLCD8(unsigned char assetId, int frame)
 {
 

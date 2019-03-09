@@ -64,7 +64,7 @@ enum { LEA, IMM, JMP, CALL, JZ, JNZ, ENT, ADJ, LEV, LI, LC, SI, SC, PUSH,
 	FLARELED, LED, FBMOVE, FBWRITE, 
 	IRRECEIVE, IRSEND, SETNOTE, GETBUTTON, GETDPAD, 
 	IRSTATS, SETTIME, GETTIME, FBLINE, FBCLEAR, 
-	FLASHW, FLASHR, IALLOC, CALLBACK,
+	FLASHW, FLASHR, IALLOC, CALLBACK0, CALLBACK1, CALLBACK2,
 	EXIT
 };
 
@@ -1475,9 +1475,31 @@ int eval() {
         else if (op == FLASHR) { ax = IflashRead((unsigned int)sp[0]); }
         else if (op == IALLOC) { setAlloc((unsigned int)sp[4], (unsigned int)sp[3], (unsigned int)sp[2], (unsigned int)sp[1], (unsigned int)sp[0]); }
 	// (void (*)(void *))
-        else if (op == CALLBACK) { 
-		void (*f)(unsigned char , int ) = (void (*)(unsigned char, int))(sp[2]);
-		f((unsigned char)0, (int)0);
+        else if (op == CALLBACK0) { 
+		void (*f)() = (void (*))(sp[0]);
+		f();
+	}
+        else if (op == CALLBACK1) { 
+		void (*f)(int) = (void (*)(int))(sp[1]);
+		f((int)sp[0]);
+	}
+        else if (op == CALLBACK2) { 
+		static char buffer[9];
+
+		void (*f)(int, int ) = (void (*)(int, int))(sp[2]);
+
+		hexDump((int)sp[2], buffer);
+                echoUSB(buffer);
+                echoUSB(" ");
+		hexDump((int)sp[1], buffer);
+                echoUSB(buffer);
+                echoUSB(" ");
+		hexDump((int)sp[0], buffer);
+                echoUSB(buffer);
+                echoUSB(" ");
+                echoUSB("calling... \r\n");
+
+		f((int)sp[1], (int)sp[0]);
 	}
         else {
             echoUSB("unknown instruction\n");
@@ -1491,7 +1513,7 @@ const char Csrc[] = "char else enum if int return sizeof while "
 	  "flareled led FbMove FbWrite "
 	  "IRreceive IRsend setNote getButton getDPAD "
 	  "IRstats setTime getTime FbLine FbClear "
-	  "flashWrite flashRead setAlloc callback "
+	  "flashWrite flashRead setAlloc callback0 callback1 callback2 "
 	  "exit void persist main";
 
 #define TEXTSZ (2048+1024)
@@ -1618,11 +1640,14 @@ void interpreterInit()
     interpreterInit0();
     interpreterAlloc();
 
+/*  ...very slow
+
     hexDump((unsigned int)ta_heap_start, dbuffer);
     echoUSB("heap start\r\n"); echoUSB(dbuffer); echoUSB("\r\n");
 
     hexDump((unsigned int)ta_heap_limit, dbuffer);
     echoUSB("heap limit\r\n"); echoUSB(dbuffer); echoUSB("\r\n");
+*/
 
     /* init tinyalloc */
     ta_init();

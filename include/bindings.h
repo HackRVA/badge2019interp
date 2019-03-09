@@ -50,8 +50,10 @@ struct param_t {
 */
 union var_fun {
     int (*fun)();
-    int *iv;
-    char *cv;
+    int *ip;
+    int i;
+    char *cp;
+    char c;
 };
 
 struct binding_t {

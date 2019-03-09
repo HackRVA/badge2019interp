@@ -366,7 +366,7 @@ void ProcessIO(void)
     */
     doButtons();
     IRhandler(); /* do any pending IR callbacks */
-    dopersist(LASTBINDING, bindings); /* do after button and IR so we can intercept */
+    dopersist(LASTBINDING, (char **)bindings); /* do after button and IR so we can intercept */
     menus();
     FbPushBuffer();
 
