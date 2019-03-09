@@ -1692,7 +1692,7 @@ void interpreterInit()
     next(); idmain = current_id; // keep track of main
 }
 
-int dopersist(int argc, const int **argv)
+int dopersist(int argc, char **argv)
 {
     int *tmp, r;
 
