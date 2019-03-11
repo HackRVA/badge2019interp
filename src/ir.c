@@ -117,9 +117,12 @@ void IRhandler()
     /* curr == next == empty */
     if (IRpacketInCurr != IRpacketInNext) {
         IR_inpkts++;
+#if BASE_STATION_BADGE_BUILD
+	relay_ir_packet_to_usb_serial(IRpacketsIn[IRpacketInCurr].p);
+#else
         if (IRpacketsIn[IRpacketInCurr].p.address < IR_LASTADRESS) /* basic sanity check before we call unknown handlers */
             IRcallbacks[ IRpacketsIn[IRpacketInCurr].p.address].handler( IRpacketsIn[IRpacketInCurr].p );
-
+#endif
         IRpacketInCurr++;
         IRpacketInCurr %= MAXPACKETQUEUE;
     }

@@ -8,11 +8,20 @@
 #include "buttons.h"
 #include "timer1_int.h"
 #include "assets.h"
+#include "build_bug_on.h"
 
-#include "USB/usb_config.h" // for buffer size/CDC_DATA_IN_EP_SIZE
+#if BASE_STATION_BADGE_BUILD
+#include "ir.h"
+#include "usb_function_cdc.h" // for USBUSARTIsTxTrfReady(). (I guess... the docs and API suck.)
+#endif
+
+#include "USB/usb_config.h" // for buffer size/CDC_DATA_IN_EP_SIZE, CDC_DATA_OUT_EP_SIZE
 
 extern char USB_In_Buffer[];
 extern char USB_Out_Buffer[];
+#if BASE_STATION_BADGE_BUILD
+int USB_Out_Buffer_Len = 0; /* For base station, USB buffers are not asciiz strings */
+#endif
 
 /*
   persistant (flash) system data 
@@ -360,6 +369,47 @@ const int *bindings[] = {
     (int *)&drawLCD8, (int *)&drbob, 
 };
 
+#if BASE_STATION_BADGE_BUILD
+/* relay_usb_buffer_to_ir batches up 4-byte packets and sends to ir. If the
+ * total number of bytes is not evenly divisible by 4, the last remaining bytes
+ * are not sent, but are buffered, and when more data is to be sent, these
+ * remaining bytes will be sent first.
+ *
+ * The buffer is static, so this function is not re-entrant/thread safe.
+ */
+static void relay_usb_buffer_to_ir(unsigned char *from_usb_buffer, int length)
+{
+	int i;
+	unsigned char *packet;
+	static union IRpacket_u p;
+	static int accum = 0;
+
+	packet = (unsigned char *) &p.v;
+
+	for (i = 0; i < length; i++) {
+		packet[accum] = from_usb_buffer[i];
+		accum++;
+		if (accum == 4) {
+			IRqueueSend(p);
+			accum = 0;
+		}
+	}
+}
+
+void relay_ir_packet_to_usb_serial(union IRpacket_u p)
+{
+	int i, j;
+	unsigned char *c = (unsigned char *) &p.v;
+	BUILD_ASSERT((CDC_DATA_OUT_EP_SIZE % 4) == 0);
+
+	for (i = 0; i < 4; i++)
+		USB_Out_Buffer[USB_Out_Buffer_Len + i] = c[i];
+	USB_Out_Buffer_Len += 4;
+	if (USB_Out_Buffer_Len >= CDC_DATA_OUT_EP_SIZE)
+		USB_Out_Buffer_Len = 0;
+}
+#endif
+
 static unsigned char writeLOCK=0;
 void ProcessIO(void)
 {
@@ -386,6 +436,9 @@ void ProcessIO(void)
     }
 
     if(nread > 0) {
+#if BASE_STATION_BADGE_BUILD
+        relay_usb_buffer_to_ir(USB_In_Buffer, nread);
+#else
 	   int i, outp=0;
 
 	   for (i=0; i < nread; i++) {
@@ -426,6 +479,7 @@ void ProcessIO(void)
 	    }
 	    USB_Out_Buffer[outp] = 0; // null in case
 	nread = 0;
+#endif
     }
 
     flushUSB();
@@ -437,6 +491,14 @@ void flushUSB()
 
     //if (USBtransferReady()) {
     {
+#if BASE_STATION_BADGE_BUILD
+	if (USB_Out_Buffer_Len <= 0)
+		return;
+	if (USBUSARTIsTxTrfReady()) {
+		putUSBUSART(USB_Out_Buffer, USB_Out_Buffer_Len);
+		USB_Out_Buffer_Len = 0;
+	}
+#else
 	int len;
 
 	if (writeLOCK) {
@@ -457,5 +519,6 @@ void flushUSB()
 	   putUSBUSART(USB_Out_Buffer, len);
 	   writeLOCK = 1; // dont touch until USB done
 	}
+#endif
     }
 }
