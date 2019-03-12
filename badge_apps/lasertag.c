@@ -727,16 +727,13 @@ int lasertag_cb(void)
 
 int main(int argc, char *argv[])
 {
-	char *serial_port = NULL;
 	argcount = argc;
 	arguments = argv;
 
 #define IRXMIT_UDP_PORT 12345
 #define LASERTAG_UDP_PORT 12346
 
-	if (argc >= 2)
-		serial_port = argv[1];
-	setup_linux_ir_simulator(serial_port, IRXMIT_UDP_PORT, LASERTAG_UDP_PORT);
+	setup_linux_ir_simulator(IRXMIT_UDP_PORT, LASERTAG_UDP_PORT);
 	start_gtk(&argc, &argv, lasertag_cb, 30);
 	return 0;
 }

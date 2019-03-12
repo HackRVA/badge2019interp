@@ -70,7 +70,7 @@ int persist(int argc, int *argv)
     char *hour, *min, *sec;
 
     // only do this once
-    if (i==1) callback((int)argv[DRAWLCD8], (char)argv[DRBOB], (int)0);
+    if (i==1) callback2((int)argv[DRAWLCD8], (char)argv[DRBOB], (int)0);
 
     // ditto
     if (i==2) {

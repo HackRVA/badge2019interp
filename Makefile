@@ -32,12 +32,12 @@ SRC_BADGE_C = \
 	src/timer1_int.c src/interpreter.c src/pic32config.c \
 	src/buttons.c src/settings.c src/menu.c src/adc_int.c \
         src/LCDcolor.c src/S6B33.c src/badge.c src/fb.c src/tinyalloc.c \
-	src/achievements.c src/flash.c
+	src/achievements.c src/flash.c src/bindings.c
 
 SRC_APPS_C = \
 	badge_apps/adc.c badge_apps/maze.c badge_apps/xorshift.c \
 	badge_apps/blinkenlights.c badge_apps/conductor.c \
-	badge_apps/lasertag.c badge_apps/QC.c badge_apps/irxmit.c
+	badge_apps/lasertag.c badge_apps/QC.c badge_apps/irxmit.c \
 
 SRC_USB_C = USB/usb_device.c  USB/usb_function_cdc.c USB/usb_descriptors.c
 
@@ -87,11 +87,11 @@ $(BUILD)/firmware.hex: $(BUILD)/firmware.elf
 	$(CROSS_COMPILE)bin2hex $(BUILD)/firmware.elf
 
 ramsyms:	build/firmware.elf
-	nm -S build/firmware.elf | grep ^a00 | sort -r -t\  -k2
+	$(CROSS_COMPILE)nm -S build/firmware.elf | grep ^a00 | sort -r -t\  -k2
 
 #vfprintf routines are huge- 8k
 romsyms:	build/firmware.elf
-	nm -S build/firmware.elf | grep ^9d0 | sed -e '/ t /d' -e '/ [Aa] /d' | sort -r -t\  -k2
+	$(CROSS_COMPILE)nm -S build/firmware.elf | grep ^9d0 | sed -e '/ t /d' -e '/ [Aa] /d' | sort -r -t\  -k2
 
 # more fine grain symbols filtering. see man nm
 #	nm -S build/firmware.elf | sed -e '/ W /d' -e ' r /d' -e '/ D /d' -e '/ R /d' -e '/ T /d' -e '/ [Aa] /d' -e '/ N /d' -e '/ t /d' -e '/^    /d' | sort -r -t\  -k2

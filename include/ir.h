@@ -41,7 +41,7 @@ extern volatile unsigned short ping_responded;
 
 extern unsigned int IR_inpkts;
 extern unsigned int IR_outpkts;
-
+extern unsigned int IR_errorpkts;
 
 struct IRcallback_t {
     void (*handler)(struct IRpacket_t p);
@@ -74,7 +74,7 @@ enum {
 
 	/* special */
 	IR_CODE,		/* code to jump to */
-	IR_FORTHCODE,	/* forth code to run */
+	IR_INTERPRETER,	/* interpreter code to run */
         IR_DRAW_UNLOCKABLE,
 	IR_ASSET,		/* set current asset */
         IR_PING,

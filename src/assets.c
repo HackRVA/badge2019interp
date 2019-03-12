@@ -213,7 +213,7 @@ volatile float G_wavehop[NUM_AUDIO_CHANNELS] = {0.0, 0.0};
 /* duration through the wave that each channel has gone */
 volatile float G_wavepos[NUM_AUDIO_CHANNELS] = {0.0, 0.0};
 
-volatile unsigned short G_mute = 0;
+volatile unsigned char G_mute = 0;
 
 void playAsset(unsigned char assetId)
 {
@@ -307,7 +307,7 @@ unsigned short G_duration_cnt = 0;
 unsigned short G_freq_cnt = 0;
 unsigned short G_freq = 0;
 
-unsigned short G_mute = 0;
+unsigned char G_mute = 0;
 unsigned short G_audio_phase = 0;
 /* whether to even bother playing anything */
 volatile char G_playing = 0;

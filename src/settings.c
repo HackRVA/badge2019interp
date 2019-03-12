@@ -146,19 +146,12 @@ struct menu_t backlight_m[] = {
 };
 
 
-/*
-   rotate screen
-*/
-void rotate_cb(struct menu_t *h) {
-    unsigned char rotated=0;
-    struct menu_t *selectedMenu;
+void setRotate(int yes)
+{
     extern unsigned char G_outputMode;
     extern unsigned char G_entry; 
 
-    selectedMenu = getSelectedMenu();
-
-    rotated = selectedMenu->attrib & 0x1FF;
-    if (rotated) {
+    if (yes) {
 	G_outputMode = 0b00000111; /* CDIR=1 */
 	G_entry = 0b10000010; /* Y=Yend -> X incremented */
     }
@@ -169,6 +162,19 @@ void rotate_cb(struct menu_t *h) {
     }
 
     LCDReset();
+}
+
+/*
+   rotate screen
+*/
+void rotate_cb(struct menu_t *h) {
+    unsigned char rotated=0;
+    struct menu_t *selectedMenu;
+    selectedMenu = getSelectedMenu();
+
+    rotated = selectedMenu->attrib & 0x1FF;
+
+    setRotate(rotated);
 
     returnToMenus();
 };
@@ -226,7 +232,7 @@ struct menu_t LEDlight_m[] = {
     {"Back", VERT_ITEM|LAST_ITEM| DEFAULT_ITEM, BACK, {NULL} },
 };
 
-extern unsigned short G_mute;
+extern unsigned char G_mute;
 void buzzer_config_cb()
 {
     struct menu_t *dstMenu, *selectedMenu;

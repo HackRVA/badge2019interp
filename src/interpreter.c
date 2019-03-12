@@ -64,7 +64,7 @@ enum { LEA, IMM, JMP, CALL, JZ, JNZ, ENT, ADJ, LEV, LI, LC, SI, SC, PUSH,
 	FLARELED, LED, FBMOVE, FBWRITE, 
 	IRRECEIVE, IRSEND, SETNOTE, GETBUTTON, GETDPAD, 
 	IRSTATS, SETTIME, GETTIME, FBLINE, FBCLEAR, 
-	FLASHW, FLASHR, IALLOC, CALLBACK,
+	FLASHW, FLASHR, IALLOC, CALLBACK0, CALLBACK1, CALLBACK2,
 	EXIT
 };
 
@@ -125,7 +125,10 @@ void IRstats()
 {
     char dbuffer[9];
 
-    decDump(IR_inpkts, dbuffer);
+    decDump(IR_errorpkts, dbuffer);
+    echoUSB("E "); echoUSB(dbuffer); echoUSB("\r\n");
+
+    decDump((IR_inpkts-IR_errorpkts), dbuffer);
     echoUSB("I "); echoUSB(dbuffer); echoUSB("\r\n");
 
     decDump(IR_outpkts, dbuffer);
@@ -135,21 +138,36 @@ void IRstats()
     echoUSB("P "); echoUSB(dbuffer); echoUSB("\r\n");
 }
 
-void IRsend(int p)
+/*
+   ir callback for interpreter
+*/
+struct IRpacket_t ir_recv;
+
+void ir_interpreter(struct IRpacket_t p)
+{
+    ir_recv = p;
+}
+
+// my addr = IR_INTERPRETER
+void IRsend(char addr, char id, int data)
 {
     union IRpacket_u pkt;
 
     pkt.p.command = IR_WRITE;
-    pkt.p.address = IR_PING;
-    pkt.p.badgeId = 0x0; 
-    pkt.p.data    = 0xABCD;
+    pkt.p.address = addr;
+    pkt.p.badgeId = id; 
+    pkt.p.data    = (unsigned short)data;
 
     IRqueueSend(pkt);
 }
 
-unsigned int IRreceive()
+int IRreceive()
 {
-   return (unsigned int)(pinged);
+   static union IRpacket_u tmp;
+
+   tmp.p = ir_recv;
+
+   return tmp.v;
 }
 
 extern struct wallclock_t wclock;
@@ -1462,7 +1480,7 @@ int eval() {
         else if (op == FBMOVE) { FbMove((char)sp[1], (char)sp[0]); }
         else if (op == FBWRITE) { FbWriteLine((char *)sp[0]); }
         else if (op == IRRECEIVE) { ax = (unsigned int)IRreceive(); }
-        else if (op == IRSEND) { IRsend((int)sp[0]); }
+        else if (op == IRSEND) { IRsend((char)sp[2], (char)sp[1], (int)sp[0]); }
         else if (op == SETNOTE) { setNote((int)sp[1], (int)sp[0]); }
         else if (op == GETBUTTON) { ax = (int)getButton(); } /* return button bitmask */
         else if (op == GETDPAD) { ax = (int)getDPAD(); }  /* return button bitmask */
@@ -1475,9 +1493,17 @@ int eval() {
         else if (op == FLASHR) { ax = IflashRead((unsigned int)sp[0]); }
         else if (op == IALLOC) { setAlloc((unsigned int)sp[4], (unsigned int)sp[3], (unsigned int)sp[2], (unsigned int)sp[1], (unsigned int)sp[0]); }
 	// (void (*)(void *))
-        else if (op == CALLBACK) { 
-		void (*f)(unsigned char , int ) = (void (*)(unsigned char, int))(sp[2]);
-		f((unsigned char)0, (int)0);
+        else if (op == CALLBACK0) { 
+		void (*f)() = (void (*))(sp[0]);
+		f();
+	}
+        else if (op == CALLBACK1) { 
+		void (*f)(int) = (void (*)(int))(sp[1]);
+		f((int)sp[0]);
+	}
+        else if (op == CALLBACK2) { 
+		void (*f)(int, int ) = (void (*)(int, int))(sp[2]);
+		f((int)sp[1], (int)sp[0]);
 	}
         else {
             echoUSB("unknown instruction\n");
@@ -1491,7 +1517,7 @@ const char Csrc[] = "char else enum if int return sizeof while "
 	  "flareled led FbMove FbWrite "
 	  "IRreceive IRsend setNote getButton getDPAD "
 	  "IRstats setTime getTime FbLine FbClear "
-	  "flashWrite flashRead setAlloc callback "
+	  "flashWrite flashRead setAlloc callback0 callback1 callback2 "
 	  "exit void persist main";
 
 #define TEXTSZ (2048+1024)
@@ -1618,11 +1644,14 @@ void interpreterInit()
     interpreterInit0();
     interpreterAlloc();
 
+/*  ...very slow
+
     hexDump((unsigned int)ta_heap_start, dbuffer);
     echoUSB("heap start\r\n"); echoUSB(dbuffer); echoUSB("\r\n");
 
     hexDump((unsigned int)ta_heap_limit, dbuffer);
     echoUSB("heap limit\r\n"); echoUSB(dbuffer); echoUSB("\r\n");
+*/
 
     /* init tinyalloc */
     ta_init();
@@ -1692,7 +1721,7 @@ void interpreterInit()
     next(); idmain = current_id; // keep track of main
 }
 
-int dopersist(int argc, const int **argv)
+int dopersist(int argc, char **argv)
 {
     int *tmp, r;
 

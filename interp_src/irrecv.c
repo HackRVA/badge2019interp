@@ -1,26 +1,23 @@
-int main() {
+int i;
+int persist() {
    int r, b, ir;
 
-   while (1)  {
-      r = IRreceive();
-      if (r == 0) {
+   i++;
+   if ((i % 50000) != 0) return(0);
+
+   r = IRreceive();
+   if (r == 0) {
 	setNote(40, 4096);
         led(255, 0, 0);
-      }
-      else {
+   }
+   else {
 	setNote(100, 4096);
         led(0, 255, 0);
-      }
-
-      print("recv");
-      IRstats();
-      print("endrecv");
-
-      b = 0;
-      while (b==0)  {
-         b = getButton();
-      }
    }
+   printx(r);
+   print("recv");
+   IRstats();
+   print("endrecv");
 
    exit(r);
 }
