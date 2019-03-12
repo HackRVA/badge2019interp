@@ -125,7 +125,10 @@ void IRstats()
 {
     char dbuffer[9];
 
-    decDump(IR_inpkts, dbuffer);
+    decDump(IR_errorpkts, dbuffer);
+    echoUSB("E "); echoUSB(dbuffer); echoUSB("\r\n");
+
+    decDump((IR_inpkts-IR_errorpkts), dbuffer);
     echoUSB("I "); echoUSB(dbuffer); echoUSB("\r\n");
 
     decDump(IR_outpkts, dbuffer);
@@ -135,21 +138,36 @@ void IRstats()
     echoUSB("P "); echoUSB(dbuffer); echoUSB("\r\n");
 }
 
-void IRsend(int p)
+/*
+   ir callback for interpreter
+*/
+struct IRpacket_t ir_recv;
+
+void ir_interpreter(struct IRpacket_t p)
+{
+    ir_recv = p;
+}
+
+// my addr = IR_INTERPRETER
+void IRsend(char addr, char id, int data)
 {
     union IRpacket_u pkt;
 
     pkt.p.command = IR_WRITE;
-    pkt.p.address = IR_PING;
-    pkt.p.badgeId = 0x0; 
-    pkt.p.data    = 0xABCD;
+    pkt.p.address = addr;
+    pkt.p.badgeId = id; 
+    pkt.p.data    = (unsigned short)data;
 
     IRqueueSend(pkt);
 }
 
-unsigned int IRreceive()
+int IRreceive()
 {
-   return (unsigned int)(pinged);
+   static union IRpacket_u tmp;
+
+   tmp.p = ir_recv;
+
+   return tmp.v;
 }
 
 extern struct wallclock_t wclock;
@@ -1462,7 +1480,7 @@ int eval() {
         else if (op == FBMOVE) { FbMove((char)sp[1], (char)sp[0]); }
         else if (op == FBWRITE) { FbWriteLine((char *)sp[0]); }
         else if (op == IRRECEIVE) { ax = (unsigned int)IRreceive(); }
-        else if (op == IRSEND) { IRsend((int)sp[0]); }
+        else if (op == IRSEND) { IRsend((char)sp[2], (char)sp[1], (int)sp[0]); }
         else if (op == SETNOTE) { setNote((int)sp[1], (int)sp[0]); }
         else if (op == GETBUTTON) { ax = (int)getButton(); } /* return button bitmask */
         else if (op == GETDPAD) { ax = (int)getDPAD(); }  /* return button bitmask */
@@ -1484,21 +1502,7 @@ int eval() {
 		f((int)sp[0]);
 	}
         else if (op == CALLBACK2) { 
-		static char buffer[9];
-
 		void (*f)(int, int ) = (void (*)(int, int))(sp[2]);
-
-		hexDump((int)sp[2], buffer);
-                echoUSB(buffer);
-                echoUSB(" ");
-		hexDump((int)sp[1], buffer);
-                echoUSB(buffer);
-                echoUSB(" ");
-		hexDump((int)sp[0], buffer);
-                echoUSB(buffer);
-                echoUSB(" ");
-                echoUSB("calling... \r\n");
-
 		f((int)sp[1], (int)sp[0]);
 	}
         else {

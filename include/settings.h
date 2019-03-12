@@ -19,6 +19,8 @@ extern struct menu_t rotate_m[];
 extern struct menu_t LEDlight_m[];
 extern struct menu_t buzzer_m[];
 extern struct menu_t ping_m[];
+void rotate_cb(struct menu_t *h) ;
+void setRotate(int yes);
 
 
 #ifdef	__cplusplus

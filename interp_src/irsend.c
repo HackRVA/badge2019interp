@@ -1,21 +1,17 @@
-int main() {
-   int r, b, ir;
+int i;
+int persist() {
 
-   while (1)  {
-      IRsend(31);
-      setNote(75, 4096);
+   i++;
+   if ((i % 50000) != 0) return(0);
 
-      print("send");
-      IRstats();
-      print("endsend");
+   IRsend(11, 0, (int)(i & 0xFFFF));
+   setNote(75, 4096);
 
-      b = 0;
-      while (b==0)  {
-         b = getButton();
-      }
-   }
-
-   exit(b);
+   print("send");
+   printx((int)(i & 0xFFFF));
+   IRstats();
+   print("endsend");
+   exit(0);
 }
 
 run

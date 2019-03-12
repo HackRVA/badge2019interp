@@ -1,26 +1,32 @@
 enum {
-  MAINBUTTON,
-  UPBUTTON,
-  DOWNBUTTON,
-  LEFTBUTTON,
-  RIGHTBUTTON,
+  MAINBTN,
+  UPBTN,
+  DOWNBTN,
+  LEFTBTN,
+  RIGHTBTN,
   HOUR,
   MIN,
   SEC,
   BADGEID,
   NAME,
-  FLASHEDID,
-  FLASHADDR,
+  FL_ID,
+  FL_ADDR,
   DRAWLCD8,
-  DRBOB_BIND,
+  DRBOB_,
+  ADC,
+  ROTATE,
+  LEDBRIGHT,
+  MUTE,
   LASTBINDING,
 };
 
+/* binding record type */
 enum {
     B_VARIABLE,
     B_FUNCTION,
 };
 
+/* binding record return, parm, or type */
 enum {
     B_VOID,
     B_CHAR,

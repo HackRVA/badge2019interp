@@ -2,10 +2,11 @@
 // keep this in sync with include/bindings.h
 //
 enum {
-  MAINBUTTON, UPBUTTON, DOWNBUTTON, LEFTBUTTON, RIGHTBUTTON,
+  MAINBTN, UPBTN, DOWNBTN, LEFTBTN, RIGHTBTN,
   HOUR, MIN, SEC,
-  BADGEID, NAME, FLASHEDID, FLASHADDR,
-  DRAWLCD8, DRBOB_BIND,
+  BADGEID, NAME, FL_ID, FL_ADDR,
+  DRAWLCD8, DRBOB, ADC, ROTATE, 
+  LEDBRIGHT, MUTE,
 };
 
 int i;
@@ -14,10 +15,10 @@ int persist(int argc, int *argv)
    char *mainbtn, *upbtn, *downbtn;
    int *fbadgeid;
 
-   mainbtn = (char *)argv[MAINBUTTON];
-   upbtn = (char *)argv[UPBUTTON];
-   downbtn = (char *)argv[DOWNBUTTON];
-   fbadgeid = (char *)argv[FLASHEDID];
+   mainbtn = (char *)argv[MAINBTN];
+   upbtn = (char *)argv[UPBTN];
+   downbtn = (char *)argv[DOWNBTN];
+   fbadgeid = (char *)argv[FL_ID];
 
    i = i + 1;
    i = i % 5000;
@@ -48,10 +49,11 @@ int persist(int argc, int *argv)
 // drawlcd8 and parameters (DRBOB)
 // get time 2 different ways
 enum {
-  MAINBUTTON, UPBUTTON, DOWNBUTTON, LEFTBUTTON, RIGHTBUTTON,
+  MAINBTN, UPBTN, DOWNBTN, LEFTBTN, RIGHTBTN,
   HOUR, MIN, SEC,
-  BADGEID, NAME, FLASHEDID, FLASHADDR,
-  DRAWLCD8, DRBOB,
+  BADGEID, NAME, FL_ID, FL_ADDR,
+  DRAWLCD8, DRBOB, ADC, ROTATE, 
+  LEDBRIGHT, MUTE,
 };
 
 int i;
@@ -79,10 +81,11 @@ int persist(int argc, int *argv)
 // a call to a function
 //
 enum {
-  MAINBUTTON, UPBUTTON, DOWNBUTTON, LEFTBUTTON, RIGHTBUTTON,
+  MAINBTN, UPBTN, DOWNBTN, LEFTBTN, RIGHTBTN,
   HOUR, MIN, SEC,
-  BADGEID, NAME, FLASHEDID, FLASHADDR,
-  DRAWLCD8, DRBOB,
+  BADGEID, NAME, FL_ID, FL_ADDR,
+  DRAWLCD8, DRBOB, ADC, ROTATE, 
+  LEDBRIGHT, MUTE,
 };
 
 int i;
@@ -92,5 +95,80 @@ int persist(int argc, int *argv)
     if (i==1) callback2((int)argv[DRAWLCD8], (char)argv[DRBOB], (int)0);
 
     i++;
+}
+
+enum {
+  MAINBTN, UPBTN, DOWNBTN, LEFTBTN, RIGHTBTN,
+  HOUR, MIN, SEC,
+  BADGEID, NAME, FL_ID, FL_ADDR,
+  DRAWLCD8, DRBOB, ADC, ROTATE, 
+  LEDBRIGHT, MUTE,
+};
+
+int i;
+int persist(int argc, int *argv)
+{
+    // callback2 takes 2 parms.
+    callback0((int)argv[ADC_CB]);
+}
+
+enum {
+  MAINBTN, UPBTN, DOWNBTN, LEFTBTN, RIGHTBTN,
+  HOUR, MIN, SEC,
+  BADGEID, NAME, FL_ID, FL_ADDR,
+  DRAWLCD8, DRBOB, ADC, ROTATE, 
+  LEDBRIGHT, MUTE,
+};
+
+int i;
+int persist(int argc, int *argv)
+{
+    // callback2 takes 2 parms.
+    if (i==1) 
+       callback1((int)argv[ROTATE], (int)1);
+
+    FbWrite(" ");
+
+    i++;
+}
+
+
+enum {
+  MAINBTN, UPBTN, DOWNBTN, LEFTBTN, RIGHTBTN,
+  HOUR, MIN, SEC,
+  BADGEID, NAME, FL_ID, FL_ADDR,
+  DRAWLCD8, DRBOB, ADC, ROTATE, 
+  LEDBRIGHT, MUTE,
+};
+
+int i;
+int persist(int argc, int *argv)
+{
+    // callback2 takes 2 parms.
+    if (i==1) 
+       callback1((int)argv[ROTATE], (int)0);
+    i++;
+    FbWrite(" ");
+}
+
+enum {
+  MAINBTN, UPBTN, DOWNBTN, LEFTBTN, RIGHTBTN,
+  HOUR, MIN, SEC,
+  BADGEID, NAME, FL_ID, FL_ADDR,
+  DRAWLCD8, DRBOB, ADC, ROTATE, 
+  LEDBRIGHT, MUTE,
+};
+
+int i;
+int persist(int argc, int *argv)
+{
+   char *mute;
+
+   if (i==1) {
+       callback1((int)argv[LEDBRIGHT], (char)4);
+
+       mute = (char *)argv[MUTE];
+       *mute = 1;
+   }
 }
 

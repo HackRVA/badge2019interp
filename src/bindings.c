@@ -15,6 +15,13 @@ cc -m32 -DMAIN -I./include -o bindings src/bindings.c
 #include "timer1_int.h"
 #include "assets.h"
 #include "assetList.h"
+#include "adc.h"
+#include "menu.h"
+#include "settings.h"
+
+
+#endif
+
 
 // keep in sync with .h
 const char *ptrType[] = {
@@ -31,6 +38,9 @@ const char *parmType[] = {
     "int*",
 };
 
+void led_brightness(unsigned char bright) ;
+extern unsigned char G_mute;
+
 struct binding_t bindings[] = {
     {.vf.cp  = (char *)&G_button_cnt},
     {.vf.cp  = (char *)&G_up_button_cnt},
@@ -46,6 +56,10 @@ struct binding_t bindings[] = {
     {.vf.ip  = (int *)&G_flashAddr},
     {.vf.fun = (drawLCD8)},
     {.vf.c   = (char)DRBOB},
+    {.vf.fun = (adc_cb)},
+    {.vf.fun = (setRotate)},
+    {.vf.fun = (led_brightness)},
+    {.vf.ip  = &G_mute},
 };
 
 /*
@@ -53,26 +67,84 @@ struct binding_t bindings[] = {
     parms types are used for listing function
 */
 struct param_t params[] = {
-    { "MAINBUTTON",	B_VARIABLE, B_CHAR,      B_VOID,     B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID },
-    { "UPBUTTON",	B_VARIABLE, B_CHAR,      B_VOID,     B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID },
-    { "DOWNBUTTON",	B_VARIABLE, B_CHAR,      B_VOID,     B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID },
-    { "LEFTBUTTON",	B_VARIABLE, B_CHAR,      B_VOID,     B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID },
-    { "RIGHTBUTTON",	B_VARIABLE, B_CHAR,      B_VOID,     B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID },
-    { "HOUR", 		B_VARIABLE, B_CHAR,      B_VOID,     B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID },
-    { "MIN", 		B_VARIABLE, B_CHAR,      B_VOID,     B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID },
-    { "SEC", 		B_VARIABLE, B_CHAR,      B_VOID,     B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID },
-    { "BADGEID", 	B_VARIABLE, B_INT,       B_VOID,     B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID },
-    { "NAME", 		B_VARIABLE, B_CHARSTAR,  B_VOID,     B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID },
-    { "FLASHEDID", 	B_VARIABLE, B_INT,       B_VOID,     B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID },
-    { "FLASHADDR", 	B_VARIABLE, B_INT,       B_VOID,     B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID },
-    { "DRAWLCD8", 	B_FUNCTION, B_VOID,      B_CHAR,     B_INT,   B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID },
-    { "DRBOB", 		B_VARIABLE, B_CHARSTAR,  B_VOID,     B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID },
+/*     name             var/fun         val/run      parm0       parm2    parm3 */
+    { "MAINBUTTON",	B_VARIABLE, 	B_CHAR,      B_VOID,     B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID },
+    { "UPBUTTON",	B_VARIABLE, 	B_CHAR,      B_VOID,     B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID },
+    { "DOWNBUTTON",	B_VARIABLE, 	B_CHAR,      B_VOID,     B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID },
+    { "LEFTBUTTON",	B_VARIABLE, 	B_CHAR,      B_VOID,     B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID },
+    { "RIGHTBUTTON",	B_VARIABLE, 	B_CHAR,      B_VOID,     B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID },
+    { "HOUR", 		B_VARIABLE, 	B_CHAR,      B_VOID,     B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID },
+    { "MIN", 		B_VARIABLE, 	B_CHAR,      B_VOID,     B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID },
+    { "SEC", 		B_VARIABLE, 	B_CHAR,      B_VOID,     B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID },
+    { "BADGEID", 	B_VARIABLE, 	B_INT,       B_VOID,     B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID },
+    { "NAME", 		B_VARIABLE, 	B_CHARSTAR,  B_VOID,     B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID },
+    { "FLASHEDID", 	B_VARIABLE, 	B_INT,       B_VOID,     B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID },
+    { "FLASHADDR", 	B_VARIABLE, 	B_INT,       B_VOID,     B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID },
+    { "DRAWLCD8", 	B_FUNCTION, 	B_VOID,      B_CHAR,     B_INT,   B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID },
+    { "DRBOB", 		B_VARIABLE, 	B_CHAR,      B_VOID,     B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID },
+    { "ADC", 		B_FUNCTION, 	B_VOID,      B_VOID,     B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID },
+    { "ROTATE",	        B_FUNCTION, 	B_VOID,      B_CHAR,     B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID },
+    { "LEDBRIGHT",	B_FUNCTION, 	B_VOID,      B_CHAR,     B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID },
+    { "MUTE",		B_VARIABLE, 	B_CHAR,      B_VOID,     B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID },
 };
 
-enum {
-    B_VAR,
-    B_FUNC
-};
+void listbindings()
+{
+    int i;
+
+    for (i=0; i< LASTBINDING; i++) {
+	if ( params[i].var_fun == B_FUNCTION ) {
+	    echoUSB(parmType[params[i].ret]);
+	    echoUSB(" ");
+	    echoUSB(params[i].name);
+	    echoUSB("(");
+
+	    if (params[i].arg0 != B_VOID) {
+	        echoUSB(parmType[params[i].arg0]);
+
+	        if (params[i].arg1 != B_VOID) {
+	            echoUSB(", ");
+	            echoUSB(parmType[params[i].arg1]);
+
+	            if (params[i].arg2 != B_VOID) {
+	                echoUSB(", ");
+	                echoUSB(parmType[params[i].arg2]);
+
+			if (params[i].arg3 != B_VOID) {
+	                    echoUSB(", ");
+	                    echoUSB(parmType[params[i].arg3]);
+
+			    if (params[i].arg4 != B_VOID) {
+	                        echoUSB(", ");
+	                        echoUSB(parmType[params[i].arg4]);
+
+			        if (params[i].arg5 != B_VOID) {
+	                            echoUSB(", ");
+	                            echoUSB(parmType[params[i].arg5]);
+
+			            if (params[i].arg6 != B_VOID) {
+	                                echoUSB(", ");
+	                                echoUSB(parmType[params[i].arg6]);
+			            }
+			        }
+			    }
+			}
+		    }
+		}
+	    }
+	    echoUSB(")\r\n");
+	}
+	else
+	if ( params[i].var_fun == B_VARIABLE ) {
+	    echoUSB(parmType[params[i].ret]);
+	    echoUSB(" ");
+	    echoUSB(params[i].name);
+	    echoUSB("\r\n");
+	}
+    }
+    echoUSB("\r\n");
+}
+
 
 #ifdef MAIN
 #include <stdio.h>
@@ -113,51 +185,6 @@ int flashedBadgeId;
 int *G_flashAddr;
 void drawLCD8(unsigned char , int);
 char drbob[32];
-
-void listbindings()
-{
-    int i;
-
-    for (i=0; i< LASTBINDING; i++) {
-	if ( params[i].var_fun == B_FUNCTION ) {
-	    printf("%s %s(", parmType[params[i].ret], params[i].name);
-
-	    if (params[i].arg0 != B_VOID) {
-	        printf("%s", parmType[params[i].arg0]);
-
-	        if (params[i].arg1 != B_VOID) {
-	            printf(", %s", parmType[params[i].arg1]);
-
-	            if (params[i].arg2 != B_VOID) {
-	                printf(", %s", parmType[params[i].arg2]);
-
-			if (params[i].arg3 != B_VOID) {
-	                    printf(", %s", parmType[params[i].arg3]);
-
-			    if (params[i].arg4 != B_VOID) {
-	                        printf(", %s", parmType[params[i].arg4]);
-
-			        if (params[i].arg5 != B_VOID) {
-	                            printf(", %s", parmType[params[i].arg5]);
-
-			            if (params[i].arg6 != B_VOID) {
-	                                printf(", %s", parmType[params[i].arg6]);
-			            }
-			        }
-			    }
-			}
-		    }
-		}
-	    }
-
-	    printf(")\n");
-	}
-	else
-	if ( params[i].var_fun == B_VARIABLE ) {
-	    printf("%s %s\n", parmType[params[i].ret], params[i].name);
-	}
-    }
-}
 
 void drawLCD8(unsigned char assetId, int frame)
 {

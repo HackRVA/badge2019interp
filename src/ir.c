@@ -2,6 +2,7 @@
 #include "colors.h"
 #include "ir.h"
 #include "flash.h"
+#include "interpreter.h"
 
 unsigned short G_peerBadgeId=0;
 
@@ -18,6 +19,7 @@ union IRpacket_u IRpacketsOut[MAXPACKETQUEUE];
 */
 unsigned int IR_inpkts = 0;
 unsigned int IR_outpkts = 0;
+unsigned int IR_errorpkts = 0;
 
 
 // will be called by an interrupt 
@@ -48,7 +50,7 @@ struct IRcallback_t IRcallbacks[] = {
 
 	/* special */
 	{ ir_code },
-	{ ir_forthcode },
+	{ ir_interpreter },
         { ir_draw_unlockable },
 	{ ir_asset },
         { ir_ping},
@@ -341,6 +343,7 @@ void ir_app7(struct IRpacket_t p)
 
 void ir_error(struct IRpacket_t p)
 {
+   IR_errorpkts++;
 }
 
 void ir_lastaddress(struct IRpacket_t p)

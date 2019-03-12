@@ -311,6 +311,9 @@ void doLine()
     else if (strncmp(textBuffer,"new",3) == 0) {
 	    memset(sourceBuffer, 0, SOURCEBUFFERSIZE);
     } 
+    else if (strncmp(textBuffer,"lib",3) == 0) {
+	listbindings();
+    } 
     else if (strncmp(textBuffer,"list",4) == 0) {
 	char *startS, *endS;
 

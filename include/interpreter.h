@@ -6,4 +6,5 @@
     void interpreterAlloc(); /* alloc struct */
     void interpreterStats(); /* dump ram distribution stats */
     int dopersist(int argc, char **argv); /* pass bindings as pty doesnt support arrays */
+    void ir_interpreter();
 #endif
