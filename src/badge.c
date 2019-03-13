@@ -268,7 +268,7 @@ static unsigned char textBuffer[TEXTBUFFERSIZE], textBufPtr=0;
 char sourceBuffer[SOURCEBUFFERSIZE];
 
 /*
-  process one line of input
+  process one line of input in textBuffer[]
 */
 void doLine()
 {
@@ -280,7 +280,7 @@ void doLine()
 	strcpy(&(lineOutBuffer[lineOutBufPtr]), "\r\n"); 
 	lineOutBufPtr += 2;
 
-	r = interpreterMain(sourceBuffer); 
+	r = interpreterMain(LASTBINDING, (char **)bindings, sourceBuffer); 
 
 	lineOutBufPtr = 0; 
 	lineOutBuffer[lineOutBufPtr] = 0; 
@@ -289,7 +289,7 @@ void doLine()
 	lineOutBufPtr += 6;
 
 	decDump(r, &(lineOutBuffer[lineOutBufPtr]));
-	lineOutBufPtr += 8; /* always converts 8 digits */
+	lineOutBufPtr += 8; /* always converts 8 digits (crap for large integers)  */
 
 	strcpy(&(lineOutBuffer[lineOutBufPtr]), "  ");
 	lineOutBufPtr += 2;
@@ -301,7 +301,7 @@ void doLine()
 
 	lineOutBufPtr = 0; 
 	lineOutBuffer[lineOutBufPtr] = 0; 
-	//memset(sourceBuffer, 0, SOURCEBUFFERSIZE);
+	//memset(sourceBuffer, 0, SOURCEBUFFERSIZE); // do in "new"
     }
     else if (strncmp(textBuffer,"reset",5) == 0) {
 	interpreterInit0();
@@ -309,7 +309,7 @@ void doLine()
 	interpreterAlloc();
     } 
     else if (strncmp(textBuffer,"new",3) == 0) {
-	    memset(sourceBuffer, 0, SOURCEBUFFERSIZE);
+	memset(sourceBuffer, 0, SOURCEBUFFERSIZE);
     } 
     else if (strncmp(textBuffer,"lib",3) == 0) {
 	listbindings();
@@ -367,14 +367,17 @@ void ProcessIO(void)
 	buttons are serviced only when the app finishes
 	same with IR events and USB input/output
     */
-    doButtons();
+
     IRhandler(); /* do any pending IR callbacks */
-    dopersist(LASTBINDING, (char **)bindings); /* do after button and IR so we can intercept */
+    dopersist(LASTBINDING, (char **)bindings); /* do before doButtons so external changes work */
     menus();
-    FbPushBuffer();
 
-    if (mchipUSBnotReady()) return;
+    doButtons(); /* do after dopersist and interpreterMain() returns becasue 
+		this call zeros button counters which screws up any interpreter changes */ 
 
+    FbPushBuffer(); // may sync if any calls modified display ram
+
+    if (mchipUSBnotReady()) return; // on battery. not connected to usb
 
     if (writeLOCK == 0) {
 	nread = getsUSBUSART(USB_In_Buffer, CDC_DATA_IN_EP_SIZE);
