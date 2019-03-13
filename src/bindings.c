@@ -59,12 +59,12 @@ struct binding_t bindings[] = {
     {.vf.fun = (adc_cb)},
     {.vf.fun = (setRotate)},
     {.vf.fun = (led_brightness)},
-    {.vf.ip  = &G_mute},
+    {.vf.cp  = (char *)&G_mute},
 };
 
 /*
     first is for function/variable, second for return type, third...end for parm types
-    parms types are used for listing function
+    parms types are used for usb/term "lib" command
 */
 struct param_t params[] = {
 /*     name             var/fun         val/run      parm0       parm2    parm3 */

@@ -148,7 +148,7 @@ void ir_interpreter(struct IRpacket_t p)
     ir_recv = p;
 }
 
-// my addr = IR_INTERPRETER
+// my addr = IR_INTERPRETER == 11
 void IRsend(char addr, char id, int data)
 {
     union IRpacket_u pkt;
@@ -163,11 +163,16 @@ void IRsend(char addr, char id, int data)
 
 int IRreceive()
 {
-   static union IRpacket_u tmp;
+    static union IRpacket_u tmp;
 
-   tmp.p = ir_recv;
+    tmp.p = ir_recv;
 
-   return tmp.v;
+    ir_recv.command = 0;
+    ir_recv.address = 0;
+    ir_recv.badgeId = 0; 
+    ir_recv.data    = 0;
+
+    return tmp.v;
 }
 
 extern struct wallclock_t wclock;
@@ -1737,7 +1742,6 @@ int dopersist(int argc, char **argv)
     else {
 	pc = (int *)idpersist[Value];
 
-	//stacklow = sp = (int *)((int)stack + stacksz);
 	*--sp = EXIT; // call exit if main returns
 	*--sp = PUSH; tmp = sp;
 	*--sp = argc;
@@ -1749,11 +1753,9 @@ int dopersist(int argc, char **argv)
     return r;
 }
 
-int run()
+int run(int argc, char *argv[])
 {
     int *tmp;
-    int argc=0;
-    char *argv[]={""};
 
     stacklow = sp = (int *)((int)stack + stacksz);
     if (!(pc = (int *)idmain[Value])) {
@@ -1763,12 +1765,11 @@ int run()
 	   longjmp(error_exit, 666);
 	}
 	// persist fall thru. returns 0 but does not eval 
-	// first time bcs argc/argv not passed in
+	// first time bcs argc/argv are from persist(argc, argv) not main(argc,argc)
 	return 0; 
     }
     else {
         // setup stack
-	//stacklow = sp = (int *)((int)stack + stacksz);
         *--sp = EXIT; // call exit if main returns
         *--sp = PUSH; tmp = sp;
         *--sp = argc;
@@ -1819,25 +1820,6 @@ void interpreterStats()
     echoUSB("\r\n");
 }
 
-int interpreterCatcher(char *prog)
-{
-    int r;
-
-    r=0;
-
-    /* in case of error */
-    if (r = setjmp(error_exit)) {
-	r += 100000; /* returned error, add val to indicate error with offset */
-    }
-    else {
-	interpreterInit();
-	src = prog;
-	program();
-	r = run();
-    }
-    return r;
-}
-
 #ifdef MAINAPP
 char progsrc[] = "\
 int main() {\n\
@@ -1851,12 +1833,24 @@ int main()
     char *prog = progsrc;
 #else
 
-
-int interpreterMain(char *prog) 
+/*
+   argc, argv - are assumed to be binding count and array
+   prog - code to interpret
+*/
+int interpreterMain(int argc, char *argv[], char *prog)
 {
 #endif
     int r=0;
 
-    r = interpreterCatcher(prog);
+    /* flag return value in cases of error */
+    if (r = setjmp(error_exit)) {
+	r += 100000; /* returned error, add val to indicate error with offset */
+    }
+    else {
+	interpreterInit();
+	src = prog;
+	program();
+	r = run(argc, argv);
+    }
     return r;
 }
