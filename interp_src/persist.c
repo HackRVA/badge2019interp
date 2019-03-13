@@ -1,3 +1,9 @@
+// to stop persist() do:
+//   new <enter>
+//   run <enter>
+// in usb/serial terminal
+// this emptys the src/interp
+
 //
 // keep this in sync with include/bindings.h
 //
