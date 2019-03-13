@@ -3,6 +3,9 @@
 //   run <enter>
 // in usb/serial terminal
 // this emptys the src/interp
+//
+// if code gets too big use setAlloc() & run
+// badge bindings. see badge.c bindings[] 
 
 //
 // keep this in sync with include/bindings.h
