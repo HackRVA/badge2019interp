@@ -5,7 +5,6 @@
 // this emptys the src/interp
 //
 // if code gets too big use setAlloc() & run
-// badge bindings. see badge.c bindings[] 
 //
 // badge functions args types and these have to be the same
 // because of int <-> char alignment otherwise will fault and lockup badge
@@ -37,7 +36,7 @@ int persist(int argc, int *argv)
    i = i + 1;
    i = i % 5000;
 
-   if (i == 1) printx(*fbadgeid);
+//   if (i == 1) printx(*fbadgeid);
    if (i == 500) *downbtn = 200;
    if (i == 2500) *mainbtn = 200; // clicks on things
    if (i == 4500) *upbtn = 200;
