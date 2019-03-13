@@ -314,6 +314,9 @@ void doLine()
     else if (strncmp(textBuffer,"lib",3) == 0) {
 	listbindings();
     } 
+    else if (strncmp(textBuffer,"lib",3) == 0) {
+	listbindings();
+    } 
     else if (strncmp(textBuffer,"list",4) == 0) {
 	char *startS, *endS;
 
