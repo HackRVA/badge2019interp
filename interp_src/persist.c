@@ -6,6 +6,10 @@
 //
 // if code gets too big use setAlloc() & run
 // badge bindings. see badge.c bindings[] 
+//
+// badge functions args types and these have to be the same
+// because of int <-> char alignment otherwise will fault and lockup badge
+// btns are unsigned char types but interp doesn't have "unsigned"
 
 //
 // keep this in sync with include/bindings.h
