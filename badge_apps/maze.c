@@ -81,6 +81,7 @@ enum maze_program_state_t {
     MAZE_CHOOSE_DROP_OBJECT,
     MAZE_TAKE_OBJECT,
     MAZE_DROP_OBJECT,
+    MAZE_THROW_GRENADE,
     MAZE_WIN_CONDITION,
     MAZE_EXIT,
 };
@@ -1036,6 +1037,8 @@ static void maze_button_pressed(void)
     int monster_present = 0;
     int takeable_object_count = 0;
     int droppable_object_count = 0;
+    int grenade_count = 0;
+    int grenade_number = -1;
 
     if (game_is_won) {
         maze_program_state = MAZE_GAME_INIT;
@@ -1081,6 +1084,11 @@ static void maze_button_pressed(void)
         }
         if (maze_object[i].x == 255 && object_is_portable(i))
            droppable_object_count++;
+	if (maze_object[i].x == 255 &&
+           maze_object_template[maze_object[i].type].category == MAZE_OBJECT_GRENADE) {
+           grenade_count++;
+	   grenade_number = i;
+	}
         if (maze_object[i].x == newx && maze_object[i].y == newy &&
             maze_object_template[maze_object[i].type].category == MAZE_OBJECT_MONSTER)
             monster_present = 1;
@@ -1094,6 +1102,8 @@ static void maze_button_pressed(void)
         maze_menu_add_item("TAKE ITEM", MAZE_CHOOSE_TAKE_OBJECT, takeable_object_count);
     if (droppable_object_count > 0)
         maze_menu_add_item("DROP OBJECT",  MAZE_CHOOSE_DROP_OBJECT, 1);
+    if (grenade_count > 0)
+        maze_menu_add_item("THROW GRENADE",  MAZE_THROW_GRENADE, grenade_number);
     maze_menu_add_item("VIEW MAP", MAZE_DRAW_MAP, 1);
     maze_menu_add_item("WIELD WEAPON", MAZE_CHOOSE_WEAPON, 1);
     maze_menu_add_item("DON ARMOR", MAZE_CHOOSE_ARMOR, 1);
@@ -1902,6 +1912,23 @@ static void maze_drop_object(void)
        player.armor = 255;
 }
 
+static void maze_throw_grenade(void)
+{
+    int i;
+
+    i = maze_menu.chosen_cookie;
+    if (i < 0 || i >= ARRAYSIZE(maze_object)) {
+	maze_program_state = MAZE_RENDER;
+	return;
+    }
+    maze_object[i].x = 254; /* Remove grenade from player's possession */
+    maze_object[i].y = 254;
+    encounter_text = "THE GRENADE";
+    encounter_adjective = "EMITS THOUGHTS";
+    encounter_name = "AND PRAYERS!";
+    maze_program_state = MAZE_RENDER;
+}
+
 int maze_cb(void)
 {
     switch (maze_program_state) {
@@ -2002,6 +2029,9 @@ int maze_cb(void)
          break;
     case MAZE_DROP_OBJECT:
          maze_drop_object();
+         break;
+    case MAZE_THROW_GRENADE:
+         maze_throw_grenade();
          break;
     case MAZE_EXIT:
         maze_program_state = MAZE_GAME_INIT;
