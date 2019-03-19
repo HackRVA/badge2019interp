@@ -38,6 +38,12 @@ const char *parmType[] = {
     "int*",
 };
 
+
+int returnVal(int val)
+{
+   return val;
+}
+
 void led_brightness(unsigned char bright) ;
 extern unsigned char G_mute;
 
@@ -54,12 +60,13 @@ struct binding_t bindings[] = {
     {.vf.cp  = (char *)G_sysData.name},
     {.vf.ip  = (int *)&flashedBadgeId},
     {.vf.ip  = (int *)&G_flashAddr},
-    {.vf.fun = (drawLCD8)},
+    {.vf.vfn = (void *)(drawLCD8)},
     {.vf.c   = (char)DRBOB},
-    {.vf.fun = (adc_cb)},
-    {.vf.fun = (setRotate)},
-    {.vf.fun = (led_brightness)},
+    {.vf.vfn = (void *)(adc_cb)},
+    {.vf.vfn = (void *)(setRotate)},
+    {.vf.vfn = (void *)(led_brightness)},
     {.vf.cp  = (char *)&G_mute},
+    {.vf.ifn = (int *)(returnVal)},
 };
 
 /*
@@ -86,6 +93,7 @@ struct param_t params[] = {
     { "ROTATE",	        B_FUNCTION, 	B_VOID,      B_CHAR,     B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID },
     { "LEDBRIGHT",	B_FUNCTION, 	B_VOID,      B_CHAR,     B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID },
     { "MUTE",		B_VARIABLE, 	B_CHAR,      B_VOID,     B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID },
+    { "RETVAL",		B_FUNCTION, 	B_INT,       B_INT,      B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID,  B_VOID },
 };
 
 void listbindings()

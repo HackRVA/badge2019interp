@@ -194,3 +194,47 @@ int main(argc, int *argv)
 }
 
 
+// malloc doesnt work with standard alloc
+// since 100% of ram is allocated
+main()
+{
+    setAlloc(0, 30, 5, 5, 40); // 20% free
+}
+run
+new
+
+// test passing int and returning int
+enum {
+  MAINBTN, UPBTN, DOWNBTN, LEFTBTN, RIGHTBTN,
+  HOUR, MIN, SEC,
+  BADGEID, NAME, FL_ID, FL_ADDR,
+  DRAWLCD8, DRBOB, ADC, ROTATE, 
+  LEDBRIGHT, MUTE, RETVAL,
+};
+
+int main(argc, int *argv)
+{
+   int r, i;
+   int *arr, *a;
+
+   arr = malloc(64*4); // in bytes
+   a = arr;
+
+   printx(a);
+   i=0;
+   while (i < 64) {
+      *a++ = callback1((int)argv[RETVAL], (int)i);
+      i++;
+   }
+
+   a = arr;
+   i=0;
+   while (i < 64) {
+      printd(*a++);
+      i++;
+   }
+
+   return 42;
+}
+
+

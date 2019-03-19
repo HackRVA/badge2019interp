@@ -14,6 +14,7 @@ unsigned char calc_adcs(unsigned char chans,  int hz, unsigned char *samc_out) ;
 const struct analog_src_t analog_info[] = {
    {"mic", AN_MIC_MASK, 1},
    {"R/G/B/Vss", AN_RED_MASK|AN_GREEN_MASK|AN_BLUE_MASK|AN_VSS_MASK, 4}, // needs to be multiples of 1/2/4
+   {"R/G", AN_RED_MASK|AN_GREEN_MASK, 2}, // needs to be multiples of 1/2/4
    {"red led", AN_RED_MASK, 1},
    {"green led", AN_GREEN_MASK, 1},
    {"blue led", AN_BLUE_MASK, 1},
@@ -22,6 +23,8 @@ const struct analog_src_t analog_info[] = {
 
 // see adc.h for HZ_ enums
 const struct sample_info_t samples_info[] = {
+   {30,   "30hz "},
+   {60,   "60hz "},
    {150,  "0.15 "},
    {500,  "0.5 "},
    {1000,  "1 "},
@@ -47,6 +50,7 @@ volatile unsigned short ADCbuffer[ADC_BUFFER_SIZE+8]; // extra 8 bytes so interr
 // for buttons.c and adc.c to peek
 volatile char G_analog_src_num ;  //copy of ADC_init parm
 volatile char G_hz_num ; //copy of ADC_init parm
+volatile char G_chans ; //copy of ADC_init parm
 
 void ADC_init(unsigned char analog_src_num, unsigned char hz_num) // enum {HZ_500 ... (HZ_LAST-1)}
 {
@@ -57,6 +61,7 @@ void ADC_init(unsigned char analog_src_num, unsigned char hz_num) // enum {HZ_50
 
    G_analog_src_num = analog_src_num;
    G_hz_num = hz_num;
+   G_chans = analog_info[analog_src_num].chans;
 
    IEC0bits.AD1IE = 0; // disable int to reconfig
    AD1CON1bits.ON = 0; // adc off
@@ -179,28 +184,8 @@ void __ISR(_ADC_VECTOR, IPL4SOFT) ADC_handler(void)
 	ADCbuffer[ADCbufferCnt++] = ADC1BUF5;
 	ADCbuffer[ADCbufferCnt++] = ADC1BUF6;
 	ADCbuffer[ADCbufferCnt++] = ADC1BUF7;
-/*
-	krap = ADC1BUF8;
-	krap = ADC1BUF9;
-	krap = ADC1BUFA;
-	krap = ADC1BUFB;
-	krap = ADC1BUFC;
-	krap = ADC1BUFD;
-	krap = ADC1BUFE;
-	krap = ADC1BUFF;
-*/
    }
    else {
-/*
-	krap = ADC1BUF0;
-	krap = ADC1BUF1;
-	krap = ADC1BUF2;
-	krap = ADC1BUF3;
-	krap = ADC1BUF4;
-	krap = ADC1BUF5;
-	krap = ADC1BUF6;
-	krap = ADC1BUF7;
-*/
 	ADCbuffer[ADCbufferCnt++] = ADC1BUF8;
 	ADCbuffer[ADCbufferCnt++] = ADC1BUF9;
 	ADCbuffer[ADCbufferCnt++] = ADC1BUFA;
@@ -211,48 +196,6 @@ void __ISR(_ADC_VECTOR, IPL4SOFT) ADC_handler(void)
 	ADCbuffer[ADCbufferCnt++] = ADC1BUFF;
    }
 
-   // is touch being sampled?
-//   if ( (analog_info[G_analog_src_num].ANmask & AN_TOUCH_MASK) != 0) {
-       int i;
-       G_adc_sum = 0;
-
-       switch (analog_info[G_analog_src_num].chans) {
-	   case 1:
-		for (i=ADCbufferCntStart; i<ADCbufferCnt; i++) G_adc_sum = G_adc_sum + ADCbuffer[i];
-		G_adc_samps = 8;
-		break;
-
-	   case 2:
-		// if RF is on it is the first sample, otherwise touch is first
-		//if ( (analog_info[G_analog_src_num].ANmask & AN_RF_MASK) != 0) ADCbufferCntStart++;
-		for (i=ADCbufferCntStart; i<ADCbufferCnt; i+=2) G_adc_sum = G_adc_sum + ADCbuffer[i];
-		G_adc_samps = 4;
-		break;
-	   case 4:
-		// if RF is on it is the first sample, otherwise touch is first
-		//if ( (analog_info[G_analog_src_num].ANmask & AN_RF_MASK) != 0) ADCbufferCntStart++;
-		for (i=ADCbufferCntStart; i<ADCbufferCnt; i+=4) G_adc_sum = G_adc_sum + ADCbuffer[i];
-		G_adc_samps = 2;
-		break;
-       }
-
-#ifdef DERP
-       CTMUCONbits.IDISSEN = 1;   // ground
-       for(i=0; i < 5; i++); 
-       CTMUCONbits.IDISSEN = 0;
-
-       CTMUCONbits.EDG1STAT = 1; // Begin charging the circuit
-       for(i=0; i < 20; i++); 
-       //AD1CON1bits.SAMP = 0;     // Begin analog-to-digital conversion
-       CTMUCONbits.EDG1STAT = 0; // Stop charging circuit
-#endif
-
-//   }
-//   else {
-//	G_adc_samps = 2;
-//	G_adc_sum = 0;
-//   }
-   G_adc_sum_done = 1;
 
    IFS0bits.AD1IF = 0; // clear int
 //   AD1CON1bits.ASAM = 1; // re-enable auto sampling
@@ -266,6 +209,12 @@ struct adc_table_t {
 };
 
 const struct adc_table_t adc_table[] = {
+  {      30, 1, 255, 255}, // fake need to decimate in SW
+  {      30, 2, 255, 255}, // fake need to decimate in SW
+  {      30, 4, 255, 255}, // fake need to decimate in SW
+  {      60, 1, 255, 255}, // fake need to decimate in SW
+  {      60, 2, 255, 255}, // fake need to decimate in SW
+  {      60, 4, 255, 255}, // fake need to decimate in SW
   {     150, 1, 255, 249}, 
   {     150, 2, 190, 164}, 
   {     150, 4, 153, 100}, 
