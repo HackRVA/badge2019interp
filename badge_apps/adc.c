@@ -37,7 +37,7 @@ void adc_cb() {
 	    FbColor(WHITE);
 	    FbMove(10,10);
 
-	    strcpy(title, "kHZ ");
+	    strcpy(title, "HZ ");
 	    strcat(title, samples_info[hz_num].name);
 	    FbWriteLine(title);
 
@@ -172,6 +172,10 @@ void adc_cb() {
 			      }
 			   }
 		    }
+
+		    // if hz = 30 or 60 we have to decimate the buffer since it doesn't match
+		    // the slowest it can sample is ~300hz
+
 
 		    // the ADC samples and buffers each pin in sequence, 
 		    // need to pic them apart and plot them on their own line

@@ -39,6 +39,9 @@ const char *parmType[] = {
 };
 
 
+/*
+  sanity check if it is returning value
+*/
 int returnVal(int val)
 {
    return val;
