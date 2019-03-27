@@ -1,10 +1,49 @@
-// to stop persist() do:
+//
+// Badge usb commands
+//
+// new - clear source ram
+// run - run source ram
+// list - list source ram
+// reset - reinitialize interpreter, reset allocation
+// lib - list bindings and parameters
+// stats - print ram stats
+//
+// Bindings are passed as argc, argv into
+//    main(argc, argv)  - runs just once
+//    
+//    persist(argc, argv) - run once per badge loop
+//
+// To stop persist() do:
 //   new <enter>
 //   run <enter>
-// in usb/serial terminal
-// this emptys the src/interp
+// this emptys the src buffer and clears interpreter persist()
 //
-// if code gets too big use setAlloc() & run
+// If code gets too big use setAlloc():
+//   setAlloc(int allocScanlines, int textpct, int datapct, int stackpct, int symbolpct) 
+// 
+// if allocScanlines == 0 then use interpreterRam which is ~8k
+// allocated scanlines are at the bottom of the display                                        
+// so limit print/drawing between (top, bottom-alloc)
+// and use pushbuffers() to update since it doesn't clear the display ram
+//
+// if the sum of percentages is not 100% then the remaining is used for malloc() 
+// alloc changes persist until the next alloc() or "reset"
+//
+// new
+// main()
+// {
+//     setAlloc(0, 30, 5, 5, 40); // 20% free from interpreter ram
+// }
+// run
+
+// new
+// main()
+// {
+//     setAlloc(64, 30, 5, 5, 40); // steal 64 scan from display for 16k of ram -> (64 * 128 * 2) with 20% free for malloc (100-(30+5+5+40))
+// }
+// run
+
+
 //
 // badge functions args types and these have to be the same
 // because of int <-> char alignment otherwise will fault and lockup badge
@@ -191,6 +230,50 @@ int main(argc, int *argv)
    *mainbtn = 200; // clicks on things
 
    return (int)*mainbtn;
+}
+
+
+// malloc doesnt work with standard alloc
+// since 100% of ram is allocated
+main()
+{
+    setAlloc(0, 30, 5, 5, 40); // 20% free
+}
+run
+new
+
+// test passing int and returning int
+enum {
+  MAINBTN, UPBTN, DOWNBTN, LEFTBTN, RIGHTBTN,
+  HOUR, MIN, SEC,
+  BADGEID, NAME, FL_ID, FL_ADDR,
+  DRAWLCD8, DRBOB, ADC, ROTATE, 
+  LEDBRIGHT, MUTE, RETVAL,
+};
+
+int main(argc, int *argv)
+{
+   int r, i;
+   int *arr, *a;
+
+   arr = malloc(64*4); // in bytes
+   a = arr;
+
+   printx(a);
+   i=0;
+   while (i < 64) {
+      *a++ = callback1((int)argv[RETVAL], (int)i);
+      i++;
+   }
+
+   a = arr;
+   i=0;
+   while (i < 64) {
+      printd(*a++);
+      i++;
+   }
+
+   return 42;
 }
 
 

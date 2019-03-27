@@ -1540,7 +1540,7 @@ unsigned int G_textpct=38, G_datapct=6, G_stackpct=6, G_symbolpct=50;
 unsigned int G_allocScanlines = 0;
 
 /* (percent * ramsize)/100 */
-unsigned int textsz, datasz, stacksz, symbolsz;
+unsigned int ramsz, textsz, datasz, stacksz, symbolsz;
 
 /*
    if allocScanlines == 0 then use interpreterRam which
@@ -1586,7 +1586,6 @@ void interpreterInit0()
 
 void interpreterAlloc()
 {
-    int ramsz;
 
     if (G_allocScanlines == 0) {
 	ta_heap_start = INTERP_RAM;
@@ -1781,42 +1780,75 @@ int run(int argc, char *argv[])
 
 void interpreterStats()
 {
-    unsigned int used_textsz, used_datasz, used_stacksz, used_symbolsz;
+    unsigned int mallocsz, used_textsz, used_datasz, used_stacksz, used_symbolsz;
     char textbuf[9]; /* 1 for null */
 
     used_textsz = (unsigned int)text - (unsigned int)textbase;
-    used_textsz = (used_textsz * 100) / textsz;
+//    used_textsz = (used_textsz * 100) / textsz;
 
     used_datasz = (unsigned int)data - (unsigned int)database;
-    used_datasz = (used_datasz * 100) / datasz;
+//    used_datasz = (used_datasz * 100) / datasz;
 
     /* top of stack - stacklow point */
     used_stacksz =  ((unsigned int)stackbase + stacksz) - (unsigned int)stacklow;
-    used_stacksz = (used_stacksz * 100) / stacksz;
+//    used_stacksz = (used_stacksz * 100) / stacksz;
 
     current_id = symbols;
     while (current_id[Token]) {
         current_id = current_id + IdSize;
     }
     used_symbolsz = (unsigned int)current_id - (unsigned int)symbols ;
-    used_symbolsz = (used_symbolsz * 100) / symbolsz;
+//    used_symbolsz = (used_symbolsz * 100) / symbolsz;
+
+    decDump(ramsz, textbuf);
+    echoUSB("\r\nRam Avail ");
+    echoUSB(textbuf);
+
+    mallocsz = ramsz - (textsz+datasz+stacksz+symbolsz);
+    decDump(mallocsz, textbuf);
+    echoUSB("\r\nMalloc ");
+    echoUSB(textbuf);
+
+    decDump(mallocsz - (unsigned int)(ta_heap_limit-ta_heap.top), textbuf);
+    echoUSB("\r\nUsed Malloc ");
+    echoUSB(textbuf);
+
+    decDump(textsz, textbuf);
+    echoUSB("\r\nText ");
+    echoUSB(textbuf);
 
     decDump(used_textsz, textbuf);
-    echoUSB("\r\nText %");
+    echoUSB(" Used Text ");
+    echoUSB(textbuf);
+
+
+    decDump(datasz, textbuf);
+    echoUSB("\r\nData ");
     echoUSB(textbuf);
 
     decDump(used_datasz, textbuf);
-    echoUSB("\r\nData %");
+    echoUSB(" Used Data ");
+    echoUSB(textbuf);
+
+
+    decDump(stacksz, textbuf);
+    echoUSB("\r\nStack ");
     echoUSB(textbuf);
 
     decDump(used_stacksz, textbuf);
-    echoUSB("\r\nStack %");
+    echoUSB(" Used Stack ");
+    echoUSB(textbuf);
+
+
+    decDump(symbolsz, textbuf);
+    echoUSB("\r\nSymbol ");
     echoUSB(textbuf);
 
     decDump(used_symbolsz, textbuf);
-    echoUSB("\r\nSymbol %");
+    echoUSB(" Used Symbol ");
     echoUSB(textbuf);
 
+    echoUSB("\r\n");
     echoUSB("\r\n");
 }
 

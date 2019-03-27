@@ -37,7 +37,7 @@ void adc_cb() {
 	    FbColor(WHITE);
 	    FbMove(10,10);
 
-	    strcpy(title, "kHZ ");
+	    strcpy(title, "HZ ");
 	    strcat(title, samples_info[hz_num].name);
 	    FbWriteLine(title);
 
@@ -137,7 +137,7 @@ void adc_cb() {
 		    unsigned char b, s, x, y;
 
 		    // init min and maxes- #chans=4
-		    for (s=0; s<4; s++) {
+		    for (s=0; s<G_chans; s++) {
 			   min[s] = 0xFFFF;
 			   max[s] = 0x0000;
 			   Rshift[s] = 0;
@@ -145,20 +145,20 @@ void adc_cb() {
 		    }
 
 		    // find min/max for channels
-		    for (i=0; i < ADC_BUFFER_SIZE; i+=4) {
-			   for (s=0; s<4; s++) {
+		    for (i=0; i < ADC_BUFFER_SIZE; i+=G_chans) {
+			   for (s=0; s<G_chans; s++) {
 				if (ADCbuffer[i+s] < min[s]) min[s] = ADCbuffer[i+s];
 				if (ADCbuffer[i+s] > max[s]) max[s] = ADCbuffer[i+s];
 			    }
 		    }
 
-		    for (s=0; s<4; s++) {
+		    for (s=0; s<G_chans; s++) {
 			   delta[s] = max[s] - min[s];
 		    }
 
 		    // find highest bit to for scale down
 		    for (b=9; b>=5; b--) {
-			   for (s=0; s<4; s++) {
+			   for (s=0; s<G_chans; s++) {
 			      if (delta[s] & (1<<b))    { if (Rshift[s]==0)    Rshift[s] = b-4; };
 			   }
 		    }
@@ -166,18 +166,22 @@ void adc_cb() {
 		    // if the levels are really low (b<=1) this just amplifies noise
 		    // the dev version has better filtering on AVss 
 		    for (b=4; b>2; b--) {
-			   for (s=0; s<4; s++) {
+			   for (s=0; s<G_chans; s++) {
 			      if (delta[s] & (1<<b)) { 
 				if ((Rshift[s]==0) & (Lshift[s] == 0)) Lshift[s] = 4-b;
 			      }
 			   }
 		    }
 
+		    // if hz = 30 or 60 we have to decimate the buffer since it doesn't match
+		    // the slowest it can sample is ~300hz
+
+
 		    // the ADC samples and buffers each pin in sequence, 
 		    // need to pic them apart and plot them on their own line
 		    // avoid division when posible
-		    for (i=0,x=0; i < ADC_BUFFER_SIZE; i+=4,x++) { // RF 4=128 buf, 8 = 256 buffer
-			   for (s=0; s<4; s++) {
+		    for (i=0,x=0; i < ADC_BUFFER_SIZE; i+=G_chans,x++) { // RF 4=128 buf, 8 = 256 buffer
+			   for (s=0; s<G_chans; s++) {
 				if (s==0) {
 				   y = 8;
 				   FbColor(B_RED);

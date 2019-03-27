@@ -69,7 +69,10 @@ struct sample_info_t {
 } sample_info_t;
 
 enum SAMPLE_HZ {
-   HZ_150,
+   HZ_30,
+   HZ_60,
+   HZ_120,
+   HZ_240,
    HZ_500,
    HZ_1000,
    HZ_2000,
@@ -98,9 +101,11 @@ extern volatile unsigned int ADCbufferCnt;
 extern volatile unsigned int ADCbufferCntMark;
 extern const volatile unsigned int *ADCbufferAddresses[][8];
 
-extern volatile int G_adc_sum;
-extern volatile int G_adc_samps;
-extern volatile short G_adc_sum_done;
+extern volatile int G_adc_sum; // for touch pad
+extern volatile int G_adc_samps;  // for touch pad
+extern volatile short G_adc_sum_done; // for touch pad
+
+extern volatile char G_chans ; // number of channels being sampled for deinterlacing
 
  
 #define AUDIO_PHASE1 LATAbits.LATA9

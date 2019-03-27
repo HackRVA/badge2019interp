@@ -17,6 +17,7 @@ enum {
   ROTATE,
   LEDBRIGHT,
   MUTE,
+  RETVAL,
   LASTBINDING,
 };
 
@@ -55,7 +56,9 @@ struct param_t {
    4 bytes
 */
 union var_fun {
-    int (*fun)();
+    int *(*ifn)();
+    char *(*cfn)();
+    void *(*vfn)();
     int *ip;
     int i;
     char *cp;
