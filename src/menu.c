@@ -333,7 +333,12 @@ void menus()
                 G_selectedMenu--;
 
             G_selectedMenu = display_menu(G_currMenu, G_selectedMenu, MAIN_MENU_STYLE);
-        }
+        } else {
+		/* Move to the last item if press UP from the first item */
+		while (!(G_selectedMenu->attrib & LAST_ITEM))
+			G_selectedMenu++;
+		G_selectedMenu = display_menu(G_currMenu, G_selectedMenu, MAIN_MENU_STYLE);
+	}
     }
     else if (DOWN_BTN_AND_CONSUME)
     {
@@ -351,7 +356,12 @@ void menus()
                 G_selectedMenu++;
 
             G_selectedMenu = display_menu(G_currMenu, G_selectedMenu, MAIN_MENU_STYLE);
-        }
+        } else {
+		/* Move to the first item if press DOWN from the last item */
+		while (G_selectedMenu > G_currMenu)
+			G_selectedMenu--;
+		G_selectedMenu = display_menu(G_currMenu, G_selectedMenu, MAIN_MENU_STYLE);
+	}
     }
 }
 
