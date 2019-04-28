@@ -27,7 +27,7 @@ int USB_Out_Buffer_Len = 0; /* For base station, USB buffers are not asciiz stri
 /*
   persistant (flash) system data 
 */
-struct sysData_t G_sysData;
+struct sysData_t G_sysData = { { 0 }, INITIAL_BADGE_ID, { 0 }, { 0 } };
 
 const char hextab[16]={"0123456789ABCDEF"};
 
