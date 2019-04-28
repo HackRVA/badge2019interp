@@ -632,6 +632,10 @@ static void process_packet(unsigned int packet)
 		break;
 	case OPCODE_GAME_ID:
 		game_id = payload & 0x0fff;
+		/* We happen to know this is the last bit of data for a game that the base
+		 * station sends us. So at this time, we beep to indicate all the data for
+		 * the game has been recieved. */
+		setNote(50, 4000);
 		break;
 	default:
 		break;
