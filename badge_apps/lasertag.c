@@ -717,7 +717,8 @@ static void game_shoot(void)
 	unsigned int packet;
 	unsigned short payload;
 
-	if (suppress_further_hits_until < 0) { /* Player can only shoot if they are not currently dead. */
+	/* Player can only shoot if they are not currently dead. */
+	if (suppress_further_hits_until == -1) {
 		payload = (OPCODE_HIT << 12) | ((G_sysData.badgeId & 0x1ff) << 4) | (team & 0x0f);
 		packet = build_ir_packet(0, 1, BADGE_IR_GAME_ADDRESS, BADGE_IR_BROADCAST_ID, payload);
 		send_ir_packet(packet);
