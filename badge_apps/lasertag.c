@@ -678,6 +678,8 @@ static void advance_time()
 		suppress_further_hits_until = -1;
 	if (old_time != seconds_until_game_starts || old_suppress != suppress_further_hits_until)
 		screen_changed = 1;
+	if (old_time > 0 && seconds_until_game_starts <= 0)
+		setNote(50, 4000); /* Beep upon game start */
 }
 
 static void game_process_button_presses(void)
