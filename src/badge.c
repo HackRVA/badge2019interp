@@ -465,12 +465,13 @@ void ProcessIO(void)
 	if (wait_for_sync_sequence) {
 		/* We need to sync up to figure out where the 4 byte boundary between packets is.
 		 * Initially, a few (unknown number of) garbage characters come in from the USB
-		 * serial, and we have to throw those away, and so we wait until we see "ZsYnC#"
+		 * serial, and we have to throw those away, and so we wait until we see "ZsYnCxX#"
 		 * come in, and immediately after that, the sequence of 4 byte packets begins.
-		 * Once we get past the initial garbage and see the ZsYnC# sequence, it should
+		 * Once we get past the initial garbage and see the ZsYnCxX# sequence, it should
 		 * be stable enough that we do not need to re-sync.
 		 */
-		static char sync_sequence[] = "ZsYnC#"; /* unlikely character sequence */
+		static char sync_sequence[] = "ZsYnCxX#"; /* unlikely character sequence, */
+							  /* must be a multiple of 4 bytes long */
 		static int last_byte = -1;
 		static int expected = 0;
 		int i, nb;
