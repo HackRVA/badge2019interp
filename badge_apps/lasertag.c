@@ -207,10 +207,24 @@ static void menu_add_item(char *text, enum game_state_type next_state, unsigned 
 	menu.nitems++;
 }
 
+static void to_hex(unsigned int n, char buf[])
+{
+	int i, nybble;
+	int shift;
+	const char *dig = "0123456789ABCDEFG";
+
+	for (i = 0; i < 8; i++) {
+		shift = (8 - i) * 4 - 4;
+		nybble = (n >> shift) & 0x0f;
+		buf[i] = dig[nybble];
+	}
+	buf[8] = '\0';
+}
+
 static void draw_menu(void)
 {
 	int i, y, first_item, last_item;
-	char str[15], str2[15], title[15], timecode[15];
+	char str[15], str2[15], title[15], timecode[15], badgeidstr[20];
 	int color;
 
 	first_item = menu.current_item - 4;
@@ -325,6 +339,9 @@ static void draw_menu(void)
 	FbMove(10, 120);
 	FbWriteLine(timecode);
 #endif
+	to_hex(G_sysData.badgeId, badgeidstr);
+	FbMove(131 - 4 * 8, 131 - 10);
+	FbWriteLine(badgeidstr + 4); /* only print last 4 digits, it's a 16 bit number. */
 
 	game_state = GAME_SCREEN_RENDER;
 }
