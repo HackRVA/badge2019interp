@@ -499,6 +499,7 @@ static void process_hit(unsigned int packet)
 	hit_table[nhits].timestamp = (unsigned short) timestamp;
 	hit_table[nhits].team = shooter_team;
 	nhits++;
+	setNote(50, 4000); /* beep upon receipt of hit. */
 	screen_changed = 1;
 	if (nhits >= MAX_HIT_TABLE_ENTRIES)
 		nhits = 0;
