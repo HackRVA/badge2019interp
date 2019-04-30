@@ -212,19 +212,19 @@ static void send_new_game(void)
 
 	switch (step_number) {
 	case 0:
-		send_duration();
+		send_start_time();
 		break;
 	case 1:
-		send_variant();
+		send_duration();
 		break;
 	case 2:
-		send_team();
+		send_variant();
 		break;
 	case 3:
-		send_id();
+		send_team();
 		break;
 	case 4:
-		send_start_time();
+		send_id();
 		break;
 	default:
 		break;
