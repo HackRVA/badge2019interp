@@ -391,11 +391,12 @@ static void to_hex(unsigned int n, char buf[])
  */
 static void relay_usb_buffer_to_ir(unsigned char *from_usb_buffer, int length)
 {
-	int i;
+	int i, j;
 	unsigned char *packet;
 	static union IRpacket_u p;
 	static int accum = 0;
-	char buffer[20];
+	static int line = 0;
+	static char buffer[10][20] = { 0 };
 
 	packet = (unsigned char *) &p.v;
 
@@ -404,10 +405,22 @@ static void relay_usb_buffer_to_ir(unsigned char *from_usb_buffer, int length)
 		accum++;
 		if (accum == 4) {
 			IRqueueSend(p);
-			to_hex(p.v, buffer);
-			FbMove(10, 120);
-			FbWriteLine(buffer);
+#define DEBUG_IR_OUT 0
+#if DEBUG_IR_OUT
+			/* To debug packets coming in serial and going out IR */
+			to_hex(p.v, buffer[line]);
+			for (j = 0; j < 10; j++) {
+				FbMove(0, j * 10);
+				if (j == line)
+					FbWriteLine(">");
+				else
+					FbWriteLine(" ");
+				FbMove(10, line * 10);
+				FbWriteLine(buffer[j]);
+			}
+			line = (line + 1) % 10;
 			FbSwapBuffers();
+#endif
 			accum = 0;
 		}
 	}
@@ -418,6 +431,8 @@ void relay_ir_packet_to_usb_serial(union IRpacket_u p)
 	int i, j;
 	unsigned char *c = (unsigned char *) &p.v;
 	BUILD_ASSERT((CDC_DATA_OUT_EP_SIZE % 4) == 0);
+	static int line = 0;
+	static char buffer[10][20] = { 0 };
 
 	for (i = 0; i < 4; i++) {
 		j = USB_Out_Buffer_Len + i;
@@ -425,6 +440,23 @@ void relay_ir_packet_to_usb_serial(union IRpacket_u p)
 			break;
 		USB_Out_Buffer[j] = c[i];
 	}
+#define DEBUG_IR_IN 1
+#if DEBUG_IR_IN
+	/* To debug packets coming in IR and going out serial */
+	to_hex(p.v, buffer[line]);
+	for (j = 0; j < 10; j++) {
+		FbMove(0, j * 10);
+		if (j == line)
+			FbWriteLine(">");
+		else
+			FbWriteLine(" ");
+		FbMove(10, j * 10);
+		FbWriteLine(buffer[j]);
+	}
+	line = (line + 1) % 10;
+	FbSwapBuffers();
+#endif
+
 	USB_Out_Buffer_Len += i;
 	if (USB_Out_Buffer_Len >= CDC_DATA_OUT_EP_SIZE)
 		USB_Out_Buffer_Len = 0;
