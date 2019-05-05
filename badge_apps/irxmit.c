@@ -40,6 +40,7 @@ extern char *strcat(char *dest, const char *src);
 #define CAPTUREBADGE 10
 #define SENDNEWGAME 11 
 #define INITGAMEDATA 12 
+#define BYTETEST 13
 
 static void app_init(void);
 static void render_screen(void);
@@ -54,6 +55,7 @@ static void zombies_game(void);
 static void capture_the_badge_game(void);
 static void send_new_game(void);
 static void init_game_data(void);
+static void byte_test(void);
 
 typedef void (*state_to_function_map_fn_type)(void);
 
@@ -71,6 +73,7 @@ static state_to_function_map_fn_type state_to_function_map[] = {
 	capture_the_badge_game,
 	send_new_game,
 	init_game_data,
+	byte_test,
 };
 
 static struct game_data {
@@ -113,6 +116,7 @@ static struct menu_item m[] = {
         { "CAPTURE BADGE", CAPTUREBADGE },
 	{ "SEND NEW GAME", SENDNEWGAME },
 	{ "INIT GAME DATA", INITGAMEDATA  },
+	{ "BYTE TEST", BYTETEST  },
 	{ "EXIT\n", EXIT_APP },
 };
 
@@ -273,6 +277,16 @@ static void init_game_data(void)
 	game_data.team = (game_data.team + 1) % 4;
 	game_data.duration = 120;
 	game_data.game_id = (game_data.game_id + 1) % 1024;
+	app_state = CHECK_THE_BUTTONS;
+}
+
+static void byte_test(void)
+{
+	static unsigned char value = 0;
+
+	send_a_packet(build_packet(1, 1, BADGE_IR_GAME_ADDRESS, BADGE_IR_BROADCAST_ID,
+		(OPCODE_BYTE_TEST << 12) | value));
+	value += 1;
 	app_state = CHECK_THE_BUTTONS;
 }
 
