@@ -458,6 +458,7 @@ void relay_ir_packet_to_usb_serial(union IRpacket_u p)
 #endif
 
 	USB_Out_Buffer_Len += i;
+	flushUSB();
 	if (USB_Out_Buffer_Len >= CDC_DATA_OUT_EP_SIZE)
 		USB_Out_Buffer_Len = 0;
 }
