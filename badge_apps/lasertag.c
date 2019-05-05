@@ -593,10 +593,18 @@ static void game_dump_data(void)
 		send_game_id_packet(game_id);
 	} else if (record_num == 2) {
 		send_badge_record_count(nhits);
-	} else if (record_num < nhits + 3) {
-		send_badge_upload_hit_record_badge_id(&hit_table[record_num - 2]);
-		send_badge_upload_hit_record_timestamp(&hit_table[record_num - 2]);
-		send_badge_upload_hit_record_team(&hit_table[record_num - 2]);
+	} else if (record_num < nhits * 3 + 3) {
+		switch ((record_num  - 3) % 3) {
+		case 0:
+			send_badge_upload_hit_record_badge_id(&hit_table[record_num - 2]);
+			break;
+		case 1:
+			send_badge_upload_hit_record_timestamp(&hit_table[record_num - 2]);
+			break;
+		case 2:
+			send_badge_upload_hit_record_team(&hit_table[record_num - 2]);
+			break;
+		}
 	} else {
 		record_num = 0;
 		game_state = GAME_PROCESS_BUTTON_PRESSES;
