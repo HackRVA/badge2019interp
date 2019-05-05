@@ -488,7 +488,7 @@ static void set_game_start_timestamp(int time)
 static void process_hit(unsigned int packet)
 {
 	int timestamp;
-	unsigned char shooter_team = (get_payload(packet) | 0x0f);
+	unsigned char shooter_team = (get_payload(packet) & 0x0f);
 	unsigned short badgeid = get_shooter_badge_id_bits(packet);
 	timestamp = current_time - game_start_timestamp;
 	if (timestamp < 0) /* game has not started yet  */
