@@ -99,6 +99,10 @@ void UserInit(void)
 
     //LCDBars();
 
+    /* 1st 4 bytes of flash is magic, next 4 = badgeId */
+    if (*G_flashstart != 0) 
+	G_sysData.badgeId = (G_flashstart[5] << 8 | G_flashstart[4]); /* if flash is initial program value, set default */
+
     FbInit();
     FbClear();
 
@@ -220,6 +224,7 @@ void UserInit(void)
     FbPushBuffer();
 
     timerInit();
+    flareled(128, 64, 255);
 }
 
 void decDump(unsigned int value, char *out) {

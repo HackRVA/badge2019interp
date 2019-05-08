@@ -64,11 +64,12 @@ _GEN_EXCPT_ADDR          = _ebase_address + 0x180;
  *************************************************************************/
 MEMORY
 {
-  kseg0_program_mem    (rx)  : ORIGIN = (0x9D006000 + 0x1000 + 0x490), LENGTH = 0x3F000 - (0x6000 + 0x1000 + 0x490) /* All C Files will be located here */ 
+  kseg0_program_mem    (rx)  : ORIGIN = (0x9D006000 + 0x1000 + 0x490), LENGTH = 0x3F000 - (0x6000 + 0x1000 + 0x490 + 0x4000) /* All C Files will be located here */ 
   exception_mem              : ORIGIN = 0x9D006000, LENGTH = 0x1000 /* Interrupt vector table */
   debug_exec_mem             : ORIGIN = 0x9FC00490, LENGTH = 0x760
   kseg0_boot_mem             : ORIGIN = 0x9D006000, LENGTH = 0x0 /* This memory region is dummy */ 
   kseg1_boot_mem             : ORIGIN = (0x9D006000 + 0x1000), LENGTH = 0x490 /* C Startup code */
+  kseg0_badge_mem      (rx)  : ORIGIN = (0x9D006000 + 0x1000 + 0x490 + 0x3F000 - (0x6000 + 0x1000 + 0x490 + 0x4000 + 0x370 + 0x90)), LENGTH = 0x4000 /* skip over C startup for badge */
   config3                    : ORIGIN = 0xBFC00BF0, LENGTH = 0x4
   config2                    : ORIGIN = 0xBFC00BF4, LENGTH = 0x4
   config1                    : ORIGIN = 0xBFC00BF8, LENGTH = 0x4
@@ -454,6 +455,13 @@ SECTIONS
   ** locates them, so that .text may flow around absolute sections
   ** as needed.
   */
+
+  /* PEB seems a reasonable place to put this.. */
+  .badge :
+  {
+    *(.badge)
+  } >kseg0_badge_mem
+
   .text :
   {
     *(.stub .gnu.linkonce.t.*)

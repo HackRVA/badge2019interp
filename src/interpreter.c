@@ -13,6 +13,7 @@
 #include "timer1_int.h"
 #include "tinyalloc.h"
 #include "fb.h"
+#include "flash.h"
 
 static jmp_buf error_exit;
 
@@ -64,7 +65,7 @@ enum { LEA, IMM, JMP, CALL, JZ, JNZ, ENT, ADJ, LEV, LI, LC, SI, SC, PUSH,
 	FLARELED, LED, FBMOVE, FBWRITE, 
 	IRRECEIVE, IRSEND, SETNOTE, GETBUTTON, GETDPAD, 
 	IRSTATS, SETTIME, GETTIME, FBLINE, FBCLEAR, 
-	FLASHW, FLASHR, IALLOC, CALLBACK0, CALLBACK1, CALLBACK2,
+	FLASHW, FLASHR, FLASHE, IALLOC, CALLBACK0, CALLBACK1, CALLBACK2,
 	EXIT
 };
 
@@ -204,47 +205,32 @@ char *getTime()
    return time;
 }
 
-/* 
-  interpreter flash area
-*/
-const unsigned char Iflash[2048] = {0x00};
-
-unsigned int *IflashAddr=0;
-unsigned int *IflashAddrPtr=0;
-unsigned int findex=0;
-
-
-void IflashInit()
+void IflashErase()
 {
-    /* 1k align */
-    IflashAddr = (unsigned int *)(((unsigned int)(Iflash)+1024) & 0b11111111111111111111110000000000); // 1k flash boundary
-    IflashAddrPtr = IflashAddr;
+    int i;
 
-    if (*IflashAddr != (unsigned int)0xFACEBEEF) {
-        findex=0;
-	NVMErasePage(IflashAddr);
-	NVMWriteWord(IflashAddr, (unsigned int)0xFACEBEEF);
-        IflashAddrPtr++;
-	findex++;
-    }
+    for (i=0; i<16; i++)
+       NVMErasePage((void *)G_flashstart+i*1024); // pic32mx2XX has 1024 bute pages
 
+
+    NVMWriteWord((void *)G_flashstart, (unsigned int)0xFACEBEEF);
 }
 
-unsigned int IflashWrite(unsigned int data) {
-    if (IflashAddrPtr == 0) IflashInit();
+unsigned int IflashWrite(unsigned int data, unsigned int loc) {
+    if (*G_flashstart == 0) IflashErase();
 
-    NVMWriteWord(IflashAddrPtr, data);
-    IflashAddrPtr++;
+    NVMWriteWord((void *)G_flashstart + loc*4, data);
+    if (loc == 1) G_sysData.badgeId = (G_flashstart[5] << 8 | G_flashstart[4]) ; /* update ram if badge id set */
 
-    return (findex++);
+    return (loc);
 }
 
-unsigned int IflashRead(unsigned int index) {
+unsigned int IflashRead(unsigned int loc) {
     unsigned int *r_addr;
 
-    if (IflashAddrPtr == 0) IflashInit();
+    if (*G_flashstart == 0) IflashErase();
 
-    r_addr = IflashAddr + index;
+    r_addr = (unsigned int *)G_flashstart + loc*4;
 
     return(*r_addr);
 }
@@ -1494,8 +1480,9 @@ int eval() {
         else if (op == GETTIME) { ax = (int)getTime(); }
         else if (op == FBLINE) { FbLine((char)sp[3], (char)sp[2], (char)sp[1], (char)sp[0]); }
         else if (op == FBCLEAR) { FbClear(); }
-        else if (op == FLASHW) { ax = (unsigned int)IflashWrite((unsigned int)sp[0]); }
+        else if (op == FLASHW) { ax = (unsigned int)IflashWrite((unsigned int)sp[1], (unsigned int)sp[0]); }
         else if (op == FLASHR) { ax = IflashRead((unsigned int)sp[0]); }
+        else if (op == FLASHE) { IflashErase(); }
         else if (op == IALLOC) { setAlloc((unsigned int)sp[4], (unsigned int)sp[3], (unsigned int)sp[2], (unsigned int)sp[1], (unsigned int)sp[0]); }
 	// (void (*)(void *))
         else if (op == CALLBACK0) { 
@@ -1522,7 +1509,7 @@ const char Csrc[] = "char else enum if int return sizeof while "
 	  "flareled led FbMove FbWrite "
 	  "IRreceive IRsend setNote getButton getDPAD "
 	  "IRstats setTime getTime FbLine FbClear "
-	  "flashWrite flashRead setAlloc callback0 callback1 callback2 "
+	  "flashWrite flashRead flashErase setAlloc callback0 callback1 callback2 "
 	  "exit void persist main";
 
 #define TEXTSZ (2048+1024)
