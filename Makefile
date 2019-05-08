@@ -12,6 +12,7 @@ INC += -I$(TOP)
 INC += -I./$(BUILD)
 INC += -D_SUPPRESS_PLIB_WARNING -D_DISABLE_OPENADC10_CONFIGPORT_WARNING -fno-schedule-insns -D_XC -D__XC
 INC += -DPAULSHACKEDBADGE
+INC += -DBADGE_FLASH_SECTION
 
 # for assembler. assembler nop's after instructions
 #INC += -fno-schedule-insns 
@@ -33,7 +34,7 @@ SRC_BADGE_C = \
 	src/timer1_int.c src/interpreter.c src/pic32config.c \
 	src/buttons.c src/settings.c src/menu.c src/adc_int.c \
         src/LCDcolor.c src/S6B33.c src/badge.c src/fb.c src/tinyalloc.c \
-	src/achievements.c src/flash.c src/bindings.c
+	src/achievements.c src/flash.c src/flash_addr.c src/bindings.c
 
 SRC_APPS_C = \
 	badge_apps/adc.c badge_apps/maze.c badge_apps/xorshift.c \
@@ -92,7 +93,7 @@ ramsyms:	build/firmware.elf
 
 #vfprintf routines are huge- 8k
 romsyms:	build/firmware.elf
-	$(CROSS_COMPILE)nm -S build/firmware.elf | grep ^9d0 | sed -e '/ t /d' -e '/ [Aa] /d' | sort -r -t\  -k2
+	$(CROSS_COMPILE)nm -anS build/firmware.elf | grep ^9d0 | sed -e '/ t /d' -e '/ [Aa] /d' | sort -r -t\  -k2
 
 # more fine grain symbols filtering. see man nm
 #	nm -S build/firmware.elf | sed -e '/ W /d' -e ' r /d' -e '/ D /d' -e '/ R /d' -e '/ T /d' -e '/ [Aa] /d' -e '/ N /d' -e '/ t /d' -e '/^    /d' | sort -r -t\  -k2

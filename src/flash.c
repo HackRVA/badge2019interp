@@ -1,6 +1,8 @@
 #include <stdio.h>
 
+#ifndef BADGE_FLASH_SECTION
 const unsigned short flashedBadgeId = 0xefbe; /* MAGIC value for script. It will be replaced by awk script in final flashing */
+#endif
 
 /*
 
@@ -21,7 +23,9 @@ void NVMErasePage(unsigned int *addr);
 #else
 #include "plib.h"
 #include "flash.h"
+#ifndef BADGE_FLASH_SECTION
 const unsigned char G_flashstart[2048] = {0x00, 0x00};
+#endif
 #endif
 /*
     not really a NV routine- used mostly for POC/MAIN testing 
@@ -44,7 +48,11 @@ void flashInit()
    // align addr on a 1k boundary within the 2k block we allocated
    // erase page first, don't have to erase if writing an area already erased
    /* seems there should be a way to statically define this */
+#ifdef BADGE_FLASH_SECTION
+   G_flashAddr = (unsigned int *)G_flashstart;
+#else
    G_flashAddr = (unsigned int *)(((unsigned long)(&G_flashstart)+1024) & 0b11111111111111111111110000000000); // 1k flash boundary
+#endif
 
 #ifdef MAIN
    {

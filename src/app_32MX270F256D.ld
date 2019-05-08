@@ -26,9 +26,9 @@ INPUT("/opt/microchip/xc32/v1.34/pic32mx/lib/proc/32MX270F256D/processor.o");
  * Processor-specific peripheral libraries are optional
  *************************************************************************/
 
+/*
 OPTIONAL("/opt/microchip/xc32/v1.34/pic32mx/lib/libmchp_peripheral.a")
 OPTIONAL("/opt/microchip/xc32/v1.34/pic32mx/lib/libmchp_peripheral_32MX270F256D.a")
-/*
 OPTIONAL("libmchp_peripheral.a")
 OPTIONAL("libmchp_peripheral_32MX270F256D.a")
 */
@@ -37,6 +37,7 @@ OPTIONAL("libmchp_peripheral_32MX270F256D.a")
  * For interrupt vector handling
  *************************************************************************/
 PROVIDE(_vector_spacing = 0x00000001);
+/* bootloader uses this: _ebase_address = 0x9D03F000; */
 _ebase_address =  0x9D006000;
 
 /*************************************************************************
@@ -50,9 +51,11 @@ _ebase_address =  0x9D006000;
  *************************************************************************/
 _RESET_ADDR              = (0x9D006000 + 0x1000);
 _BEV_EXCPT_ADDR          = ((0x9D006000 + 0x1000) + 0x380);
+/*
 _DBG_EXCPT_ADDR          = ((0x9D006000 + 0x1000) + 0x480);
 _DBG_CODE_ADDR           = 0x9FC00490;
 _DBG_CODE_SIZE           = 0x760     ;
+*/
 _GEN_EXCPT_ADDR          = _ebase_address + 0x180;
 
 /*************************************************************************
@@ -62,13 +65,18 @@ _GEN_EXCPT_ADDR          = _ebase_address + 0x180;
  * Only sections specifically assigned to these regions can be allocated
  * into these regions.
  *************************************************************************/
+
 MEMORY
 {
-  kseg0_program_mem    (rx)  : ORIGIN = (0x9D006000 + 0x1000 + 0x490), LENGTH = 0x3F000 - (0x6000 + 0x1000 + 0x490) /* All C Files will be located here */ 
+  kseg0_program_mem    (rx)  : ORIGIN = (0x9D006000 + 0x1000 + 0x490), LENGTH = 0x3F000 - (0x6000 + 0x1000 + 0x490 + (0x370+0x90+0x4000) /* All C Files will be located here */ 
   exception_mem              : ORIGIN = 0x9D006000, LENGTH = 0x1000 /* Interrupt vector table */
+/*
   debug_exec_mem             : ORIGIN = 0x9FC00490, LENGTH = 0x760
+*/
   kseg0_boot_mem             : ORIGIN = 0x9D006000, LENGTH = 0x0 /* This memory region is dummy */ 
   kseg1_boot_mem             : ORIGIN = (0x9D006000 + 0x1000), LENGTH = 0x490 /* C Startup code */
+/*  kseg0_badge_mem      (rx)  : ORIGIN = (0x9D006000 + 0x1000 + 0x490 + 0x3F000 - (0x6000 + 0x1000 + 0x490 + 0x370 + 0x4000 + 0x90)), LENGTH = 0x1000 /* skip over C startup for badge */
+  kseg0_badge_mem      (rx)  : ORIGIN = (0x9D006000 + 0x1000 + 0x490 + 0x3F000 - (0x6000 + 0x1000 + 0x490 + 0x370 + 0x90)), LENGTH = 0x4000 /* skip over C startup for badge */
   config3                    : ORIGIN = 0xBFC00BF0, LENGTH = 0x4
   config2                    : ORIGIN = 0xBFC00BF4, LENGTH = 0x4
   config1                    : ORIGIN = 0xBFC00BF8, LENGTH = 0x4
@@ -110,6 +118,7 @@ SECTIONS
   {
     KEEP(*(.bev_handler))
   } > kseg1_boot_mem
+/*
   .dbg_excpt _DBG_EXCPT_ADDR (NOLOAD) :
   {
     . += (DEFINED (_DEBUGGER) ? 0x8 : 0x0);
@@ -118,6 +127,7 @@ SECTIONS
   {
     . += (DEFINED (_DEBUGGER) ? _DBG_CODE_SIZE : 0x0);
   } > debug_exec_mem
+*/
   .app_excpt _GEN_EXCPT_ADDR :
   {
     KEEP(*(.gen_handler))
@@ -454,6 +464,14 @@ SECTIONS
   ** locates them, so that .text may flow around absolute sections
   ** as needed.
   */
+
+  /* PEB seems a reasonable place to put this.. */
+  .badge :
+  {
+    *(.badge)
+  } >kseg0_badge_mem
+
+
   .text :
   {
     *(.stub .gnu.linkonce.t.*)
@@ -473,11 +491,13 @@ SECTIONS
     KEEP (*crtn.o(.init))
     . = ALIGN(4) ;
   } >kseg0_program_mem
+
   .fini   :
   {
     KEEP (*(.fini))
     . = ALIGN(4) ;
   } >kseg0_program_mem
+
   .preinit_array   :
   {
     PROVIDE_HIDDEN (__preinit_array_start = .);
@@ -485,6 +505,7 @@ SECTIONS
     PROVIDE_HIDDEN (__preinit_array_end = .);
     . = ALIGN(4) ;
   } >kseg0_program_mem
+
   .init_array   :
   {
     PROVIDE_HIDDEN (__init_array_start = .);
@@ -493,6 +514,7 @@ SECTIONS
     PROVIDE_HIDDEN (__init_array_end = .);
     . = ALIGN(4) ;
   } >kseg0_program_mem
+
   .fini_array   :
   {
     PROVIDE_HIDDEN (__fini_array_start = .);
@@ -501,6 +523,7 @@ SECTIONS
     PROVIDE_HIDDEN (__fini_array_end = .);
     . = ALIGN(4) ;
   } >kseg0_program_mem
+
   .ctors   :
   {
     /* XC32 uses crtbegin.o to find the start of
@@ -574,6 +597,8 @@ SECTIONS
     *(.gcc_except_table .gcc_except_table.*)
   } >kseg0_program_mem
     . = ALIGN(4) ;
+
+
   .dbg_data (NOLOAD) :
   {
     . += (DEFINED (_DEBUGGER) ? 0x200 : 0x0);
@@ -602,6 +627,8 @@ SECTIONS
     . = ALIGN(4) ;
     _persist_end = .;
   } >kseg1_data_mem
+
+
   /*
    * Note that input sections named .data* are no longer mapped here.
    * Starting in C32 v2.00, the best-fit allocator locates them, so

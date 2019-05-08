@@ -1,9 +1,45 @@
+/*
+   change badge id (loc==1)
+*/
+new
 main()
 {
-   int w, r;
+   flashErase();
+   flashWrite(0x0000beef, 1);
+}
+run
 
-   w = flashWrite(0xabcdef01);
-   printd(w);
+/*
+   change badge id (loc==1)
+*/
+new
+main()
+{
+   flashErase();
+   flashWrite(0x0000abcd, 1);
+}
+run
+
+new
+main()
+{
+   int r;
+
+   flashWrite(0xabcdef01, 2);
+
+   r=flashRead(0); printx(r);
+   r=flashRead(1); printx(r);
+   r=flashRead(2); printx(r);
+   r=flashRead(3); printx(r);
+}
+run
+
+new
+main()
+{
+   int r;
+
+   flashWrite(0xdeaddead, 3);
 
    r=flashRead(0); printx(r);
    r=flashRead(1); printx(r);
@@ -13,76 +49,56 @@ main()
 run
 
 
+new
 main()
 {
    int r;
+
+   flashWrite(0x01020304, 4);
    r = flashRead(0); printx(r);
    r = flashRead(1); printx(r);
    r = flashRead(2); printx(r);
    r = flashRead(3); printx(r);
-   r = flashRead(4); printd(r);
 }
 run
 
-main()
-{
-   int w;
-
-   w=flashWrite(0xff);
-   return w;
-}
-run
-
-main()
-{
-   int r,w;
-
-   w=flashWrite(0x01234567);
-   printd(w);
-   r = flashRead(0); printx(r);
-}
-run
-
-
-main()
-{
-   int r,w;
-
-   w=flashWrite(0x01234567);
-   printd(w);
-   r=flashRead(2);
-   printd(r);
-   r=flashRead(3);
-   printd(r);
-}
-run
-
+new
 main()
 {
    int r;
 
-   r=flashRead(2);
-   printd(r);
-   r=flashRead(3);
-   printd(r);
-   r=flashRead(4);
-   printd(r);
+   flashWrite(0xfedcba98, 5);
+
+   r=flashRead(0); printx(r);
+   r=flashRead(1); printx(r);
+   r=flashRead(2); printx(r);
+   r=flashRead(3); printx(r);
+   r=flashRead(4); printx(r);
 }
 run
 
-
+new
 main()
 {
-   int r,w;
+   int r;
 
-   w=flashWrite(0x42424242);
-   printd(w);
-
-   r=flashRead(w);
-   printd(r);
-
-   return w;
+   flashWrite(0x01234567, 6);
+   r = flashRead(5); printx(r);
 }
 run
+
+new
+main()
+{
+   int r;
+
+   flashWrite(0x11111111, 2);
+   r = flashRead(0); printx(r);
+   r = flashRead(1); printx(r);
+   r = flashRead(2); printx(r);
+   r = flashRead(3); printx(r);
+}
+run
+
 
 

@@ -78,7 +78,7 @@ void timerInit(void)
     ConfigIntTimer4(T4_INT_ON | T4_INT_PRIOR_3);
 
     // enable multi-vector interrupts
-    INTEnableSystemMultiVectoredInt();
+//    INTEnableSystemMultiVectoredInt();
 
 #ifdef PRE2019
     IEC0bits.INT1IE=0; // 2015 disable this interrupt

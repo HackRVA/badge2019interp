@@ -28,6 +28,7 @@ int USB_Out_Buffer_Len = 0; /* For base station, USB buffers are not asciiz stri
   persistant (flash) system data 
 */
 struct sysData_t G_sysData;
+unsigned short flashedBadgeId=0;
 
 const char hextab[16]={"0123456789ABCDEF"};
 
@@ -99,9 +100,11 @@ void UserInit(void)
 
     //LCDBars();
 
+    flashedBadgeId = (unsigned char)*G_flashstart; /* grab badge Id from flash */
+    if (flashedBadgeId == 0) flashedBadgeId = 0xefbe; /* if flash is not erased, set default */
+
     FbInit();
     FbClear();
-
  
 
     /* boot status */
@@ -220,6 +223,7 @@ void UserInit(void)
     FbPushBuffer();
 
     timerInit();
+    flareled(128, 64, 255);
 }
 
 void decDump(unsigned int value, char *out) {
