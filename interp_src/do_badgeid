@@ -1,0 +1,14 @@
+#!/bin/bash
+
+cat /dev/ttyACM0 &
+
+cat << END > /dev/ttyACM0
+new
+main()
+{
+   flashErase();
+   flashWrite(0x0000deaf, 1);
+}
+run
+
+END
