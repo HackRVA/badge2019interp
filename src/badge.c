@@ -27,8 +27,7 @@ int USB_Out_Buffer_Len = 0; /* For base station, USB buffers are not asciiz stri
 /*
   persistant (flash) system data 
 */
-struct sysData_t G_sysData;
-unsigned short flashedBadgeId=0;
+struct sysData_t G_sysData = { { 0 }, INITIAL_BADGE_ID, { 0 }, { 0 } };
 
 const char hextab[16]={"0123456789ABCDEF"};
 
@@ -100,11 +99,13 @@ void UserInit(void)
 
     //LCDBars();
 
-    flashedBadgeId = (unsigned char)*G_flashstart; /* grab badge Id from flash */
-    if (flashedBadgeId == 0) flashedBadgeId = 0xefbe; /* if flash is not erased, set default */
+    /* 1st 4 bytes of flash is magic, next 4 = badgeId */
+    if (*G_flashstart != 0) 
+	G_sysData.badgeId = (G_flashstart[5] << 8 | G_flashstart[4]); /* if flash is initial program value, set default */
 
     FbInit();
     FbClear();
+
  
 
     /* boot status */
@@ -395,11 +396,12 @@ static void to_hex(unsigned int n, char buf[])
  */
 static void relay_usb_buffer_to_ir(unsigned char *from_usb_buffer, int length)
 {
-	int i;
+	int i, j;
 	unsigned char *packet;
 	static union IRpacket_u p;
 	static int accum = 0;
-	char buffer[20];
+	static int line = 0;
+	static char buffer[10][20] = { 0 };
 
 	packet = (unsigned char *) &p.v;
 
@@ -408,10 +410,22 @@ static void relay_usb_buffer_to_ir(unsigned char *from_usb_buffer, int length)
 		accum++;
 		if (accum == 4) {
 			IRqueueSend(p);
-			to_hex(p.v, buffer);
-			FbMove(10, 120);
-			FbWriteLine(buffer);
+#define DEBUG_IR_OUT 0
+#if DEBUG_IR_OUT
+			/* To debug packets coming in serial and going out IR */
+			to_hex(p.v, buffer[line]);
+			for (j = 0; j < 10; j++) {
+				FbMove(0, j * 10);
+				if (j == line)
+					FbWriteLine(">");
+				else
+					FbWriteLine(" ");
+				FbMove(10, line * 10);
+				FbWriteLine(buffer[j]);
+			}
+			line = (line + 1) % 10;
 			FbSwapBuffers();
+#endif
 			accum = 0;
 		}
 	}
@@ -422,6 +436,8 @@ void relay_ir_packet_to_usb_serial(union IRpacket_u p)
 	int i, j;
 	unsigned char *c = (unsigned char *) &p.v;
 	BUILD_ASSERT((CDC_DATA_OUT_EP_SIZE % 4) == 0);
+	static int line = 0;
+	static char buffer[10][20] = { 0 };
 
 	for (i = 0; i < 4; i++) {
 		j = USB_Out_Buffer_Len + i;
@@ -429,7 +445,25 @@ void relay_ir_packet_to_usb_serial(union IRpacket_u p)
 			break;
 		USB_Out_Buffer[j] = c[i];
 	}
+#define DEBUG_IR_IN 1
+#if DEBUG_IR_IN
+	/* To debug packets coming in IR and going out serial */
+	to_hex(p.v, buffer[line]);
+	for (j = 0; j < 10; j++) {
+		FbMove(0, j * 10);
+		if (j == line)
+			FbWriteLine(">");
+		else
+			FbWriteLine(" ");
+		FbMove(10, j * 10);
+		FbWriteLine(buffer[j]);
+	}
+	line = (line + 1) % 10;
+	FbSwapBuffers();
+#endif
+
 	USB_Out_Buffer_Len += i;
+	flushUSB();
 	if (USB_Out_Buffer_Len >= CDC_DATA_OUT_EP_SIZE)
 		USB_Out_Buffer_Len = 0;
 }
@@ -469,12 +503,13 @@ void ProcessIO(void)
 	if (wait_for_sync_sequence) {
 		/* We need to sync up to figure out where the 4 byte boundary between packets is.
 		 * Initially, a few (unknown number of) garbage characters come in from the USB
-		 * serial, and we have to throw those away, and so we wait until we see "ZsYnC#"
+		 * serial, and we have to throw those away, and so we wait until we see "ZsYnCxX#"
 		 * come in, and immediately after that, the sequence of 4 byte packets begins.
-		 * Once we get past the initial garbage and see the ZsYnC# sequence, it should
+		 * Once we get past the initial garbage and see the ZsYnCxX# sequence, it should
 		 * be stable enough that we do not need to re-sync.
 		 */
-		static char sync_sequence[] = "ZsYnC#"; /* unlikely character sequence */
+		static char sync_sequence[] = "ZsYnCxX#"; /* unlikely character sequence, */
+							  /* must be a multiple of 4 bytes long */
 		static int last_byte = -1;
 		static int expected = 0;
 		int i, nb;

@@ -23,7 +23,7 @@ union IRpacket_u {
 #define PING_PAIR_CONFIRM 0x3
 
 /* input circular queue */
-#define MAXPACKETQUEUE 64
+#define MAXPACKETQUEUE 8
 extern unsigned char IRpacketInCurr ;
 extern unsigned char IRpacketInNext ;
 extern union IRpacket_u IRpacketsIn[];

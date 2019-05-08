@@ -207,10 +207,24 @@ static void menu_add_item(char *text, enum game_state_type next_state, unsigned 
 	menu.nitems++;
 }
 
+static void to_hex(unsigned int n, char buf[])
+{
+	int i, nybble;
+	int shift;
+	const char *dig = "0123456789ABCDEFG";
+
+	for (i = 0; i < 8; i++) {
+		shift = (8 - i) * 4 - 4;
+		nybble = (n >> shift) & 0x0f;
+		buf[i] = dig[nybble];
+	}
+	buf[8] = '\0';
+}
+
 static void draw_menu(void)
 {
 	int i, y, first_item, last_item;
-	char str[15], str2[15], title[15], timecode[15];
+	char str[15], str2[15], title[15], timecode[15], badgeidstr[20];
 	int color;
 
 	first_item = menu.current_item - 4;
@@ -325,6 +339,9 @@ static void draw_menu(void)
 	FbMove(10, 120);
 	FbWriteLine(timecode);
 #endif
+	to_hex(G_sysData.badgeId, badgeidstr);
+	FbMove(131 - 4 * 8, 131 - 10);
+	FbWriteLine(badgeidstr + 4); /* only print last 4 digits, it's a 16 bit number. */
 
 	game_state = GAME_SCREEN_RENDER;
 }
@@ -471,7 +488,7 @@ static void set_game_start_timestamp(int time)
 static void process_hit(unsigned int packet)
 {
 	int timestamp;
-	unsigned char shooter_team = (get_payload(packet) | 0x0f);
+	unsigned char shooter_team = (get_payload(packet) & 0x0f);
 	unsigned short badgeid = get_shooter_badge_id_bits(packet);
 	timestamp = current_time - game_start_timestamp;
 	if (timestamp < 0) /* game has not started yet  */
@@ -499,6 +516,7 @@ static void process_hit(unsigned int packet)
 	hit_table[nhits].timestamp = (unsigned short) timestamp;
 	hit_table[nhits].team = shooter_team;
 	nhits++;
+	setNote(50, 4000); /* beep upon receipt of hit. */
 	screen_changed = 1;
 	if (nhits >= MAX_HIT_TABLE_ENTRIES)
 		nhits = 0;
@@ -575,10 +593,19 @@ static void game_dump_data(void)
 		send_game_id_packet(game_id);
 	} else if (record_num == 2) {
 		send_badge_record_count(nhits);
-	} else if (record_num < nhits + 3) {
-		send_badge_upload_hit_record_badge_id(&hit_table[record_num - 2]);
-		send_badge_upload_hit_record_timestamp(&hit_table[record_num - 2]);
-		send_badge_upload_hit_record_team(&hit_table[record_num - 2]);
+	} else if (record_num < nhits * 3 + 3) {
+		int hit_index = (record_num - 3) / 3;
+		switch ((record_num  - 3) % 3) {
+		case 0:
+			send_badge_upload_hit_record_badge_id(&hit_table[hit_index]);
+			break;
+		case 1:
+			send_badge_upload_hit_record_timestamp(&hit_table[hit_index]);
+			break;
+		case 2:
+			send_badge_upload_hit_record_team(&hit_table[hit_index]);
+			break;
+		}
 	} else {
 		record_num = 0;
 		game_state = GAME_PROCESS_BUTTON_PRESSES;
@@ -632,6 +659,10 @@ static void process_packet(unsigned int packet)
 		break;
 	case OPCODE_GAME_ID:
 		game_id = payload & 0x0fff;
+		/* We happen to know this is the last bit of data for a game that the base
+		 * station sends us. So at this time, we beep to indicate all the data for
+		 * the game has been recieved. */
+		setNote(50, 4000);
 		break;
 	default:
 		break;
@@ -674,6 +705,8 @@ static void advance_time()
 		suppress_further_hits_until = -1;
 	if (old_time != seconds_until_game_starts || old_suppress != suppress_further_hits_until)
 		screen_changed = 1;
+	if (old_time > 0 && seconds_until_game_starts <= 0)
+		setNote(50, 4000); /* Beep upon game start */
 }
 
 static void game_process_button_presses(void)
@@ -710,9 +743,12 @@ static void game_shoot(void)
 	unsigned int packet;
 	unsigned short payload;
 
-	payload = (OPCODE_HIT << 12) | ((G_sysData.badgeId & 0x1ff) << 4) | (team & 0x0f);
-	packet = build_ir_packet(0, 1, BADGE_IR_GAME_ADDRESS, BADGE_IR_BROADCAST_ID, payload);
-	send_ir_packet(packet);
+	/* Player can only shoot if they are not currently dead. */
+	if (suppress_further_hits_until == -1) {
+		payload = (OPCODE_HIT << 12) | ((G_sysData.badgeId & 0x1ff) << 4) | (team & 0x0f);
+		packet = build_ir_packet(0, 1, BADGE_IR_GAME_ADDRESS, BADGE_IR_BROADCAST_ID, payload);
+		send_ir_packet(packet);
+	}
 
 	game_state = GAME_MAIN_MENU;
 }

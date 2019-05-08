@@ -1,9 +1,5 @@
 #include <stdio.h>
 
-#ifndef BADGE_FLASH_SECTION
-const unsigned short flashedBadgeId = 0xefbe; /* MAGIC value for script. It will be replaced by awk script in final flashing */
-#endif
-
 /*
 
 PEB 2015/05/29

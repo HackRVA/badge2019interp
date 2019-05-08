@@ -24,6 +24,17 @@ new
 main()
 {
    int r;
+   r=flashRead(0); printx(r);
+   r=flashRead(1); printx(r);
+   r=flashRead(2); printx(r);
+   r=flashRead(3); printx(r);
+}
+run
+
+new
+main()
+{
+   int r;
 
    flashWrite(0xabcdef01, 2);
 

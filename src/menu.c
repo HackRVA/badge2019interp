@@ -333,7 +333,12 @@ void menus()
                 G_selectedMenu--;
 
             G_selectedMenu = display_menu(G_currMenu, G_selectedMenu, MAIN_MENU_STYLE);
-        }
+        } else {
+		/* Move to the last item if press UP from the first item */
+		while (!(G_selectedMenu->attrib & LAST_ITEM))
+			G_selectedMenu++;
+		G_selectedMenu = display_menu(G_currMenu, G_selectedMenu, MAIN_MENU_STYLE);
+	}
     }
     else if (DOWN_BTN_AND_CONSUME)
     {
@@ -351,7 +356,12 @@ void menus()
                 G_selectedMenu++;
 
             G_selectedMenu = display_menu(G_currMenu, G_selectedMenu, MAIN_MENU_STYLE);
-        }
+        } else {
+		/* Move to the first item if press DOWN from the last item */
+		while (G_selectedMenu > G_currMenu)
+			G_selectedMenu--;
+		G_selectedMenu = display_menu(G_currMenu, G_selectedMenu, MAIN_MENU_STYLE);
+	}
     }
 }
 
@@ -465,12 +475,12 @@ void genericMenu(struct menu_t *L_menu, MENU_STYLE style)
 }
 
 const struct menu_t games_m[] = {
-//   {"Blinkenlights", VERT_ITEM|DEFAULT_ITEM, FUNCTION, {(struct menu_t *)blinkenlights_cb}}, // Set other badges LED
-//   {"Conductor",     VERT_ITEM, FUNCTION, {(struct menu_t *)conductor_cb}}, // Tell other badges to play notes
-//   {"Sensors",       VERT_ITEM, FUNCTION, {(struct menu_t *)adc_cb} },
-//   {"Maze",          VERT_ITEM, FUNCTION, {(struct menu_t *)maze_cb} },
-//   {"Laser Tag",     VERT_ITEM, FUNCTION, {(struct menu_t *)lasertag_cb} },
-//   {"IR XMIT",       VERT_ITEM, FUNCTION, {(struct menu_t *)irxmit_cb} },
+   {"Blinkenlights", VERT_ITEM|DEFAULT_ITEM, FUNCTION, {(struct menu_t *)blinkenlights_cb}}, // Set other badges LED
+   {"Conductor",     VERT_ITEM, FUNCTION, {(struct menu_t *)conductor_cb}}, // Tell other badges to play notes
+   {"Sensors",       VERT_ITEM, FUNCTION, {(struct menu_t *)adc_cb} },
+   {"Maze",          VERT_ITEM, FUNCTION, {(struct menu_t *)maze_cb} },
+   {"Laser Tag",     VERT_ITEM, FUNCTION, {(struct menu_t *)lasertag_cb} },
+   {"IR XMIT",       VERT_ITEM, FUNCTION, {(struct menu_t *)irxmit_cb} },
    {"Back",	     VERT_ITEM|LAST_ITEM, BACK, {NULL}},
 };
 
@@ -489,7 +499,7 @@ const struct menu_t settings_m[] = {
 
 const struct menu_t main_m[] = {
 //   {"Schedule",    VERT_ITEM, MENU, {schedule_m}},
-//   {"Games",       VERT_ITEM|DEFAULT_ITEM, MENU, {games_m}},
+   {"Games",       VERT_ITEM|DEFAULT_ITEM, MENU, {games_m}},
    {"QC",          VERT_ITEM, FUNCTION, {(struct menu_t *)QC_cb}},
    {"Settings",    VERT_ITEM|LAST_ITEM, MENU, {settings_m}},
 } ;

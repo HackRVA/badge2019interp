@@ -55,7 +55,7 @@
 enum {
   MAINBTN, UPBTN, DOWNBTN, LEFTBTN, RIGHTBTN,
   HOUR, MIN, SEC,
-  BADGEID, NAME, FL_ID, FL_ADDR,
+  BADGEID, NAME, FL_ADDR,
   DRAWLCD8, DRBOB, ADC, ROTATE, 
   LEDBRIGHT, MUTE,
 };
@@ -70,7 +70,7 @@ int persist(int argc, int *argv)
    mainbtn = (char *)argv[MAINBTN];
    upbtn = (char *)argv[UPBTN];
    downbtn = (char *)argv[DOWNBTN];
-   fbadgeid = (char *)argv[FL_ID];
+   fbadgeid = (char *)argv[BADGEID];
 
    i = i + 1;
    i = i % 5000;
@@ -98,7 +98,7 @@ int persist(int argc, int *argv)
 enum {
   MAINBTN, UPBTN, DOWNBTN, LEFTBTN, RIGHTBTN,
   HOUR, MIN, SEC,
-  BADGEID, NAME, FL_ID, FL_ADDR,
+  BADGEID, NAME, FL_ADDR,
   DRAWLCD8, DRBOB, ADC, ROTATE, 
   LEDBRIGHT, MUTE,
 };
@@ -131,7 +131,7 @@ int persist(int argc, int *argv)
 enum {
   MAINBTN, UPBTN, DOWNBTN, LEFTBTN, RIGHTBTN,
   HOUR, MIN, SEC,
-  BADGEID, NAME, FL_ID, FL_ADDR,
+  BADGEID, NAME, FL_ADDR,
   DRAWLCD8, DRBOB, ADC, ROTATE, 
   LEDBRIGHT, MUTE,
 };
@@ -151,7 +151,7 @@ int persist(int argc, int *argv)
 enum {
   MAINBTN, UPBTN, DOWNBTN, LEFTBTN, RIGHTBTN,
   HOUR, MIN, SEC,
-  BADGEID, NAME, FL_ID, FL_ADDR,
+  BADGEID, NAME, FL_ADDR,
   DRAWLCD8, DRBOB, ADC, ROTATE, 
   LEDBRIGHT, MUTE,
 };
@@ -176,7 +176,7 @@ int persist(int argc, int *argv)
 enum {
   MAINBTN, UPBTN, DOWNBTN, LEFTBTN, RIGHTBTN,
   HOUR, MIN, SEC,
-  BADGEID, NAME, FL_ID, FL_ADDR,
+  BADGEID, NAME, FL_ADDR,
   DRAWLCD8, DRBOB, ADC, ROTATE, 
   LEDBRIGHT, MUTE,
 };
@@ -195,7 +195,7 @@ int persist(int argc, int *argv)
 enum {
   MAINBTN, UPBTN, DOWNBTN, LEFTBTN, RIGHTBTN,
   HOUR, MIN, SEC,
-  BADGEID, NAME, FL_ID, FL_ADDR,
+  BADGEID, NAME, FL_ADDR,
   DRAWLCD8, DRBOB, ADC, ROTATE, 
   LEDBRIGHT, MUTE,
 };
@@ -217,7 +217,7 @@ int main(argc, int *argv)
 enum {
   MAINBTN, UPBTN, DOWNBTN, LEFTBTN, RIGHTBTN,
   HOUR, MIN, SEC,
-  BADGEID, NAME, FL_ID, FL_ADDR,
+  BADGEID, NAME, FL_ADDR,
   DRAWLCD8, DRBOB, ADC, ROTATE, 
   LEDBRIGHT, MUTE,
 };
@@ -246,7 +246,7 @@ new
 enum {
   MAINBTN, UPBTN, DOWNBTN, LEFTBTN, RIGHTBTN,
   HOUR, MIN, SEC,
-  BADGEID, NAME, FL_ID, FL_ADDR,
+  BADGEID, NAME, FL_ADDR,
   DRAWLCD8, DRBOB, ADC, ROTATE, 
   LEDBRIGHT, MUTE, RETVAL,
 };

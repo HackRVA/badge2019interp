@@ -64,3 +64,5 @@
 #define OPCODE_BADGE_IDENTITY 0x0b
 /* low 9 bits contain badge id of this badge that is uploading to the base station */
 
+#define OPCODE_BYTE_TEST 0x0c
+
