@@ -294,6 +294,8 @@ static void draw_menu(void)
 		FbColor(color);
 		FbMove(10, 40);
 		strcpy(str, "DEAD TIME:");
+		if (suppress_further_hits_until == current_time)
+			setNote(90, 4000);
 		itoa(str2, suppress_further_hits_until - current_time, 10);
 		if (old_deadtime != suppress_further_hits_until - current_time) {
 			old_deadtime = suppress_further_hits_until - current_time;
