@@ -571,6 +571,8 @@ static void send_badge_upload_hit_record_team(struct hit_table_entry *h)
 
 static void game_dump_data(void)
 {
+	static int delay = 0;
+	const int delay_count = 20000;
 	static int record_num = 0;
 
 	/*
@@ -581,6 +583,11 @@ static void game_dump_data(void)
 	* 5. Badge responds with triplets of OPCODE_BADGE_UPLOAD_HIT_RECORD_BADGE_ID,
 	*    OPCODE_BADGE_UPLOAD_HIT_RECORD_TIMESTAMP, and OPCODE_SET_BADGE_TEAM.
 	*/
+
+	if (delay) {
+		delay--;
+		return;
+	}
 
 	/* This check is probably racy */
 	if (((IRpacketOutNext+1) % MAXPACKETQUEUE) == IRpacketOutCurr) {
@@ -612,6 +619,7 @@ static void game_dump_data(void)
 		return;
 	}
 	record_num++;
+	delay = delay_count;
 	return;
 }
 
