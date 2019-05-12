@@ -806,6 +806,11 @@ static void game_shoot(void)
 	unsigned int packet;
 	unsigned short payload;
 
+	if (current_time - game_start_timestamp < 0) { /* game has not started yet, do not shoot. */
+		game_state = GAME_MAIN_MENU;
+		return;
+	}
+
 	/* Player can only shoot if they are not currently dead. */
 	if (suppress_further_hits_until == -1) {
 		payload = (OPCODE_HIT << 12) | ((G_sysData.badgeId & 0x1ff) << 4) | (team & 0x0f);
