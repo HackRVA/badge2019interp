@@ -41,6 +41,7 @@ extern char *strcat(char *dest, const char *src);
 #define SENDNEWGAME 11 
 #define INITGAMEDATA 12 
 #define BYTETEST 13
+#define VENDOR_POWERUP 14
 
 static void app_init(void);
 static void render_screen(void);
@@ -56,6 +57,7 @@ static void capture_the_badge_game(void);
 static void send_new_game(void);
 static void init_game_data(void);
 static void byte_test(void);
+static void vendor_powerup(void);
 
 typedef void (*state_to_function_map_fn_type)(void);
 
@@ -74,6 +76,7 @@ static state_to_function_map_fn_type state_to_function_map[] = {
 	send_new_game,
 	init_game_data,
 	byte_test,
+	vendor_powerup,
 };
 
 static struct game_data {
@@ -117,6 +120,7 @@ static struct menu_item m[] = {
 	{ "SEND NEW GAME", SENDNEWGAME },
 	{ "INIT GAME DATA", INITGAMEDATA  },
 	{ "BYTE TEST", BYTETEST  },
+	{ "VENDOR POWERUP", VENDOR_POWERUP  },
 	{ "EXIT\n", EXIT_APP },
 };
 
@@ -287,6 +291,16 @@ static void byte_test(void)
 	send_a_packet(build_packet(1, 1, BADGE_IR_GAME_ADDRESS, BADGE_IR_BROADCAST_ID,
 		(OPCODE_BYTE_TEST << 12) | value));
 	value += 1;
+	app_state = CHECK_THE_BUTTONS;
+}
+
+static void vendor_powerup(void)
+{
+	static int powerup = 0;
+
+	send_a_packet(build_packet(1, 1, BADGE_IR_GAME_ADDRESS, BADGE_IR_BROADCAST_ID,
+		(OPCODE_VENDOR_POWER_UP << 12) | ((powerup + 1) << 4) | 0));
+	powerup = (powerup + 1) % 2;
 	app_state = CHECK_THE_BUTTONS;
 }
 
