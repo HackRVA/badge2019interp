@@ -86,6 +86,16 @@ static struct hit_table_entry {
 } hit_table[MAX_HIT_TABLE_ENTRIES];
 static int nhits = 0;
 
+static struct powerup {
+	char *name;
+	char obtained;
+} powerup[] = {
+#define RESILIENCE 0
+	{ "RESILIENCE", 0 }, /* Deadtime will be 5 seconds instead of 30 */
+#define IMMUNITY 1
+	{ "IMMUNITY", 0 }, /* Immunity from one hit. */
+};
+
 /* Builds up a 32 bit badge packet.
  * 1 bit for start
  * 1 bit for cmd,
@@ -343,6 +353,16 @@ static void draw_menu(void)
 	FbMove(131 - 4 * 8, 131 - 10);
 	FbWriteLine(badgeidstr + 4); /* only print last 4 digits, it's a 16 bit number. */
 
+	/* Draw any powerups we might have accumulated... */
+	for (i = 0; i < ARRAYSIZE(powerup); i++)
+		if (powerup[i].obtained) {
+			char buf[2];
+			buf[0] = powerup[i].name[0];
+			buf[1] = '\0';
+			FbMove(10 + 10 * i, 131 - 10);
+			FbWriteLine(buf);
+		}
+
 	game_state = GAME_SCREEN_RENDER;
 }
 
@@ -512,6 +532,15 @@ static void process_hit(unsigned int packet)
 		return; /* hits have no effect if a known game is not in play */
 	}
 
+	/* Dodge via immunity? */
+	if (powerup[IMMUNITY].obtained) {
+		powerup[IMMUNITY].obtained = 0;
+#ifdef __linux__
+		fprintf(stderr, "lasertag: Used up hit immunity powerup\n");
+#endif
+		return;
+	}
+
 	hit_table[nhits].badgeid = badgeid;
 	hit_table[nhits].timestamp = (unsigned short) timestamp;
 	hit_table[nhits].team = shooter_team;
@@ -520,7 +549,28 @@ static void process_hit(unsigned int packet)
 	screen_changed = 1;
 	if (nhits >= MAX_HIT_TABLE_ENTRIES)
 		nhits = 0;
-	suppress_further_hits_until = current_time + 30;
+
+	if (powerup[RESILIENCE].obtained) {
+		suppress_further_hits_until = current_time + 5;
+		powerup[RESILIENCE].obtained = 0;
+#ifdef __linux__
+		fprintf(stderr, "lasertag: Used up resilience powerup\n");
+#endif
+	} else {
+		suppress_further_hits_until = current_time + 30;
+	}
+}
+
+static void process_vendor_powerup(unsigned int packet)
+{
+	unsigned short badgeid = get_shooter_badge_id_bits(packet);
+	if (badgeid < 1 || badgeid > ARRAYSIZE(powerup) + 1)
+		return;
+#ifdef __linux__
+	fprintf(stderr, "lasertag: Received powerup %d\n", badgeid - 1); 
+#endif
+	setNote(70, 4000);
+	powerup[badgeid - 1].obtained = 1;
 }
 
 static void send_ir_packet(unsigned int packet)
@@ -671,6 +721,9 @@ static void process_packet(unsigned int packet)
 		 * station sends us. So at this time, we beep to indicate all the data for
 		 * the game has been recieved. */
 		setNote(50, 4000);
+		break;
+	case OPCODE_VENDOR_POWER_UP:
+		process_vendor_powerup(packet);
 		break;
 	default:
 		break;

@@ -66,3 +66,9 @@
 
 #define OPCODE_BYTE_TEST 0x0c
 
+#define OPCODE_VENDOR_POWER_UP 0x0d
+/* Bits 4 - 13 are badge ID of power-up grantor (same as for HIT packet). */
+/* There is a fixed mapping of low badge numbers to powerups.
+ * So vendor badges need to be in the low-badge number range (say, 1-9)
+ */
+
