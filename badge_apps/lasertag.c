@@ -622,7 +622,11 @@ static void send_badge_upload_hit_record_team(struct hit_table_entry *h)
 static void game_dump_data(void)
 {
 	static int delay = 0;
+#ifndef __linux__
 	const int delay_count = 20000;
+#else
+	const int delay_count = 1;
+#endif
 	static int record_num = 0;
 
 	/*
