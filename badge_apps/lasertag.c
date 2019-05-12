@@ -294,8 +294,6 @@ static void draw_menu(void)
 		FbColor(color);
 		FbMove(10, 40);
 		strcpy(str, "DEAD TIME:");
-		if (suppress_further_hits_until == current_time)
-			setNote(90, 4000);
 		itoa(str2, suppress_further_hits_until - current_time, 10);
 		if (old_deadtime != suppress_further_hits_until - current_time) {
 			old_deadtime = suppress_further_hits_until - current_time;
@@ -711,6 +709,8 @@ static void advance_time()
 #endif
 	if (seconds_until_game_starts != NO_GAME_START_TIME && game_start_timestamp != NO_GAME_START_TIME)
 		seconds_until_game_starts = game_start_timestamp - current_time;
+	if (suppress_further_hits_until == current_time)
+		setNote(70, 4000); /* Beep when deadtime expires */
 	if (suppress_further_hits_until <= current_time)
 		suppress_further_hits_until = -1;
 	if (old_time != seconds_until_game_starts || old_suppress != suppress_further_hits_until)
