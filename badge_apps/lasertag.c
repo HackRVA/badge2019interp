@@ -97,6 +97,19 @@ static struct powerup {
 };
 static int continuous_powerup_granting_enabled = 0;
 
+static struct rgbcolor {
+	unsigned char r, g, b;
+} team_color[] = {
+	{ 128, 0, 0 }, /* red */
+	{ 0, 128, 0 }, /* green */
+	{ 0, 0, 128 }, /* blue */
+	{ 128, 128, 0 }, /*  yellow */
+	{ 255, 128, 0 }, /*  orange */
+	{ 128, 0, 128 }, /* purple */
+	{ 0, 128, 128 }, /* blue green */
+	{ 128, 128, 128 } /* white */
+};
+
 /* Builds up a 32 bit badge packet.
  * 1 bit for start
  * 1 bit for cmd,
@@ -807,6 +820,9 @@ static void advance_time()
 	int old_time = seconds_until_game_starts;
 	int old_suppress = suppress_further_hits_until;
 	static int already_sent_powerup = 0;
+	static int timer = 0;
+
+	timer++;
 
 #ifdef __linux__
 	struct timeval tv;
@@ -820,8 +836,41 @@ static void advance_time()
 		seconds_until_game_starts = game_start_timestamp - current_time;
 	if (suppress_further_hits_until == current_time)
 		setNote(70, 4000); /* Beep when deadtime expires */
-	if (suppress_further_hits_until <= current_time)
+	if (suppress_further_hits_until <= current_time) {
 		suppress_further_hits_until = -1;
+		switch (game_variant % ARRAYSIZE(game_type)) {
+		case 0: /* free for all */
+			flareled(0, 0, 0);
+			break;
+		case 1: /* team battle */
+		case 2: /* zombies */
+		case 3: /* capture badge */
+			if (team >= 0 && team < ARRAYSIZE(team_color)) /* Set LED flare to team colors */
+				flareled(team_color[team].r, team_color[team].g, team_color[team].b);
+			else
+				flareled(0, 0, 0);
+			break;
+			/* TODO: still need to make the code to manipulate the team for zombies and capture badge */
+		default:
+			flareled(0, 0, 0);
+			break;
+		}
+	} else {
+		/* blink led red for dead time */
+#if __linux__
+		if (timer & 0x08)
+#else
+		if (timer & 0x1000) /* this will need tuning */
+#endif
+			flareled(255, 0, 0);
+		else
+#ifdef __linux__
+			flareled(128, 128, 128);
+#else
+			flareled(0, 0, 0);
+#endif
+
+	}
 	if (old_time != seconds_until_game_starts || old_suppress != suppress_further_hits_until)
 		screen_changed = 1;
 	if (old_time > 0 && seconds_until_game_starts <= 0)
