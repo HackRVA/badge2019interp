@@ -1,5 +1,5 @@
-#ifndef LASERTAG_H__ 
-#define LASERTAG_H__ 
+#ifndef USERNAME_H__ 
+#define USERNAME_H__ 
 
 int lasertag_cb(void);
 

@@ -18,6 +18,7 @@
 #include "maze.h"
 #include "QC.h"
 #include "lasertag.h"
+#include "username.h"
 #include "irxmit.h"
 
 
@@ -493,9 +494,9 @@ const struct menu_t settings_m[] = {
    {"Led",	VERT_ITEM, MENU, {(struct menu_t *)LEDlight_m}},  /* coerce/cast to a menu_t data pointer */
    {"Buzzer",	VERT_ITEM|DEFAULT_ITEM, MENU, {(struct menu_t *)buzzer_m}},
    {"Rotate",   VERT_ITEM, MENU, {(struct menu_t *)rotate_m}},
+   {"User Name",VERT_ITEM, FUNCTION, {(struct menu_t *)username_cb} },
    {"Back",	VERT_ITEM|LAST_ITEM, BACK, {NULL}},
 };
-
 
 const struct menu_t main_m[] = {
 //   {"Schedule",    VERT_ITEM, MENU, {schedule_m}},
