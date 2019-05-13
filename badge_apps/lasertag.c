@@ -89,12 +89,13 @@ static int nhits = 0;
 static struct powerup {
 	char *name;
 	char obtained;
-} powerup[] = {
+} powerup[NUM_LASERTAG_POWERUPS] = {
 #define RESILIENCE 0
 	{ "RESILIENCE", 0 }, /* Deadtime will be 5 seconds instead of 30 */
 #define IMMUNITY 1
 	{ "IMMUNITY", 0 }, /* Immunity from one hit. */
 };
+static int continuous_powerup_granting_enabled = 0;
 
 /* Builds up a 32 bit badge packet.
  * 1 bit for start
@@ -152,6 +153,9 @@ static void game_shoot(void);
 static void game_confirm_exit(void);
 static void game_exit_abandoned(void);
 static void game_dump_data(void);
+static void game_grant_powerup(void);
+static void game_grant_continuous_powerup(void);
+static void game_stop_powerups(void);
 
 static enum game_state_type {
 	INITIAL_STATE = 0,
@@ -162,7 +166,10 @@ static enum game_state_type {
 	GAME_SHOOT = 5,
 	GAME_CONFIRM_EXIT = 6,
 	GAME_EXIT_ABANDONED = 7,
-	GAME_DUMP_DATA = 8
+	GAME_DUMP_DATA = 8,
+	GAME_GRANT_POWERUP = 9,
+	GAME_GRANT_CONTINUOUS_POWERUPS = 10,
+	GAME_STOP_POWERUPS = 11
 } game_state = INITIAL_STATE;
 
 /* Note, game_state_fn[] array must have an entry for every value
@@ -177,6 +184,9 @@ static game_state_function game_state_fn[] = {
 	game_confirm_exit,
 	game_exit_abandoned,
 	game_dump_data,
+	game_grant_powerup,
+	game_grant_continuous_powerup,
+	game_stop_powerups,
 };
 
 struct menu_item {
@@ -258,6 +268,8 @@ static void draw_menu(void)
 		FbMove(10, y);
 		FbWriteLine(menu.item[i].text);
 		y += 12;
+		if (y > 100)
+			break;
 	}
 
 	FbColor(GREEN);
@@ -389,12 +401,24 @@ static void ir_packet_callback(struct IRpacket_t packet)
 	queue_in = next_queue_in;
 }
 
+static int is_vendor_badge(unsigned short badgeId)
+{
+	return (G_sysData.badgeId & 0x1ff) < NUM_VENDOR_BADGES && (G_sysData.badgeId & 0x1ff) >= 0;
+}
+
 static void setup_main_menu(void)
 {
 	menu_clear();
 	menu.menu_active = 1;
 	strcpy(menu.title, "");
 	menu_add_item("SHOOT", GAME_SHOOT, 0);
+	if (is_vendor_badge(G_sysData.badgeId)) {
+		menu_add_item("GIVE 1 POWERUP", GAME_GRANT_POWERUP, 0);
+		if (continuous_powerup_granting_enabled)
+			menu_add_item("STOP POWERUPS", GAME_STOP_POWERUPS, 0);
+		else
+			menu_add_item("AUTO POWERUPS", GAME_GRANT_CONTINUOUS_POWERUPS, 0);
+	}
 	menu_add_item("EXIT GAME", GAME_CONFIRM_EXIT, 0);
 	screen_changed = 1;
 }
@@ -677,6 +701,33 @@ static void game_dump_data(void)
 	return;
 }
 
+static void game_grant_powerup(void)
+{
+        int powerup = G_sysData.badgeId;
+
+	if (!is_vendor_badge(G_sysData.badgeId))
+		return;
+
+        send_ir_packet(build_ir_packet(1, 1, BADGE_IR_GAME_ADDRESS, BADGE_IR_BROADCAST_ID,
+                (OPCODE_VENDOR_POWER_UP << 12) | ((powerup + 1) << 4)));
+	if (game_state == GAME_GRANT_POWERUP)
+		game_state = GAME_MAIN_MENU;
+}
+
+static void game_grant_continuous_powerup(void)
+{
+	continuous_powerup_granting_enabled = 1;
+	setup_main_menu();
+	game_state = GAME_MAIN_MENU;
+}
+
+static void game_stop_powerups(void)
+{
+	continuous_powerup_granting_enabled = 0;
+	setup_main_menu();
+	game_state = GAME_MAIN_MENU;
+}
+
 static void process_packet(unsigned int packet)
 {
 	unsigned int payload;
@@ -755,6 +806,7 @@ static void advance_time()
 {
 	int old_time = seconds_until_game_starts;
 	int old_suppress = suppress_further_hits_until;
+	static int already_sent_powerup = 0;
 
 #ifdef __linux__
 	struct timeval tv;
@@ -774,6 +826,14 @@ static void advance_time()
 		screen_changed = 1;
 	if (old_time > 0 && seconds_until_game_starts <= 0)
 		setNote(50, 4000); /* Beep upon game start */
+	if ((current_time % AUTO_GRANT_POWERUP_INTERVAL) == 0) {
+		if (continuous_powerup_granting_enabled && !already_sent_powerup) {
+			game_grant_powerup();
+			already_sent_powerup = 1;
+		}
+	} else {
+		already_sent_powerup = 0;
+	}
 }
 
 static void game_process_button_presses(void)
