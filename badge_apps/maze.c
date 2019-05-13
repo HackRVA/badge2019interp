@@ -242,7 +242,7 @@ struct maze_object_template {
     char name[14];
     int color;
     enum maze_object_category category;
-    struct point *drawing;
+    const struct point *drawing;
     int npoints;
     short speed;
     unsigned char hitpoints;
@@ -255,49 +255,49 @@ struct maze_object {
     union maze_object_type_specific_data tsd;
 };
 
-static struct point scroll_points[] =
+static const struct point scroll_points[] =
 #include "scroll_points.h"
 
-static struct point dragon_points[] =
+static const struct point dragon_points[] =
 #include "dragon_points.h"
 
-static struct point chest_points[] =
+static const struct point chest_points[] =
 #include "chest_points.h"
 
-static struct point cobra_points[] =
+static const struct point cobra_points[] =
 #include "cobra_points.h"
 
-static struct point grenade_points[] =
+static const struct point grenade_points[] =
 #include "grenade_points.h"
 
-static struct point orc_points[] =
+static const struct point orc_points[] =
 #include "orc_points.h"
 
-static struct point phantasm_points[] =
+static const struct point phantasm_points[] =
 #include "phantasm_points.h"
 
-static struct point potion_points[] =
+static const struct point potion_points[] =
 #include "potion_points.h"
 
-static struct point shield_points[] =
+static const struct point shield_points[] =
 #include "shield_points.h"
 
-static struct point sword_points[] =
+static const struct point sword_points[] =
 #include "sword_points.h"
 
-static struct point up_ladder_points[] =
+static const struct point up_ladder_points[] =
 #include "up_ladder_points.h"
 
-static struct point down_ladder_points[] =
+static const struct point down_ladder_points[] =
 #include "down_ladder_points.h"
 
-static struct point player_points[] =
+static const struct point player_points[] =
 #include "player_points.h"
 
-static struct point bones_points[] =
+static const struct point bones_points[] =
 #include "bones_points.h"
 
-static struct point chalice_points[] =
+static const struct point chalice_points[] =
 #include "chalice_points.h"
 
 #define MAZE_NOBJECT_TYPES 14
@@ -823,7 +823,7 @@ static void draw_map()
  */
 static const int drawing_scale_numerator[] = { 410, 328, 262, 210, 168, 134, 107, 86 };
 
-static void draw_object(struct point drawing[], int npoints, int scale_index, int color, int x, int y)
+static void draw_object(const struct point drawing[], int npoints, int scale_index, int color, int x, int y)
 {
     int i;
     int xcenter = x;
@@ -1233,8 +1233,10 @@ static void process_commands(void)
 
 static void draw_objects(void)
 {
-    int a, b, i, x[2], y[2], s, otype, npoints;
-    struct point *drawing;
+    int a, b, x[2], y[2], s, npoints;
+    int i = current_drawing_object;
+    int otype = maze_object[i].type;
+    const struct point *drawing = maze_object_template[otype].drawing;
     int color;
 
     a = 0;
@@ -1256,9 +1258,6 @@ static void draw_objects(void)
         }
     }
 
-    i = current_drawing_object;
-    otype = maze_object[i].type;
-    drawing = maze_object_template[otype].drawing;
     npoints = maze_object_template[otype].npoints;
     color = maze_object_template[otype].color;
     if (x[0] == x[1]) {
@@ -1428,15 +1427,14 @@ static void maze_combat_monster_move(void)
 
 static void maze_render_combat(void)
 {
-    int color, otype, npoints;
-    struct point *drawing;
+    int color, npoints;
+    int otype = maze_object[encounter_object].type;
+    const struct point *drawing = maze_object_template[otype].drawing;
 
     FbClear();
 
     /* Draw the monster */
-    otype = maze_object[encounter_object].type;
     color = maze_object_template[otype].color;
-    drawing = maze_object_template[otype].drawing;
     npoints = maze_object_template[otype].npoints;
     draw_object(drawing, npoints, ARRAYSIZE(drawing_scale_numerator) - 1,
                 color, combatant.combatx, combatant.combaty);
