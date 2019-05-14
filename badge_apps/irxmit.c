@@ -303,7 +303,7 @@ static void vendor_powerup(void)
 	static int powerup = 0;
 
 	send_a_packet(build_packet(1, 1, BADGE_IR_GAME_ADDRESS, BADGE_IR_BROADCAST_ID,
-		(OPCODE_VENDOR_POWER_UP << 12) | ((powerup + 1) << 4) | 0));
+		(OPCODE_VENDOR_POWER_UP << 12) | ((powerup + 1) & 0x1ff)));
 	powerup = (powerup + 1) % NUM_LASERTAG_POWERUPS;
 	app_state = CHECK_THE_BUTTONS;
 }

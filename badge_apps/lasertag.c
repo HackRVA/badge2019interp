@@ -600,7 +600,7 @@ static void process_hit(unsigned int packet)
 
 static void process_vendor_powerup(unsigned int packet)
 {
-	unsigned short badgeid = get_shooter_badge_id_bits(packet);
+	unsigned short badgeid = packet & 0x1ff;
 	if (badgeid < 1 || badgeid > ARRAYSIZE(powerup) + 1)
 		return;
 #ifdef __linux__
@@ -725,7 +725,7 @@ static void game_grant_powerup(void)
 		return;
 
         send_ir_packet(build_ir_packet(1, 1, BADGE_IR_GAME_ADDRESS, BADGE_IR_BROADCAST_ID,
-                (OPCODE_VENDOR_POWER_UP << 12) | ((powerup + 1) << 4)));
+                (OPCODE_VENDOR_POWER_UP << 12) | ((powerup + 1) & 0x1ff)));
 	if (game_state == GAME_GRANT_POWERUP)
 		game_state = GAME_MAIN_MENU;
 }

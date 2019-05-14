@@ -71,7 +71,7 @@
 #define NUM_VENDOR_BADGES 10
 #define OPCODE_VENDOR_POWER_UP 0x0d
 #define AUTO_GRANT_POWERUP_INTERVAL 10 /* seconds */
-/* Bits 4 - 13 are badge ID of power-up grantor (same as for HIT packet). */
+/* Bits 0 - 8 are badge ID of power-up grantor. */
 /* There is a fixed mapping of low badge numbers to powerups.
  * So vendor badges need to be in the low-badge number range (say, 1-9)
  */
