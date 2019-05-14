@@ -15,9 +15,6 @@ code must run in.
 
 #include "../linux/linuxcompat.h"
 
-int argcount;
-char **arguments;
-
 #define DISABLE_INTERRUPTS do { disable_interrupts(); } while (0)
 #define ENABLE_INTERRUPTS do { enable_interrupts(); } while (0)
 
@@ -961,8 +958,6 @@ int lasertag_cb(void)
 int main(int argc, char *argv[])
 {
 	char *serial_port = NULL;
-	argcount = argc;
-	arguments = argv;
 
 #define IRXMIT_UDP_PORT 12345
 #define LASERTAG_UDP_PORT 12346
