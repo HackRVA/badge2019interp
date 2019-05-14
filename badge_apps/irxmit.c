@@ -58,6 +58,7 @@ static void send_new_game(void);
 static void init_game_data(void);
 static void byte_test(void);
 static void vendor_powerup(void);
+static void send_monster(void); /* for badge-monsters game */
 
 typedef void (*state_to_function_map_fn_type)(void);
 
@@ -77,6 +78,7 @@ static state_to_function_map_fn_type state_to_function_map[] = {
 	init_game_data,
 	byte_test,
 	vendor_powerup,
+	send_monster,
 };
 
 static struct game_data {
@@ -121,6 +123,7 @@ static struct menu_item m[] = {
 	{ "INIT GAME DATA", INITGAMEDATA  },
 	{ "BYTE TEST", BYTETEST  },
 	{ "VENDOR POWERUP", VENDOR_POWERUP  },
+	{ "SEND MONSTER", VENDOR_POWERUP  },
 	{ "EXIT\n", EXIT_APP },
 };
 
@@ -301,6 +304,18 @@ static void vendor_powerup(void)
 	send_a_packet(build_packet(1, 1, BADGE_IR_GAME_ADDRESS, BADGE_IR_BROADCAST_ID,
 		(OPCODE_VENDOR_POWER_UP << 12) | ((powerup + 1) << 4) | 0));
 	powerup = (powerup + 1) % NUM_LASERTAG_POWERUPS;
+	app_state = CHECK_THE_BUTTONS;
+}
+
+static void send_monster(void)
+{
+	const int nmonsters = 8;
+	static int monster = 0;
+#define OPCODE_XMIT_MONSTER 0x01
+
+	send_a_packet(build_packet(1, 1, IR_APP2, BADGE_IR_BROADCAST_ID,
+		(OPCODE_XMIT_MONSTER << 12) | (monster & 0x01ff)));
+	monster = (monster + 1) % nmonsters;
 	app_state = CHECK_THE_BUTTONS;
 }
 
