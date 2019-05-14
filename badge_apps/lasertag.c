@@ -820,6 +820,17 @@ static void check_for_incoming_packets(void)
 	ENABLE_INTERRUPTS;
 }
 
+/* wrapper of flareled() to throttle calls to it to not disturb the pwm code too much */
+static void lasertag_flareled(unsigned char r, unsigned char g, unsigned char b)
+{
+	static int throttler = 0;
+	throttler++;
+	if (throttler == 100) {
+		flareled(r, g, b);
+		throttler = 0;
+	}
+}
+
 static void advance_time()
 {
 	int old_time = seconds_until_game_starts;
@@ -845,19 +856,19 @@ static void advance_time()
 		suppress_further_hits_until = -1;
 		switch (game_variant % ARRAYSIZE(game_type)) {
 		case 0: /* free for all */
-			flareled(0, 0, 0);
+			lasertag_flareled(0, 0, 0);
 			break;
 		case 1: /* team battle */
 		case 2: /* zombies */
 		case 3: /* capture badge */
 			if (team >= 0 && team < ARRAYSIZE(team_color)) /* Set LED flare to team colors */
-				flareled(team_color[team].r, team_color[team].g, team_color[team].b);
+				lasertag_flareled(team_color[team].r, team_color[team].g, team_color[team].b);
 			else
-				flareled(0, 0, 0);
+				lasertag_flareled(0, 0, 0);
 			break;
 			/* TODO: still need to make the code to manipulate the team for zombies and capture badge */
 		default:
-			flareled(0, 0, 0);
+			lasertag_flareled(0, 0, 0);
 			break;
 		}
 	} else {
@@ -867,12 +878,12 @@ static void advance_time()
 #else
 		if (timer & 0x1000) /* this will need tuning */
 #endif
-			flareled(255, 0, 0);
+			lasertag_flareled(255, 0, 0);
 		else
 #ifdef __linux__
-			flareled(128, 128, 128);
+			lasertag_flareled(128, 128, 128);
 #else
-			flareled(0, 0, 0);
+			lasertag_flareled(0, 0, 0);
 #endif
 
 	}
