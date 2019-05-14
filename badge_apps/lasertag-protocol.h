@@ -9,7 +9,7 @@
  * 1 cmd bit
  * 5 address bits (like port number)
  * 9 badge id bits
- * 16 payload bits
+ * 16 payload bits (4 bits opcode (12-15), and 12 bits operands (0-11))
  *
  */
 
@@ -54,10 +54,10 @@
 /* low 9 bits contain badge id of shooter */
 
 #define OPCODE_BADGE_UPLOAD_HIT_RECORD_TIMESTAMP 0x09
-/* 16 bits timestamp of hit, seconds since game start */
+/* 12 bits timestamp of hit, seconds since game start */
 
 #define OPCODE_GAME_ID 0x0a
-/* payload is 16 bit unique game ID.  This opcode is bidirectional.  Base
+/* Low 12 bits of payload is unique game ID.  This opcode is bidirectional.  Base
  * station transmits this to the badge at the beginning of a game, and the
  * badge transmits it back to the base station when syncing. */
 
