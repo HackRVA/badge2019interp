@@ -42,6 +42,7 @@ extern char *strcat(char *dest, const char *src);
 #define INITGAMEDATA 12 
 #define BYTETEST 13
 #define VENDOR_POWERUP 14
+#define SEND_MONSTER 15
 
 static void app_init(void);
 static void render_screen(void);
@@ -123,7 +124,7 @@ static struct menu_item m[] = {
 	{ "INIT GAME DATA", INITGAMEDATA  },
 	{ "BYTE TEST", BYTETEST  },
 	{ "VENDOR POWERUP", VENDOR_POWERUP  },
-	{ "SEND MONSTER", VENDOR_POWERUP  },
+	{ "SEND MONSTER", SEND_MONSTER },
 	{ "EXIT\n", EXIT_APP },
 };
 
