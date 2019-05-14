@@ -571,6 +571,7 @@ static void process_hit(unsigned int packet)
 
 	/* Dodge via immunity? */
 	if (powerup[IMMUNITY].obtained) {
+		screen_changed = 1;
 		powerup[IMMUNITY].obtained = 0;
 #ifdef __linux__
 		fprintf(stderr, "lasertag: Used up hit immunity powerup\n");
@@ -590,6 +591,7 @@ static void process_hit(unsigned int packet)
 	if (powerup[RESILIENCE].obtained) {
 		suppress_further_hits_until = current_time + 5;
 		powerup[RESILIENCE].obtained = 0;
+		screen_changed = 1;
 #ifdef __linux__
 		fprintf(stderr, "lasertag: Used up resilience powerup\n");
 #endif
@@ -607,7 +609,10 @@ static void process_vendor_powerup(unsigned int packet)
 	fprintf(stderr, "lasertag: Received powerup %d\n", badgeid - 1); 
 #endif
 	setNote(70, 4000);
-	powerup[badgeid - 1].obtained = 1;
+	if (!powerup[badgeid - 1].obtained) {
+		powerup[badgeid - 1].obtained = 1;
+		screen_changed = 1;
+	}
 }
 
 static void send_ir_packet(unsigned int packet)
