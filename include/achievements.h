@@ -7,7 +7,7 @@ enum achievement {
 	ACHIEVEMENT_MAZE_DRAGONS_SLAIN = 0,
 	ACHIEVEMENT_MAZE_CHALICE_FOUND = 1,
 	ACHIEVEMENT_MAZE_CHALICE_RECOVERED = 2,
-	ACHIEVEMENT_COUNT = 4 /* <-- must be last, & the enum must sequentially increase from 0 */
+	ACHIEVEMENT_COUNT = 3 /* <-- must be last, & the enum must sequentially increase from 0 */
 };
 
 /* maybe_load_achievements_from_flash() will load achievements from flash the first time
