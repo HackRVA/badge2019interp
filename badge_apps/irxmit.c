@@ -167,7 +167,7 @@ static void send_hit(void)
 	team_id = 5;
 
 	send_a_packet(build_packet(1, 1, BADGE_IR_GAME_ADDRESS, BADGE_IR_BROADCAST_ID,
-		(OPCODE_HIT << 12) | (G_sysData.badgeId << 4) | team_id));
+		(OPCODE_HIT << 12) | ((G_sysData.badgeId & 0x1ff) << 3) | (team_id & 0x07)));
 	app_state = CHECK_THE_BUTTONS;
 }
 

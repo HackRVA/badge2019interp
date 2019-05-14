@@ -104,6 +104,7 @@ static struct rgbcolor {
 	{ 255, 128, 0 }, /*  orange */
 	{ 128, 0, 128 }, /* purple */
 	{ 0, 128, 128 }, /* blue green */
+	{ 128, 128, 128 }, /* white */
 	{ 128, 128, 128 } /* white */
 };
 
@@ -144,7 +145,7 @@ static unsigned char __attribute__((unused)) get_addr_bits(unsigned int packet)
 
 static unsigned char get_shooter_badge_id_bits(unsigned int packet)
 {
-	return (unsigned char) ((packet >> 4) & 0x1ff);
+	return (unsigned char) ((packet >> 3) & 0x1ff);
 }
 
 static unsigned short get_payload(unsigned int packet)
@@ -542,7 +543,7 @@ static void set_game_start_timestamp(int time)
 static void process_hit(unsigned int packet)
 {
 	int timestamp;
-	unsigned char shooter_team = (get_payload(packet) & 0x0f);
+	unsigned char shooter_team = (get_payload(packet) & 0x07);
 	unsigned short badgeid = get_shooter_badge_id_bits(packet);
 	timestamp = current_time - game_start_timestamp;
 	if (timestamp < 0) /* game has not started yet  */
@@ -655,7 +656,7 @@ static void send_badge_upload_hit_record_timestamp(struct hit_table_entry *h)
 static void send_badge_upload_hit_record_team(struct hit_table_entry *h)
 {
 	send_ir_packet(build_ir_packet(1, 1, BADGE_IR_GAME_ADDRESS, BADGE_IR_BROADCAST_ID,
-		(OPCODE_SET_BADGE_TEAM << 12) | (h->team & 0x0fff)));
+		(OPCODE_SET_BADGE_TEAM << 12) | (h->team & 0x07)));
 }
 
 static void game_dump_data(void)
@@ -778,7 +779,7 @@ static void process_packet(unsigned int packet)
 		game_state = GAME_DUMP_DATA;
 		break;
 	case OPCODE_SET_BADGE_TEAM:
-		team = payload & 0x0f; /* TODO sanity check this better. */
+		team = payload & 0x07; /* TODO sanity check this better. */
 		screen_changed = 1;
 		break;
 	case OPCODE_SET_GAME_VARIANT:
@@ -939,7 +940,7 @@ static void game_shoot(void)
 
 	/* Player can only shoot if they are not currently dead. */
 	if (suppress_further_hits_until == -1) {
-		payload = (OPCODE_HIT << 12) | ((G_sysData.badgeId & 0x1ff) << 4) | (team & 0x0f);
+		payload = (OPCODE_HIT << 12) | ((G_sysData.badgeId & 0x1ff) << 3) | (team & 0x07);
 		packet = build_ir_packet(0, 1, BADGE_IR_GAME_ADDRESS, BADGE_IR_BROADCAST_ID, payload);
 		send_ir_packet(packet);
 	}

@@ -23,11 +23,12 @@
 /* low 12 bits of payload are duration in seconds */
 
 #define OPCODE_HIT 0x02
-/* Low 4 bits of payload (bits 0 - 3) are team id of shooter */
-/* Bits 4 - 13 are badge ID of shooter */
+/* Low 3 bits of payload (bits 0 - 2) are team id of shooter */
+/* Bits 3 - 11 are badge ID of shooter */
+/* Bits 12-15 are opcode */
 
 #define OPCODE_SET_BADGE_TEAM 0x03
-/* Low 4 bits of payload are the team ID */
+/* Low 3 bits of payload are the team ID */
 
 #define OPCODE_REQUEST_BADGE_DUMP 0x04
 /*
