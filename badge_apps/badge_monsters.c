@@ -260,7 +260,6 @@ static void check_for_incoming_packets(void)
 {
     unsigned int new_packet;
     int next_queue_out;
-    printf("\nchecking for incoming packets\n\n");
     DISABLE_INTERRUPTS;
     while (queue_out != queue_in) {
         next_queue_out = (queue_out + 1) % QUEUE_SIZE;
@@ -410,9 +409,6 @@ static void show_message(char *message)
 // stage_monster_trade -- should start listening and receiving IR
 static void stage_monster_trade(void)
 {
-    send_ir_packet(build_packet(1,1,BADGE_IR_GAME_ADDRESS, BADGE_IR_BROADCAST_ID,
-    (OPCODE_XMIT_MONSTER << 12) | (initial_mon & 0x01ff)));
-
     show_message("Sync your badge with someone to collect more     monsters\n");
 }
 
@@ -424,7 +420,6 @@ static void render_monster(void)
 
     if(current_monster > 100)
     {
-        printf("um %d\n",current_monster);
         name = vendor_monsters[current_monster-100].name;
         drawing = vendor_monsters[current_monster-100].drawing;
         npoints = vendor_monsters[current_monster-100].npoints;
@@ -596,6 +591,8 @@ static void game_menu(void)
 {
     draw_menu();
     check_for_incoming_packets();
+    send_ir_packet(build_packet(1,1,BADGE_IR_GAME_ADDRESS, BADGE_IR_BROADCAST_ID,
+    (OPCODE_XMIT_MONSTER << 12) | (initial_mon & 0x01ff)));
     app_state = RENDER_SCREEN;
 }
 
