@@ -108,6 +108,8 @@ static struct rgbcolor {
 	{ 128, 128, 128 } /* white */
 };
 
+extern char username[10];
+
 /* Builds up a 32 bit badge packet.
  * 1 bit for start
  * 1 bit for cmd,
@@ -659,6 +661,37 @@ static void send_badge_upload_hit_record_team(struct hit_table_entry *h)
 		(OPCODE_SET_BADGE_TEAM << 12) | (h->team & 0x07)));
 }
 
+static void send_badge_username_packet(unsigned short encoded)
+{
+	send_ir_packet(build_ir_packet(1, 1, BADGE_IR_GAME_ADDRESS, BADGE_IR_BROADCAST_ID,
+		(OPCODE_USERNAME_DATA << 12) | encoded));
+}
+
+static unsigned short encode_username_substring(char *substring, int length)
+{
+	int i, shift;
+	unsigned short encoded;
+	unsigned short answer = 0;
+
+	if (length > 2)
+		length = 2;
+	shift = 5;
+	for (i = 0; i < length; i++) {
+		if (substring[i] >= 'A' && substring[i] <= 'Z') {
+			encoded = substring[i] - 'A';
+		} else if (substring[i] == '_') {
+			encoded = 26;
+		} else {
+			encoded = 27;
+		}
+		answer = answer | (encoded << shift);
+		shift = shift - 5;
+	}
+	if (length == 1)
+		answer = answer | 27;
+	return answer;
+}
+
 static void game_dump_data(void)
 {
 	static int delay = 0;
@@ -676,6 +709,8 @@ static void game_dump_data(void)
 	* 4. Badge responds with OPCODE_BADGE_RECORD_COUNT
 	* 5. Badge responds with triplets of OPCODE_BADGE_UPLOAD_HIT_RECORD_BADGE_ID,
 	*    OPCODE_BADGE_UPLOAD_HIT_RECORD_TIMESTAMP, and OPCODE_SET_BADGE_TEAM.
+	* 6. Badge responds with 5 packets of OPCODE_USERNAME_DATA to transfer 10
+	*    characters of the badge username.
 	*/
 
 	if (delay) {
@@ -707,6 +742,12 @@ static void game_dump_data(void)
 			send_badge_upload_hit_record_team(&hit_table[hit_index]);
 			break;
 		}
+	} else if (record_num < nhits * 3 + 3 + 5) {
+		const int pkt_num = record_num - (nhits * 3 + 3);
+		const int pkt_len = 2;
+		unsigned short encoded;
+		encoded = encode_username_substring(&username[pkt_num * 2], pkt_len);
+		send_badge_username_packet(encoded);
 	} else {
 		record_num = 0;
 		game_state = GAME_PROCESS_BUTTON_PRESSES;

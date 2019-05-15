@@ -76,3 +76,10 @@
  * So vendor badges need to be in the low-badge number range (say, 1-9)
  */
 
+#define OPCODE_USERNAME_DATA 0x0e
+/* Usernames are exactly 10 characters and may only be 'A' - 'Z', and '_', or '\0'.
+ * Each opcode carries 2 characters.
+ * Low 10 bits of payload are 2 characters. 0 == 'A', '25' == 'Z', 26 == '_', 27 == '\0'.
+ * Character 0 is bits 5-9.  Character 1 is bits 0-4.
+ */
+
