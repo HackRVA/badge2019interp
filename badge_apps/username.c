@@ -25,7 +25,11 @@ extern char *strcat(char *dest, const char *src);
 
 /* username is a global externally visible */
 #define NAMESIZE 10
+#ifndef __linux__
 char username[NAMESIZE] = { 0 };
+#else
+extern char username[NAMESIZE];
+#endif
 
 #define INIT_APP_STATE 0
 #define DRAW_SCREEN 1
