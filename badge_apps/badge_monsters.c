@@ -122,6 +122,8 @@ static struct point stacksmasher_points[] =
 #include "stacksmasher.h"
 static struct point worm_points[] =
 #include "worm.h"
+static struct point godzilla_points[] =
+#include "godzilla.h"
 
 struct monster
 {
@@ -134,6 +136,7 @@ struct monster
 };
 
 struct monster monsters[] = {
+    {"godzilla", ARRAYSIZE(godzilla_points), 0, 0, godzilla_points, "godzilla description"},
     {"worm", ARRAYSIZE(worm_points), 0, 0, worm_points, "worm description"},
     {"stacksmasher", ARRAYSIZE(stacksmasher_points), 0, 0, stacksmasher_points, "stacksmasher description"},
     {"heartbleed", ARRAYSIZE(heartbleed_points), 0, 0, heartbleed_points, "heartbleed description"},
