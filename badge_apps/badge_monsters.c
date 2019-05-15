@@ -231,6 +231,7 @@ static void change_menu_level(enum menu_level_t level){
             setup_monster_menu();
             break;
     }
+	// app_state = GAME_MENU;
 }
 
 static void render_monster(void)
@@ -238,8 +239,8 @@ static void render_monster(void)
 	int npoints, color;
 	struct point *drawing;
 	char *name;
-	char id_string[3];
-	itoa(id_string, current_monster, 10);
+	// char id_string[3];
+	// itoa(id_string, current_monster, 10);
 
 	change_menu_level(MONSTER_MENU);
 
@@ -284,7 +285,8 @@ static void check_the_buttons(void)
 	{
 		something_changed = 1;
         menu_change_current_selection(-1);
-
+		if(menu_level == MONSTER_MENU)
+			current_monster = menu.current_item;
 		#ifdef __linux__
             print_menu_info();
 		#endif
@@ -293,16 +295,25 @@ static void check_the_buttons(void)
 	{
 		something_changed = 1;
         menu_change_current_selection(1);
+		if(menu_level == MONSTER_MENU)
+			current_monster = menu.current_item;
 		#ifdef __linux__
             print_menu_info();
 		#endif
 	}
 	else if (BUTTON_PRESSED_AND_CONSUME)
 	{
+		int back = 0;
 		if (menu_level == MONSTER_MENU)
 		{
-			current_monster = menu.current_item;
-            render_monster();
+			if(menu.current_item == menu.nitems - 1){
+				back = 1;
+				something_changed = 1;
+				} else {
+				printf("current monster---:: %d\n", menu.current_item);
+				// render_monster();
+				// app_state = RENDER_MONSTER;
+				}
 		}
 
 		if (menu_level == MAIN_MENU)
@@ -311,11 +322,11 @@ static void check_the_buttons(void)
 				case 0:
                     change_menu_level(MONSTER_MENU);
                     something_changed = 1;
-                    app_state = CHECK_THE_BUTTONS;
+                    // app_state = CHECK_THE_BUTTONS;
                     break;
                 case 1:
                     #ifdef __linux__
-                        printf("trade\n");
+                        printf("trade monsters\n");
                     #endif
                     break;
                 case 2:
@@ -323,6 +334,9 @@ static void check_the_buttons(void)
                     break;
 			}
 		}
+		if(back == 1)
+			change_menu_level(MAIN_MENU);
+		printf("current monster---:: %d\n", menu.current_item);
 	}
 
 	if (something_changed && app_state == CHECK_THE_BUTTONS)
@@ -359,10 +373,7 @@ static void setup_main_menu(void)
 static void game_menu(void)
 {
 	draw_menu();
-	if(menu_level == MAIN_MENU)
-		app_state = RENDER_SCREEN;
-	if(menu_level == MONSTER_MENU)
-		setup_monster_menu();
+	app_state = RENDER_SCREEN;		
 }
 
 static void exit_app(void)
