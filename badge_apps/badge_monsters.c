@@ -9,6 +9,7 @@
 #include "colors.h"
 #include "menu.h"
 #include "buttons.h"
+#include "flash.h"
 
 /* TODO: I shouldn't have to declare these myself. */
 #define size_t int
@@ -48,17 +49,15 @@ static state_to_function_map_fn_type state_to_function_map[] = {
 };
 
 #define TOTAL_BADGES 300
-#define INITIAL_MONSTER(x) (TOTAL_BADGES / sizeof(monsters))
+#define BADGE_ID G_sysData.badgeId
 #define ARRAYSIZE(x) (sizeof((x)) / sizeof((x)[0]))
 #define SCREEN_XDIM 132
 #define SCREEN_YDIM 132
 
 static int screen_changed = 0;
 static int smiley_x, smiley_y;
-// static int initial_monster = INITIAL_MONSTER(G_sysData.badgeId);
 static int current_monster = 0;
 static int nmonsters = 0;
-
 static int app_state = INIT_APP_STATE;
 
 static struct point
@@ -80,6 +79,30 @@ static struct point othermon_points[] =
     int color;
     struct point *drawing;
 } monsters[] = {
+    {"othermon", ARRAYSIZE(smiley_points), 0, 0, othermon_points},
+    {"othermon", ARRAYSIZE(smiley_points), 0, 1, othermon_points},
+    {"smileymon", ARRAYSIZE(smiley_points), 0, 1, smiley_points},
+    {"othermon", ARRAYSIZE(smiley_points), 0, 0, othermon_points},
+    {"othermon", ARRAYSIZE(smiley_points), 0, 1, othermon_points},
+    {"smileymon", ARRAYSIZE(smiley_points), 0, 1, smiley_points},
+    {"othermon", ARRAYSIZE(smiley_points), 0, 0, othermon_points},
+    {"othermon", ARRAYSIZE(smiley_points), 0, 1, othermon_points},
+    {"smileymon", ARRAYSIZE(smiley_points), 0, 1, smiley_points},
+    {"othermon", ARRAYSIZE(smiley_points), 0, 0, othermon_points},
+    {"othermon", ARRAYSIZE(smiley_points), 0, 1, othermon_points},
+    {"smileymon", ARRAYSIZE(smiley_points), 0, 1, smiley_points},
+    {"othermon", ARRAYSIZE(smiley_points), 0, 0, othermon_points},
+    {"othermon", ARRAYSIZE(smiley_points), 0, 1, othermon_points},
+    {"smileymon", ARRAYSIZE(smiley_points), 0, 1, smiley_points},
+    {"othermon", ARRAYSIZE(smiley_points), 0, 0, othermon_points},
+    {"othermon", ARRAYSIZE(smiley_points), 0, 1, othermon_points},
+    {"smileymon", ARRAYSIZE(smiley_points), 0, 1, smiley_points},
+    {"othermon", ARRAYSIZE(smiley_points), 0, 0, othermon_points},
+    {"othermon", ARRAYSIZE(smiley_points), 0, 1, othermon_points},
+    {"smileymon", ARRAYSIZE(smiley_points), 0, 1, smiley_points},
+    {"othermon", ARRAYSIZE(smiley_points), 0, 0, othermon_points},
+    {"othermon", ARRAYSIZE(smiley_points), 0, 1, othermon_points},
+    {"smileymon", ARRAYSIZE(smiley_points), 0, 1, smiley_points},
     {"othermon", ARRAYSIZE(smiley_points), 0, 0, othermon_points},
     {"othermon", ARRAYSIZE(smiley_points), 0, 1, othermon_points},
     {"smileymon", ARRAYSIZE(smiley_points), 0, 1, smiley_points},
@@ -234,6 +257,13 @@ static void change_menu_level(enum menu_level_t level){
     // app_state = GAME_MENU;
 }
 
+static void enable_monster(int monster_id){
+	monsters[monster_id].status = 1;
+	#ifdef __linux__
+		printf("enabling monster: %d\n", monster_id);
+	#endif
+}
+
 static void render_monster(void)
 {
     int npoints, color;
@@ -347,6 +377,7 @@ static void setup_monster_menu(void)
     current_monster = 0;
 
     for(i = 0; i < nmonsters; i++){
+		if(monsters[i].status == 1)
 			menu_add_item(monsters[i].name, RENDER_MONSTER, i);
     }
 
@@ -386,6 +417,8 @@ static void app_init(void)
     smiley_x = SCREEN_XDIM / 2;
     smiley_y = SCREEN_XDIM / 2;
     nmonsters = ARRAYSIZE(monsters);
+	int initial_mon = nmonsters % BADGE_ID - 1;
+	enable_monster(initial_mon);
 }
 
 int badge_monsters_cb(void)
