@@ -112,6 +112,8 @@ static struct point hrvamon_points[] =
 #include "hrvamon.h"
 static struct point octomon_points[] =
 #include "octomon.h"
+static struct point zombieload_points[] =
+#include "zombieload.h"
 
 struct monster
 {
@@ -124,6 +126,7 @@ struct monster
 };
 
 struct monster monsters[] = {
+    {"zombieload", ARRAYSIZE(zombieload_points), 0, 0, zombieload_points, "zombieload description"},
     {"octomon", ARRAYSIZE(octomon_points), 0, 0, octomon_points, "octomon description"},
     {"hrvamon", ARRAYSIZE(hrvamon_points), 0, 0, hrvamon_points, "hrvamon description"},
     {"mcturtle", ARRAYSIZE(mcturtle_points), 0, 0, mcturtle_points, "mcturtle description"},
