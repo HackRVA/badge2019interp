@@ -1,3 +1,15 @@
+/*
+
+This a got-a-collect-em-all style game that is meant to be played
+with little PIC32 badges built by HackRVA for RVASec Conference
+If the code seems a little strange, it's due to the environment this
+code must run in.
+
+--
+Dustin Firebaugh <dafirebaugh@gmail.com>
+
+*/
+
 #ifdef __linux__
 #include <string.h>
 
