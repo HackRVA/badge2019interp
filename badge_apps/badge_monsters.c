@@ -20,12 +20,18 @@
 extern char *strcpy(char *dest, const char *src);
 extern char *strncpy(char *dest, const char *src, size_t n);
 extern void *memset(void *s, int c, size_t n);
+extern void *memcpy(void *dest, const void *src, size_t n);
 extern char *strcat(char *dest, const char *src);
+#ifndef NULL
+#define NULL 0
+#endif
 
 #define DISABLE_INTERRUPTS
 #define ENABLE_INTERRUPTS
 
 #endif
+
+#include "badge_monsters.h"
 
 #define INIT_APP_STATE 0
 #define GAME_MENU 1
@@ -64,9 +70,9 @@ static state_to_function_map_fn_type state_to_function_map[] = {
 
 /* These need to be protected from interrupts. */
 #define QUEUE_SIZE 5
-// static int queue_in;
-// static int queue_out;
-// static int packet_queue[QUEUE_SIZE] = { 0 };
+static int queue_in;
+static int queue_out;
+static int packet_queue[QUEUE_SIZE] = { 0 };
 
 static int screen_changed = 0;
 static int smiley_x, smiley_y;
@@ -82,7 +88,8 @@ static struct point
 
 static struct point smiley_points[] =
 #include "smileymon.h"
-
+static struct point freshmon_points[] =
+#include "freshmon.h"
 static struct point othermon_points[] =
 #include "othermon.h"
 
@@ -97,12 +104,12 @@ static struct monster
 };
 
 struct monster monsters[] = {
+    {"freshmon", ARRAYSIZE(freshmon_points), 0, 0, freshmon_points, "this is freshmon, the freshest of all the mon"},
+    {"othermon", ARRAYSIZE(othermon_points), 0, 1, othermon_points, "some nice words here"},
+    {"smileymon", ARRAYSIZE(smiley_points), 0, RED, smiley_points, "some nice words here"},
     {"othermon", ARRAYSIZE(smiley_points), 0, 0, othermon_points, "some nice words here"},
     {"othermon", ARRAYSIZE(smiley_points), 0, 1, othermon_points, "some nice words here"},
-    {"smileymon", ARRAYSIZE(smiley_points), 1, RED, smiley_points, "some nice words here"},
-    {"othermon", ARRAYSIZE(smiley_points), 0, 0, othermon_points, "some nice words here"},
-    {"othermon", ARRAYSIZE(smiley_points), 0, 1, othermon_points, "some nice words here"},
-    {"smileymon", ARRAYSIZE(smiley_points), 1, WHITE, smiley_points, "Othermon some nice words here Othermon some nice words hereOthermon some nice words here Othermon some nice words here"},
+    {"smileymon", ARRAYSIZE(smiley_points), 0, WHITE, smiley_points, "Othermon some nice words here Othermon some nice words hereOthermon some nice words here Othermon some nice words here"},
     {"othermon", ARRAYSIZE(smiley_points), 0, 0, othermon_points, "some nice words here"},
     {"othermon", ARRAYSIZE(smiley_points), 0, WHITE, othermon_points, "some nice words here"},
     {"othermon", ARRAYSIZE(smiley_points), 0, WHITE, othermon_points, "some nice words here"},
@@ -111,46 +118,67 @@ struct monster monsters[] = {
 struct monster vendor_monsters[] = {
     {"vothermon", ARRAYSIZE(smiley_points), 0, CYAN, othermon_points, "some nice words here"},
     {"vothermon", ARRAYSIZE(smiley_points), 0, CYAN, othermon_points, "some nice words here"},
-    {"vsmileymon", ARRAYSIZE(smiley_points), 1, CYAN, smiley_points, "some nice words here"},
+    {"vsmileymon", ARRAYSIZE(smiley_points), 0, CYAN, smiley_points, "some nice words here"},
     {"vothermon", ARRAYSIZE(smiley_points), 0, CYAN, othermon_points, "some nice words here"}
 };
 
+int initial_mon = 0;
+
 static void draw_object(struct point drawing[], int npoints, int color, int x, int y)
 {
-    int i;
-    int xcenter = x;
-    int ycenter = y;
-    int num;
+	int i;
+	int xcenter = x;
+	int ycenter = y;
+	int num;
 
-    num = 410; /* Yeah, ok, this is a bit too magic. Basically, it's */
-               /* roughly 40% of 1024. the >> 10 below is where 1024 is */
-               /* coming from.  Because 2^10 == 1024. So this is basically */
-               /* scaling the drawing to 40% of its normal size. */
+	num = 410;	/* Yeah, ok, this is a bit too magic. Basically, it's */
+			/* roughly 40% of 1024. the >> 10 below is where 1024 is */
+			/* coming from.  Because 2^10 == 1024. So this is basically */
+			/* scaling the drawing to 40% of its normal size. */
 
-    FbColor(color);
-    for (i = 0; i < npoints - 1;)
-    {
-        if (drawing[i].x == -128)
-        {
-            i++;
-            continue;
-        }
-        if (drawing[i + 1].x == -128)
-        {
-            i += 2;
-            continue;
-        }
+	FbColor(color);
+	for (i = 0; i < npoints - 1;) {
+		if (drawing[i].x == -128) {
+			i++;
+			continue;
+		}
+		if (drawing[i + 1].x == -128) {
+			i+=2;
+			continue;
+		}
 #if 0
-        if (drawing[i].x < 0 || drawing[i].x > SCREEN_XDIM)
-            continue;
-        if (drawing[i].y < 0 || drawing[i].y > SCREEN_YDIM)
-            continue;
+		if (drawing[i].x < 0 || drawing[i].x > SCREEN_XDIM)
+			continue;
+		if (drawing[i].y < 0 || drawing[i].y > SCREEN_YDIM)
+			continue;
 #endif
-        FbLine(xcenter + ((drawing[i].x * num) >> 10), ycenter + ((drawing[i].y * num) >> 10),
-               xcenter + ((drawing[i + 1].x * num) >> 10), ycenter + ((drawing[i + 1].y * num) >> 10));
-        i++;
-    }
+		FbLine(xcenter + ((drawing[i].x * num) >> 10), ycenter + ((drawing[i].y * num) >> 10),
+			xcenter + ((drawing[i + 1].x * num) >> 10), ycenter + ((drawing[i + 1].y * num) >> 10));
+		i++;
+	}
 }
+
+#ifndef __linux__
+static void (*old_callback)(struct IRpacket_t) = NULL;
+static void register_ir_packet_callback(void (*callback)(struct IRpacket_t))
+{
+	/* This is pretty gross.  Ideally there should be some registration,
+	 * unregistration functions provided by ir.[ch] and I shouldn't touch
+	 * IRcallbacks[] directly myself, and all those hardcoded ir_app[1-7]()
+	 * functions should disappear.
+	 * Also, if an interrupt happens in the midst of the assignment we'll
+	 * be in trouble.  I expect the assignment is probably atomic though.
+	 */
+	old_callback = IRcallbacks[BADGE_IR_GAME_ADDRESS].handler;
+	IRcallbacks[BADGE_IR_GAME_ADDRESS].handler = callback;
+}
+
+static void unregister_ir_packet_callback(void)
+{
+	/* Gross. */
+	IRcallbacks[BADGE_IR_GAME_ADDRESS].handler = old_callback;
+}
+#endif
 
 enum menu_level_t {
     MAIN_MENU,
@@ -175,105 +203,75 @@ static struct menu
     unsigned char chosen_cookie;
 } menu;
 
-// static void process_packet(unsigned int packet)
-// {
-//     unsigned int payload;
-//     unsigned char opcode;
-//     int v;
+static void enable_monster(int monster_id)
+{
+    if(monster_id < 0 || monster_id > ARRAYSIZE(monsters) - 1)
+        return;
 
-//     if (packet == 32) /* Ignore spurious 32 that might come in. */
-//         return;
+    monsters[monster_id].status = 1;
+    #ifdef __linux__
+        printf("enabling monster: %d\n", monster_id);
+    #endif
+}
 
-//     payload = get_payload(packet);
-//     opcode = payload >> 12;
-//
-//     // switch (opcode) {
-//     // case OPCODE_SET_GAME_START_TIME:
-//     //     /* time is a 12 bit signed number */
-//     //     v = payload & 0x0fff;
-//     //     if (payload & 0x0800)
-//     //         v = -v;
-//     //     seconds_until_game_starts = v;
-//     //     set_game_start_timestamp(seconds_until_game_starts);
-//     //     if (seconds_until_game_starts > 0)
-//     //         nhits = 0; /* don't reset counter if game already started? */
-//     //     screen_changed = 1;
-//     //     break;
-//     // case OPCODE_SET_GAME_DURATION:
-//     //     /* time is 12 unsigned number */
-//     //     game_duration = payload & 0x0fff;
-//     //     screen_changed = 1;
-//     //     break;
-//     // case OPCODE_HIT:
-//     //     process_hit(packet);
-//     //     break;
-//     // case OPCODE_REQUEST_BADGE_DUMP:
-//     //     game_state = GAME_DUMP_DATA;
-//     //     break;
-//     // case OPCODE_SET_BADGE_TEAM:
-//     //     team = payload & 0x0f; /* TODO sanity check this better. */
-//     //     screen_changed = 1;
-//     //     break;
-//     // case OPCODE_SET_GAME_VARIANT:
-//     //     game_variant = (payload & 0x0f) % ARRAYSIZE(game_type);
-//     //     screen_changed = 1;
-//     //     break;
-//     // case OPCODE_GAME_ID:
-//     //     game_id = payload & 0x0fff;
-//         /* We happen to know this is the last bit of data for a game that the base
-//          * station sends us. So at this time, we beep to indicate all the data for
-//          * the game has been recieved. */
-//     //     setNote(50, 4000);
-//     //     break;
-//     // default:
-//     //     break;
-//     // }
-// }
+static unsigned int build_packet(unsigned char cmd, unsigned char start,
+            unsigned char address, unsigned short badge_id, unsigned short payload)
+{
+    return ((cmd & 0x01) << 31) |
+        ((start & 0x01) << 30) |
+        ((address & 0x01f) << 25) |
+        ((badge_id & 0x1ff) << 16) |
+        (payload);
+}
 
-// static unsigned int build_packet(unsigned char cmd, unsigned char start,
-//             unsigned char address, unsigned short badge_id, unsigned short payload)
-// {
-//     return ((cmd & 0x01) << 31) |
-//         ((start & 0x01) << 30) |
-//         ((address & 0x01f) << 25) |
-//         ((badge_id & 0x1ff) << 16) |
-//         (payload);
-// }
+static unsigned short get_payload(unsigned int packet)
+{
+	return (unsigned short) (packet & 0x0ffff);
+}
 
-// static void send_a_packet(unsigned int packet)
-// {
-//     union IRpacket_u p;
+static void process_packet(unsigned int packet)
+{
+    unsigned int payload;
+    unsigned char opcode;
+    int v;
 
-//     p.v = packet;
-//     IRqueueSend(p);
+    if (packet == 32) /* Ignore spurious 32 that might come in. */
+        return;
 
-// #ifdef __linux__
-//     printf("\nSent packet: %08x\n", packet);
-//     printf("      cmd: 0x%01x\n", (packet >> 31) & 0x01);
-//     printf("    start: 0x%01x\n", (packet >> 30) & 0x01);
-//     printf("  address: 0x%02x\n", (packet >> 25) & 0x1f);
-//     printf(" badge ID: 0x%03x\n", (packet >> 16) & 0x1ff);
-//     printf("  payload: 0x%04x\n\n", packet & 0x0ffff);
-// #endif
+    payload = get_payload(packet);
+    opcode = payload >> 12;
 
-// }
+    if(opcode == OPCODE_XMIT_MONSTER){
+        enable_monster(payload & 0x0ff);
+    }
+}
 
-// static void check_for_incoming_packets(void)
-// {
-//     unsigned int new_packet;
-//     int next_queue_out;
+static void send_ir_packet(unsigned int packet)
+{
+	union IRpacket_u p;
 
-//     DISABLE_INTERRUPTS;
-//     while (queue_out != queue_in) {
-//         next_queue_out = (queue_out + 1) % QUEUE_SIZE;
-//         new_packet = packet_queue[queue_out];
-//         queue_out = next_queue_out;
-//         ENABLE_INTERRUPTS;
-//         // process_packet(new_packet);
-//         DISABLE_INTERRUPTS;
-//     }
-//     ENABLE_INTERRUPTS;
-// }
+	p.v = packet;
+	p.v = packet | (1 << 30); /* Set command bit on outgoing packets */
+
+	IRqueueSend(p);
+}
+
+static void check_for_incoming_packets(void)
+{
+    unsigned int new_packet;
+    int next_queue_out;
+    printf("\nchecking for incoming packets\n\n");
+    DISABLE_INTERRUPTS;
+    while (queue_out != queue_in) {
+        next_queue_out = (queue_out + 1) % QUEUE_SIZE;
+        new_packet = packet_queue[queue_out];
+        queue_out = next_queue_out;
+        ENABLE_INTERRUPTS;
+        process_packet(new_packet);
+        DISABLE_INTERRUPTS;
+    }
+    ENABLE_INTERRUPTS;
+}
 
 static void menu_clear(void)
 {
@@ -377,7 +375,8 @@ static void menu_change_current_selection(int direction)
     screen_changed |= (menu.current_item != old);
 }
 
-static void change_menu_level(enum menu_level_t level){
+static void change_menu_level(enum menu_level_t level)
+{
     menu_level = level;
     menu_clear();
     switch(level){
@@ -392,14 +391,8 @@ static void change_menu_level(enum menu_level_t level){
     }
 }
 
-static void enable_monster(int monster_id){
-    monsters[monster_id].status = 1;
-    #ifdef __linux__
-        printf("enabling monster: %d\n", monster_id);
-    #endif
-}
-
-static void show_message(char *message){
+static void show_message(char *message)
+{
     #ifdef __linux__
         printf(message);
     #endif
@@ -415,8 +408,10 @@ static void show_message(char *message){
 }
 
 // stage_monster_trade -- should start listening and receiving IR
-static void stage_monster_trade(void){
-
+static void stage_monster_trade(void)
+{
+    send_ir_packet(build_packet(1,1,BADGE_IR_GAME_ADDRESS, BADGE_IR_BROADCAST_ID,
+    (OPCODE_XMIT_MONSTER << 12) | (initial_mon & 0x01ff)));
 
     show_message("Sync your badge with someone to collect more     monsters\n");
 }
@@ -445,7 +440,7 @@ static void render_monster(void)
 
 
     FbClear();
-    FbWriteLine(name);
+    // FbWriteLine(name);
     FbWriteLine("\n");
     draw_object(drawing, npoints, color, smiley_x, smiley_y);
 
@@ -467,9 +462,10 @@ static void render_screen(void)
 }
 
 #ifdef __linux__
-static void print_menu_info(void){
+static void print_menu_info(void)
+{
     // int next_state = menu.item[menu.current_item].next_state
-    system("clear");
+    // system("clear");
     printf("current item: %d\nmenu level: %d\ncurrent monster: %d\n menu item: %s\nn-menu-items: %d\ncookie_monster: %d\n",
     menu.current_item, menu_level, current_monster, menu.item[menu.current_item].text, menu.nitems, menu.item[menu.current_item].cookie);
 }
@@ -477,7 +473,6 @@ static void print_menu_info(void){
 
 static void check_the_buttons(void)
 {
-
     int something_changed = 0;
 
     if (UP_BTN_AND_CONSUME)
@@ -600,19 +595,35 @@ static void setup_main_menu(void)
 static void game_menu(void)
 {
     draw_menu();
+    check_for_incoming_packets();
     app_state = RENDER_SCREEN;
 }
 
 static void exit_app(void)
 {
     app_state = INIT_APP_STATE;
+    unregister_ir_packet_callback();
     returnToMenus();
+}
+
+static void ir_packet_callback(struct IRpacket_t packet)
+{
+	/* Interrupts will be already disabled when this is called. */
+	int next_queue_in;
+
+	next_queue_in = (queue_in + 1) % QUEUE_SIZE;
+	if (next_queue_in == queue_out) /* queue is full, drop packet */
+		return;
+	memcpy(&packet_queue[queue_in], &packet, sizeof(packet_queue[0]));
+	queue_in = next_queue_in;
 }
 
 static void app_init(void)
 {
     FbInit();
     app_state = INIT_APP_STATE;
+    register_ir_packet_callback(ir_packet_callback);
+
     change_menu_level(MAIN_MENU);
     app_state = GAME_MENU;
     screen_changed = 1;
@@ -634,6 +645,14 @@ int badge_monsters_cb(void)
 
 int main(int argc, char *argv[])
 {
+    char *serial_port = NULL;
+
+#define IRXMIT_UDP_PORT 12345
+#define LASERTAG_UDP_PORT 12346
+
+	if (argc >= 2)
+		serial_port = argv[1];
+	setup_linux_ir_simulator(serial_port, IRXMIT_UDP_PORT, LASERTAG_UDP_PORT);
     start_gtk(&argc, &argv, badge_monsters_cb, 30);
     return 0;
 }
