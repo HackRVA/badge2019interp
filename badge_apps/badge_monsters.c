@@ -72,6 +72,7 @@ static int screen_changed = 0;
 static int smiley_x, smiley_y;
 static int current_monster = 0;
 static int nmonsters = 0;
+static int nvendor_monsters = 0;
 static int app_state = INIT_APP_STATE;
 
 static struct point
@@ -85,7 +86,7 @@ static struct point smiley_points[] =
 static struct point othermon_points[] =
 #include "othermon.h"
 
-        static struct monster
+static struct monster
 {
     char name[20];
     int npoints;
@@ -93,7 +94,9 @@ static struct point othermon_points[] =
     int color;
     struct point *drawing;
     char blurb[128];
-} monsters[] = {
+};
+
+struct monster monsters[] = {
     {"othermon", ARRAYSIZE(smiley_points), 0, 0, othermon_points, "some nice words here"},
     {"othermon", ARRAYSIZE(smiley_points), 0, 1, othermon_points, "some nice words here"},
     {"smileymon", ARRAYSIZE(smiley_points), 1, RED, smiley_points, "some nice words here"},
@@ -103,6 +106,13 @@ static struct point othermon_points[] =
     {"othermon", ARRAYSIZE(smiley_points), 0, 0, othermon_points, "some nice words here"},
     {"othermon", ARRAYSIZE(smiley_points), 0, WHITE, othermon_points, "some nice words here"},
     {"othermon", ARRAYSIZE(smiley_points), 0, WHITE, othermon_points, "some nice words here"},
+};
+
+struct monster vendor_monsters[] = {
+    {"vothermon", ARRAYSIZE(smiley_points), 0, CYAN, othermon_points, "some nice words here"},
+    {"vothermon", ARRAYSIZE(smiley_points), 0, CYAN, othermon_points, "some nice words here"},
+    {"vsmileymon", ARRAYSIZE(smiley_points), 1, CYAN, smiley_points, "some nice words here"},
+    {"vothermon", ARRAYSIZE(smiley_points), 0, CYAN, othermon_points, "some nice words here"}
 };
 
 static void draw_object(struct point drawing[], int npoints, int color, int x, int y)
@@ -304,15 +314,27 @@ static void draw_menu(void)
     FbWriteLine(menu.title);
     if(menu_level == MONSTER_MENU){
         int nunlocked = 0;
-        char available_monsters[2];
-        char unlocked_monsters[2];
-        itoa(available_monsters, nmonsters, 5);
+        char available_monsters[3];
+        char unlocked_monsters[3];
+        itoa(available_monsters, nmonsters + nvendor_monsters, 5);
 
-        for(i = 0; i < nmonsters; i++){
-            if(monsters[i].status == 1){
+        for(i = 0; i < nmonsters; i++)
+        {
+            if(monsters[i].status == 1)
+            {
                 nunlocked++;
             }
         }
+
+        for(i = 0; i < nvendor_monsters; i++)
+        {
+            if(vendor_monsters[i].status == 1)
+            {
+                nunlocked++;
+            }
+        }
+
+
 
         itoa(unlocked_monsters, nunlocked, 5);
 
@@ -405,10 +427,22 @@ static void render_monster(void)
     struct point *drawing;
     char *name;
 
-    name = monsters[current_monster].name;
-    drawing = monsters[current_monster].drawing;
-    npoints = monsters[current_monster].npoints;
-    color = monsters[current_monster].color;
+    if(current_monster > 100)
+    {
+        printf("um %d\n",current_monster);
+        name = vendor_monsters[current_monster-100].name;
+        drawing = vendor_monsters[current_monster-100].drawing;
+        npoints = vendor_monsters[current_monster-100].npoints;
+        color = vendor_monsters[current_monster-100].color;
+    }
+    else
+    {
+        name = monsters[current_monster].name;
+        drawing = monsters[current_monster].drawing;
+        npoints = monsters[current_monster].npoints;
+        color = monsters[current_monster].color;
+    }
+
 
     FbClear();
     FbWriteLine(name);
@@ -479,7 +513,16 @@ static void check_the_buttons(void)
     else if (RIGHT_BTN_AND_CONSUME)
     {
         if(menu_level == INACTIVE)
-            show_message(monsters[current_monster].blurb);
+        {
+            if(current_monster >= 100)
+            {
+                show_message(vendor_monsters[current_monster-100].blurb);
+            }
+            else
+            {
+                show_message(monsters[current_monster].blurb);
+            }
+        }
     }
     else if (BUTTON_PRESSED_AND_CONSUME)
     {
@@ -535,6 +578,11 @@ static void setup_monster_menu(void)
             menu_add_item(monsters[i].name, RENDER_MONSTER, i);
     }
 
+    for(i = 0; i < nvendor_monsters; i++){
+        if(vendor_monsters[i].status)
+            menu_add_item(vendor_monsters[i].name, RENDER_MONSTER, i+100);
+    }
+
     menu_add_item("back", RENDER_SCREEN, 0);
     screen_changed = 1;
 }
@@ -571,6 +619,7 @@ static void app_init(void)
     smiley_x = SCREEN_XDIM / 2;
     smiley_y = SCREEN_XDIM / 2;
     nmonsters = ARRAYSIZE(monsters);
+    nvendor_monsters = ARRAYSIZE(vendor_monsters);
     int initial_mon = BADGE_ID % nmonsters;
     enable_monster(initial_mon);
 }
