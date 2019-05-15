@@ -4,12 +4,16 @@
 #include "../linux/linuxcompat.h"
 #include <stdio.h>
 
+#define DISABLE_INTERRUPTS do { disable_interrupts(); } while (0)
+#define ENABLE_INTERRUPTS do { enable_interrupts(); } while (0)
+
 #else
 
 #include "colors.h"
 #include "menu.h"
 #include "buttons.h"
 #include "flash.h"
+#include "ir.h"
 
 /* TODO: I shouldn't have to declare these myself. */
 #define size_t int
@@ -17,6 +21,9 @@ extern char *strcpy(char *dest, const char *src);
 extern char *strncpy(char *dest, const char *src, size_t n);
 extern void *memset(void *s, int c, size_t n);
 extern char *strcat(char *dest, const char *src);
+
+#define DISABLE_INTERRUPTS
+#define ENABLE_INTERRUPTS
 
 #endif
 
@@ -54,6 +61,13 @@ static state_to_function_map_fn_type state_to_function_map[] = {
 #define SCREEN_XDIM 132
 #define SCREEN_YDIM 132
 
+
+/* These need to be protected from interrupts. */
+#define QUEUE_SIZE 5
+static int queue_in;
+static int queue_out;
+static int packet_queue[QUEUE_SIZE] = { 0 };
+
 static int screen_changed = 0;
 static int smiley_x, smiley_y;
 static int current_monster = 0;
@@ -81,7 +95,7 @@ static struct point othermon_points[] =
 } monsters[] = {
     {"othermon", ARRAYSIZE(smiley_points), 0, 0, othermon_points},
     {"othermon", ARRAYSIZE(smiley_points), 0, 1, othermon_points},
-    {"smileymon", ARRAYSIZE(smiley_points), 1, RED, smiley_points},
+    {"smileymon", ARRAYSIZE(smiley_points), 0, RED, smiley_points},
     {"othermon", ARRAYSIZE(smiley_points), 0, 0, othermon_points},
     {"othermon", ARRAYSIZE(smiley_points), 0, 1, othermon_points},
     {"smileymon", ARRAYSIZE(smiley_points), 0, WHITE, smiley_points},
@@ -148,6 +162,106 @@ static struct menu
     unsigned char menu_active;
     unsigned char chosen_cookie;
 } menu;
+
+// static void process_packet(unsigned int packet)
+// {
+// 	unsigned int payload;
+// 	unsigned char opcode;
+// 	int v;
+
+// 	if (packet == 32) /* Ignore spurious 32 that might come in. */
+// 		return;
+
+// 	payload = get_payload(packet);
+// 	opcode = payload >> 12;
+//
+// 	// switch (opcode) {
+// 	// case OPCODE_SET_GAME_START_TIME:
+// 	// 	/* time is a 12 bit signed number */
+// 	// 	v = payload & 0x0fff;
+// 	// 	if (payload & 0x0800)
+// 	// 		v = -v;
+// 	// 	seconds_until_game_starts = v;
+// 	// 	set_game_start_timestamp(seconds_until_game_starts);
+// 	// 	if (seconds_until_game_starts > 0)
+// 	// 		nhits = 0; /* don't reset counter if game already started? */
+// 	// 	screen_changed = 1;
+// 	// 	break;
+// 	// case OPCODE_SET_GAME_DURATION:
+// 	// 	/* time is 12 unsigned number */
+// 	// 	game_duration = payload & 0x0fff;
+// 	// 	screen_changed = 1;
+// 	// 	break;
+// 	// case OPCODE_HIT:
+// 	// 	process_hit(packet);
+// 	// 	break;
+// 	// case OPCODE_REQUEST_BADGE_DUMP:
+// 	// 	game_state = GAME_DUMP_DATA;
+// 	// 	break;
+// 	// case OPCODE_SET_BADGE_TEAM:
+// 	// 	team = payload & 0x0f; /* TODO sanity check this better. */
+// 	// 	screen_changed = 1;
+// 	// 	break;
+// 	// case OPCODE_SET_GAME_VARIANT:
+// 	// 	game_variant = (payload & 0x0f) % ARRAYSIZE(game_type);
+// 	// 	screen_changed = 1;
+// 	// 	break;
+// 	// case OPCODE_GAME_ID:
+// 	// 	game_id = payload & 0x0fff;
+// 		/* We happen to know this is the last bit of data for a game that the base
+// 		 * station sends us. So at this time, we beep to indicate all the data for
+// 		 * the game has been recieved. */
+// 	// 	setNote(50, 4000);
+// 	// 	break;
+// 	// default:
+// 	// 	break;
+// 	// }
+// }
+
+static unsigned int build_packet(unsigned char cmd, unsigned char start,
+            unsigned char address, unsigned short badge_id, unsigned short payload)
+{
+    return ((cmd & 0x01) << 31) |
+        ((start & 0x01) << 30) |
+        ((address & 0x01f) << 25) |
+        ((badge_id & 0x1ff) << 16) |
+        (payload);
+}
+
+static void send_a_packet(unsigned int packet)
+{
+    union IRpacket_u p;
+
+    p.v = packet;
+    IRqueueSend(p);
+
+#ifdef __linux__
+    printf("\nSent packet: %08x\n", packet);
+    printf("      cmd: 0x%01x\n", (packet >> 31) & 0x01);
+    printf("    start: 0x%01x\n", (packet >> 30) & 0x01);
+    printf("  address: 0x%02x\n", (packet >> 25) & 0x1f);
+    printf(" badge ID: 0x%03x\n", (packet >> 16) & 0x1ff);
+    printf("  payload: 0x%04x\n\n", packet & 0x0ffff);
+#endif
+
+}
+
+static void check_for_incoming_packets(void)
+{
+	unsigned int new_packet;
+	int next_queue_out;
+
+	DISABLE_INTERRUPTS;
+	while (queue_out != queue_in) {
+		next_queue_out = (queue_out + 1) % QUEUE_SIZE;
+		new_packet = packet_queue[queue_out];
+		queue_out = next_queue_out;
+		ENABLE_INTERRUPTS;
+		// process_packet(new_packet);
+		DISABLE_INTERRUPTS;
+	}
+	ENABLE_INTERRUPTS;
+}
 
 static void menu_clear(void)
 {
@@ -244,6 +358,22 @@ static void enable_monster(int monster_id){
     #endif
 }
 
+// stage_monster_trade -- should start listening and receiving IR
+static void stage_monster_trade(void){
+    #ifdef __linux__
+        printf("Sync your badge with someone to collect more     monsters\n");
+    #endif
+
+    FbClear();
+    FbColor(WHITE);
+    FbMove(8, 5);
+    FbWriteLine("Sync your badge with someone to collect more     monsters");
+
+    change_menu_level(INACTIVE);
+    app_state = RENDER_SCREEN;
+    screen_changed = 1;
+}
+
 static void render_monster(void)
 {
     int npoints, color;
@@ -306,6 +436,13 @@ static void check_the_buttons(void)
         #ifdef __linux__
             print_menu_info();
         #endif
+    }
+	else if (RIGHT_BTN_AND_CONSUME)
+	{
+#ifdef __linux__
+		if(app_state == RENDER_MONSTER)
+			printf("right button pressed\n");
+#endif
 	}
     else if (BUTTON_PRESSED_AND_CONSUME)
     {
@@ -330,7 +467,7 @@ static void check_the_buttons(void)
                     something_changed = 1;
                     break;
                 case 1:
-                    /* stage_monster_trade(); */
+                    stage_monster_trade();
                     break;
                 case 2:
                     app_state = EXIT_APP;
@@ -371,7 +508,7 @@ static void setup_main_menu(void)
     strcpy(menu.title, "Badge Monsters");
     menu_add_item("Monsters", RENDER_SCREEN, 0);
     menu_add_item("Trade Monsters", RENDER_SCREEN, 1);
-    menu_add_item("EXIT GAME", EXIT_APP, 2);
+    menu_add_item("EXIT", EXIT_APP, 2);
     screen_changed = 1;
 }
 
