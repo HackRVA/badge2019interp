@@ -40,6 +40,11 @@ static state_to_function_map_fn_type state_to_function_map[] = {
 
 #define TOTAL_BADGES 300
 #define INITIAL_MONSTER(x) (TOTAL_BADGES / sizeof(monsters))
+#define ARRAYSIZE(x) (sizeof((x)) / sizeof((x)[0]))
+#define SCREEN_XDIM 132
+#define SCREEN_YDIM 132
+
+static int smiley_x, smiley_y;
 
 static struct point {
     signed char x, y;
@@ -48,15 +53,11 @@ static struct point {
 static struct point smiley_points[] = 
 #include "smileymon.h"
 
+static struct point othermon_points[] = 
+#include "othermon.h"
+
 static int app_state = INIT_APP_STATE;
 
-static int smiley_x, smiley_y;
-
-
-#define SCREEN_XDIM 132
-#define SCREEN_YDIM 132
-
-#define ARRAYSIZE(x) (sizeof((x)) / sizeof((x)[0]))
 
 static struct monster {
 	char name[20];
@@ -65,9 +66,9 @@ static struct monster {
 	int color;
 	struct point *drawing;
 } monsters[] = {
-	{ "smileymon", ARRAYSIZE(smiley_points), 0, 0, smiley_points },
-	{ "smileymon", ARRAYSIZE(smiley_points), 0, 0, smiley_points },
-	{ "smileymon", ARRAYSIZE(smiley_points), 0, 0, smiley_points },
+	{ "othermon", ARRAYSIZE(smiley_points), 0, 0, othermon_points },
+	{ "othermon", ARRAYSIZE(smiley_points), 0, 1, othermon_points },
+	{ "smileymon", ARRAYSIZE(smiley_points), 0, 1, smiley_points },
 };
 
 static void draw_object(struct point drawing[], int npoints, int color, int x, int y)
@@ -104,18 +105,32 @@ static void draw_object(struct point drawing[], int npoints, int color, int x, i
 	}
 }
 
-static void render_screen(void)
-{
-	int initial_monster, npoints, color;
+static void render_monster(int monsterID){
+	int npoints, color;
 	struct point *drawing;
+	char* name;
+	char id_string[3];
+	itoa(id_string, monsterID, 10);
 
-	initial_monster = INITIAL_MONSTER(G_sysData.badgeId);
-	drawing = monsters[initial_monster].drawing;
-	npoints = monsters[initial_monster].npoints;
-	color = monsters[initial_monster].color;
+
+	name = monsters[monsterID].name;
+	drawing = monsters[monsterID].drawing;
+	npoints = monsters[monsterID].npoints;
+	color = monsters[monsterID].color;
 	
 	FbClear();
-	draw_object(drawing, npoints, WHITE, smiley_x, smiley_y);
+	// FbWriteLine(id_string);
+	FbWriteLine(name);
+	FbWriteLine("\n");
+	draw_object(drawing, npoints, color, smiley_x, smiley_y);
+	FbSwapBuffers();
+}
+
+static void render_screen(void)
+{
+	int initial_monster = INITIAL_MONSTER(G_sysData.badgeId);
+	FbClear();
+	render_monster(initial_monster);
 	FbSwapBuffers();
 	app_state = CHECK_THE_BUTTONS;
 }
@@ -142,7 +157,9 @@ static void check_the_buttons(void)
 		smiley_x += 1;
 		something_changed = 1;
 	} else if (BUTTON_PRESSED_AND_CONSUME) {
-		app_state = EXIT_APP;
+		render_monster(0);
+		app_state = CHECK_THE_BUTTONS;
+		// app_state = EXIT_APP;
 	}
 	if (smiley_x < left_limit)
 		smiley_x = left_limit;
