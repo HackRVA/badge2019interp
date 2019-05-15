@@ -823,7 +823,7 @@ static void draw_map()
  */
 static const int drawing_scale_numerator[] = { 410, 328, 262, 210, 168, 134, 107, 86 };
 
-static void draw_object(const struct point drawing[], int npoints, int scale_index, int color, int x, int y)
+void draw_object(const struct point drawing[], int npoints, int scale_index, int color, int x, int y)
 {
     int i;
     int xcenter = x;

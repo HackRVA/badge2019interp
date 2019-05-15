@@ -169,7 +169,12 @@ struct monster vendor_monsters[] = {
 
 int initial_mon = 0;
 
-static void draw_object(const struct point drawing[], int npoints, int color, int x, int y)
+#ifndef __linux__
+/* Use draw_object() from maze.c */
+extern void draw_object(const struct point drawing[], int npoints, int scale_index, int color, int x, int y);
+#else
+static void draw_object(const struct point drawing[], int npoints,
+			__attribute__((unused)) int scale_index, int color, int x, int y)
 {
 	int i;
 	int xcenter = x;
@@ -202,6 +207,7 @@ static void draw_object(const struct point drawing[], int npoints, int color, in
 		i++;
 	}
 }
+#endif
 
 #ifndef __linux__
 static void (*old_callback)(struct IRpacket_t) = NULL;
@@ -479,7 +485,7 @@ static void render_monster(void)
     FbClear();
     /* FbWriteLine(name); */
     FbWriteLine("\n");
-    draw_object(drawing, npoints, color, smiley_x, smiley_y);
+    draw_object(drawing, npoints, 0, color, smiley_x, smiley_y);
 
     FbMove(120,120);
     FbWriteLine(">");
