@@ -95,7 +95,6 @@ static void draw_screen(void)
 			FbColor(GREEN);
 		else
 			FbColor(WHITE);
-		char buf[2];
 		buf[0] = '_';
 		buf[1] = '\0';
 		if (username[i] >= 'A' && username[i] <= 'Z')
