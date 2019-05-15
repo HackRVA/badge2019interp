@@ -357,7 +357,7 @@ static void draw_menu(void)
         int nunlocked = 0;
         char available_monsters[3];
         char unlocked_monsters[3];
-        itoa(available_monsters, nmonsters + nvendor_monsters, 5);
+        itoa(available_monsters, nmonsters + nvendor_monsters, 10);
 
         for(i = 0; i < nmonsters; i++)
         {
@@ -377,7 +377,7 @@ static void draw_menu(void)
 
 
 
-        itoa(unlocked_monsters, nunlocked, 5);
+        itoa(unlocked_monsters, nunlocked, 10);
 
         FbMove(8,25);
         FbWriteLine(unlocked_monsters);
