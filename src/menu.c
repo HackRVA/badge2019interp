@@ -19,7 +19,9 @@
 #include "QC.h"
 #include "lasertag.h"
 #include "username.h"
+#ifdef INCLUDE_IRXMIT
 #include "irxmit.h"
+#endif
 
 
 #define MAIN_MENU_BKG_COLOR GREY2
@@ -481,7 +483,9 @@ const struct menu_t games_m[] = {
    {"Sensors",       VERT_ITEM, FUNCTION, {(struct menu_t *)adc_cb} },
    {"Maze",          VERT_ITEM, FUNCTION, {(struct menu_t *)maze_cb} },
    {"Laser Tag",     VERT_ITEM, FUNCTION, {(struct menu_t *)lasertag_cb} },
+#ifdef INCLUDE_IRXMIT
    {"IR XMIT",       VERT_ITEM, FUNCTION, {(struct menu_t *)irxmit_cb} },
+#endif
    {"Back",	     VERT_ITEM|LAST_ITEM, BACK, {NULL}},
 };
 

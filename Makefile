@@ -14,6 +14,14 @@ INC += -D_SUPPRESS_PLIB_WARNING -D_DISABLE_OPENADC10_CONFIGPORT_WARNING -fno-sch
 INC += -DPAULSHACKEDBADGE
 INC += -DBADGE_FLASH_SECTION
 
+# make INCLUDE_IRXMIT=1 to include irxmit badge app
+ifeq ($(INCLUDE_IRXMIT),1)
+INC += -DINCLUDE_IRXMIT=1
+IRXMIT=badge_apps/irxmit.c
+else
+IRXMIT=
+endif
+
 # for assembler. assembler nop's after instructions
 #INC += -fno-schedule-insns 
 
@@ -41,7 +49,7 @@ SRC_BADGE_C = \
 SRC_APPS_C = \
 	badge_apps/adc.c badge_apps/maze.c badge_apps/xorshift.c \
 	badge_apps/blinkenlights.c badge_apps/conductor.c \
-	badge_apps/lasertag.c badge_apps/QC.c badge_apps/irxmit.c \
+	badge_apps/lasertag.c badge_apps/QC.c ${IRXMIT} \
 	badge_apps/username.c
 
 SRC_USB_C = USB/usb_device.c  USB/usb_function_cdc.c USB/usb_descriptors.c
