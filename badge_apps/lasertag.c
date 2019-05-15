@@ -689,8 +689,30 @@ static unsigned short encode_username_substring(char *substring, int length)
 	}
 	if (length == 1)
 		answer = answer | 27;
+#ifdef __linux__
+	printf("Encoded '%c%c' as 0x%hx\n", substring[0], substring[1], answer);
+#endif
 	return answer;
 }
+
+#ifdef __linux__
+static void decode_username_fragment(unsigned short s)
+{
+	int c[2], i;
+
+	c[0] = (s >> 5) & 0x1f;
+	c[1] = s & 0x1f;
+	for (i = 0; i < 2; i++) {
+		if (c[i] >= 0 && c[i] <= 25)
+		c[i] = c[i] + 'A';
+		if (c[i] == 27)
+			c[i] = '\0';
+		if (c[i] == 26)
+			c[i] = '_';
+	}
+	printf("0x%hx decodes to %c%c\n", s, c[0], c[1]);
+}
+#endif
 
 static void game_dump_data(void)
 {
@@ -747,6 +769,10 @@ static void game_dump_data(void)
 		const int pkt_len = 2;
 		unsigned short encoded;
 		encoded = encode_username_substring(&username[pkt_num * 2], pkt_len);
+#ifdef __linux__
+		printf("username = '%s'\n", username);
+		decode_username_fragment(encoded);
+#endif
 		send_badge_username_packet(encoded);
 	} else {
 		record_num = 0;
