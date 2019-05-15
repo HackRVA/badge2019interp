@@ -104,6 +104,14 @@ static struct point freshmon_points[] =
 #include "freshmon.h"
 static struct point othermon_points[] =
 #include "othermon.h"
+static struct point mcturtle_points[] =
+#include "mcturtle.h"
+static struct point goat_mon_points[] =
+#include "goat_mon.h"
+static struct point hrvamon_points[] =
+#include "hrvamon.h"
+static struct point octomon_points[] =
+#include "octomon.h"
 
 struct monster
 {
@@ -116,6 +124,10 @@ struct monster
 };
 
 struct monster monsters[] = {
+    {"octomon", ARRAYSIZE(octomon_points), 0, 0, octomon_points, "octomon description"},
+    {"hrvamon", ARRAYSIZE(hrvamon_points), 0, 0, hrvamon_points, "hrvamon description"},
+    {"mcturtle", ARRAYSIZE(mcturtle_points), 0, 0, mcturtle_points, "mcturtle description"},
+    {"goat_mon", ARRAYSIZE(goat_mon_points), 0, 0, goat_mon_points, "goat mon description"},
     {"freshmon", ARRAYSIZE(freshmon_points), 0, 0, freshmon_points, "this is freshmon, the freshest of all the mon"},
     {"othermon", ARRAYSIZE(othermon_points), 0, 1, othermon_points, "some nice words here"},
     {"smileymon", ARRAYSIZE(smiley_points), 0, RED, smiley_points, "some nice words here"},
@@ -629,6 +641,7 @@ static void ir_packet_callback(struct IRpacket_t packet)
 static void app_init(void)
 {
     int initial_mon;
+    int i;
 
     FbInit();
     app_state = INIT_APP_STATE;
@@ -643,6 +656,9 @@ static void app_init(void)
     nvendor_monsters = ARRAYSIZE(vendor_monsters);
     initial_mon = BADGE_ID % nmonsters;
     enable_monster(initial_mon);
+
+    for (i = 0; i < ARRAYSIZE(monsters); i++)
+	    monsters[i].status = 1;
 }
 
 int badge_monsters_cb(void)
