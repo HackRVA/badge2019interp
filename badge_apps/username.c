@@ -212,7 +212,8 @@ static void check_the_buttons(void)
 			something_changed = 1;
 		}
 	}
-	app_state = DRAW_SCREEN;
+	if (something_changed)
+		app_state = DRAW_SCREEN;
         return;
 }
 
