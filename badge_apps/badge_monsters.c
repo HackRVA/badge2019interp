@@ -98,33 +98,33 @@ struct point
     signed char x, y;
 };
 
-static struct point smiley_points[] =
+static const struct point smiley_points[] =
 #include "smileymon.h"
-static struct point freshmon_points[] =
+static const struct point freshmon_points[] =
 #include "freshmon.h"
-static struct point othermon_points[] =
+static const struct point othermon_points[] =
 #include "othermon.h"
-static struct point mcturtle_points[] =
+static const struct point mcturtle_points[] =
 #include "mcturtle.h"
-static struct point goat_mon_points[] =
+static const struct point goat_mon_points[] =
 #include "goat_mon.h"
-static struct point hrvamon_points[] =
+static const struct point hrvamon_points[] =
 #include "hrvamon.h"
-static struct point octomon_points[] =
+static const struct point octomon_points[] =
 #include "octomon.h"
-static struct point zombieload_points[] =
+static const struct point zombieload_points[] =
 #include "zombieload.h"
-static struct point spectre_points[] =
+static const struct point spectre_points[] =
 #include "spectre.h"
-static struct point heartbleed_points[] =
+static const struct point heartbleed_points[] =
 #include "heartbleed.h"
-static struct point stacksmasher_points[] =
+static const struct point stacksmasher_points[] =
 #include "stacksmasher.h"
-static struct point worm_points[] =
+static const struct point worm_points[] =
 #include "worm.h"
-static struct point godzilla_points[] =
+static const struct point godzilla_points[] =
 #include "godzilla.h"
-static struct point eddie_points[] =
+static const struct point eddie_points[] =
 #include "eddie.h"
 
 struct monster
@@ -133,7 +133,7 @@ struct monster
     int npoints;
     short status;
     int color;
-    struct point *drawing;
+    const struct point *drawing;
     char blurb[128];
 };
 
@@ -169,7 +169,7 @@ struct monster vendor_monsters[] = {
 
 int initial_mon = 0;
 
-static void draw_object(struct point drawing[], int npoints, int color, int x, int y)
+static void draw_object(const struct point drawing[], int npoints, int color, int x, int y)
 {
 	int i;
 	int xcenter = x;
@@ -459,20 +459,18 @@ static void stage_monster_trade(void)
 static void render_monster(void)
 {
     int npoints, color;
-    struct point *drawing;
+    const struct point *drawing = current_monster > 100 ? vendor_monsters[current_monster - 100].drawing : monsters[current_monster].drawing;
     /* char *name; */
 
     if(current_monster > 100)
     {
         /* name = vendor_monsters[current_monster-100].name; */
-        drawing = vendor_monsters[current_monster-100].drawing;
         npoints = vendor_monsters[current_monster-100].npoints;
         color = vendor_monsters[current_monster-100].color;
     }
     else
     {
         /* name = monsters[current_monster].name; */
-        drawing = monsters[current_monster].drawing;
         npoints = monsters[current_monster].npoints;
         color = monsters[current_monster].color;
     }
