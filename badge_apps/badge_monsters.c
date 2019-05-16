@@ -58,8 +58,8 @@ static void menu_clear(void);
 static void render_screen(void);
 static void render_monster(void);
 static void check_the_buttons(void);
-static void setup_monster_menu(void);
 static void setup_main_menu(void);
+static void setup_monster_menu(void);
 static void exit_app(void);
 
 typedef void (*state_to_function_map_fn_type)(void);
@@ -234,7 +234,7 @@ static void unregister_ir_packet_callback(void)
 enum menu_level_t {
     MAIN_MENU,
     MONSTER_MENU,
-    INACTIVE
+    DESCRIPTION
 } menu_level;
 
 struct menu_item
@@ -359,12 +359,10 @@ static void draw_menu(void)
     FbColor(WHITE);
     FbMove(8, 5);
     FbWriteLine(menu.title);
-    if(menu_level == MONSTER_MENU){
+    if(menu_level != MONSTER_MENU){
         int nunlocked = 0;
         char available_monsters[3];
         char unlocked_monsters[3];
-        itoa(available_monsters, nmonsters + nvendor_monsters, 10);
-
         for(i = 0; i < nmonsters; i++)
         {
             if(monsters[i].status == 1)
@@ -380,12 +378,11 @@ static void draw_menu(void)
                 nunlocked++;
             }
         }
-
-
-
+        itoa(available_monsters, nmonsters + nvendor_monsters, 10);
         itoa(unlocked_monsters, nunlocked, 10);
 
-        FbMove(8,25);
+        FbMove(1,25);
+        FbWriteLine("Collected: ");
         FbWriteLine(unlocked_monsters);
         FbWriteLine("/");
         FbWriteLine(available_monsters);
@@ -434,8 +431,9 @@ static void change_menu_level(enum menu_level_t level)
             break;
         case MONSTER_MENU:
             setup_monster_menu();
+            screen_changed = 1;
             break;
-        case INACTIVE:
+        case DESCRIPTION:
             return;
     }
 }
@@ -451,7 +449,10 @@ static void show_message(char *message)
     FbMove(8, 5);
     FbWriteLine(message);
 
-    change_menu_level(INACTIVE);
+    FbMove(5, 120);
+    FbWriteLine("<Back");
+
+    change_menu_level(DESCRIPTION);
     app_state = RENDER_SCREEN;
     screen_changed = 1;
 }
@@ -481,17 +482,23 @@ static void render_monster(void)
         color = monsters[current_monster].color;
     }
 
-
     FbClear();
+    if(current_monster == initial_mon)
+    {
+        FbMove(0,10);
+        FbWriteLine("--starting-mon--");
+    }
     FbMove(0,0);
     FbWriteLine(name);
-    FbWriteLine("\n");
     draw_object(drawing, npoints, 0, color, smiley_x, smiley_y);
 
-    FbMove(120,120);
-    FbWriteLine(">");
+    FbMove(5, 120);
+    FbWriteLine("<Back");
+
+    FbMove(90,120);
+    FbWriteLine("desc>");
+
     FbSwapBuffers();
-    change_menu_level(INACTIVE);
     screen_changed = 1;
     app_state = RENDER_SCREEN;
 }
@@ -527,7 +534,7 @@ static void render_screen(void)
 static void print_menu_info(void)
 {
     /* int next_state = menu.item[menu.current_item].next_state
-       system("clear"); */
+       */system("clear");
     printf("current item: %d\nmenu level: %d\ncurrent monster: %d\n menu item: %s\nn-menu-items: %d\ncookie_monster: %d\n",
     menu.current_item, menu_level, current_monster, menu.item[menu.current_item].text, menu.nitems, menu.item[menu.current_item].cookie);
 }
@@ -539,37 +546,59 @@ static void check_the_buttons(void)
 
     if (UP_BTN_AND_CONSUME)
     {
-        if(menu_level == INACTIVE)
-            change_menu_level(MONSTER_MENU);
+        switch(menu_level){
+            case MAIN_MENU:
+                menu_change_current_selection(-1);
+                break;
+            case MONSTER_MENU:
+                menu_change_current_selection(-1);
+                current_monster = menu.item[menu.current_item].cookie;
+                render_monster();
+                break;
+            case DESCRIPTION:
+                break;
+        }
         something_changed = 1;
-        menu_change_current_selection(-1);
-        if(menu_level == MONSTER_MENU)
-            current_monster = menu.item[menu.current_item].cookie;
         #ifdef __linux__
             print_menu_info();
         #endif
     }
     else if (DOWN_BTN_AND_CONSUME)
     {
-        if(menu_level == INACTIVE)
-            change_menu_level(MONSTER_MENU);
+        switch(menu_level){
+            case MAIN_MENU:
+                menu_change_current_selection(1);
+                break;
+            case MONSTER_MENU:
+                menu_change_current_selection(1);
+                current_monster = menu.item[menu.current_item].cookie;
+                render_monster();
+                break;
+            case DESCRIPTION:
+                break;
+        }
         something_changed = 1;
-        menu_change_current_selection(1);
-        if(menu_level == MONSTER_MENU)
-            current_monster = menu.item[menu.current_item].cookie;
         #ifdef __linux__
             print_menu_info();
         #endif
     }
     else if (LEFT_BTN_AND_CONSUME)
     {
-        if(menu_level == INACTIVE)
-            change_menu_level(MONSTER_MENU);
+        switch(menu_level){
+            case MAIN_MENU:
+                break;
+            case MONSTER_MENU:
+                change_menu_level(MAIN_MENU);
+                break;
+            case DESCRIPTION:
+                change_menu_level(MONSTER_MENU);
+                break;
+        }
         something_changed = 1;
     }
     else if (RIGHT_BTN_AND_CONSUME)
     {
-        if(menu_level == INACTIVE)
+        if(menu_level == MONSTER_MENU)
         {
             if(current_monster >= 100)
             {
@@ -613,7 +642,7 @@ static void check_the_buttons(void)
         }
 
         /* if the back button is pressed we will return to the main menu */
-        if(back || menu_level == INACTIVE)
+        if(back || menu_level == DESCRIPTION)
             change_menu_level(MAIN_MENU);
     }
 
@@ -628,7 +657,6 @@ static void setup_monster_menu(void)
     menu_clear();
     menu.menu_active = 0;
     strcpy(menu.title, "Monsters");
-    current_monster = 0;
 
     for(i = 0; i < nmonsters; i++){
         if(monsters[i].status)
@@ -640,8 +668,8 @@ static void setup_monster_menu(void)
             menu_add_item(vendor_monsters[i].name, RENDER_MONSTER, i+100);
     }
 
-    menu_add_item("back", RENDER_SCREEN, 0);
     screen_changed = 1;
+    render_monster();
 }
 
 static void setup_main_menu(void)
@@ -684,7 +712,7 @@ static void ir_packet_callback(struct IRpacket_t packet)
 
 static void app_init(void)
 {
-    int initial_mon;
+    // int initial_mon;
     int i;
 
     FbInit();
