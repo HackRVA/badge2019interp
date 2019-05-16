@@ -88,7 +88,7 @@ static int packet_queue[QUEUE_SIZE] = { 0 };
 
 static int screen_changed = 0;
 static int smiley_x, smiley_y;
-static int current_monster = 0;
+static int current_monster;
 static int nmonsters = 0;
 static int nvendor_monsters = 0;
 static int app_state = INIT_APP_STATE;
@@ -534,7 +534,7 @@ static void render_screen(void)
 static void print_menu_info(void)
 {
     /* int next_state = menu.item[menu.current_item].next_state
-       */system("clear");
+       system("clear"); */
     printf("current item: %d\nmenu level: %d\ncurrent monster: %d\n menu item: %s\nn-menu-items: %d\ncookie_monster: %d\n",
     menu.current_item, menu_level, current_monster, menu.item[menu.current_item].text, menu.nitems, menu.item[menu.current_item].cookie);
 }
@@ -663,10 +663,12 @@ static void setup_monster_menu(void)
             menu_add_item(monsters[i].name, RENDER_MONSTER, i);
     }
 
+    #if 0
     for(i = 0; i < nvendor_monsters; i++){
         if(vendor_monsters[i].status)
             menu_add_item(vendor_monsters[i].name, RENDER_MONSTER, i+100);
     }
+    #endif
 
     screen_changed = 1;
     render_monster();
@@ -727,6 +729,7 @@ static void app_init(void)
     nmonsters = ARRAYSIZE(monsters);
     nvendor_monsters = ARRAYSIZE(vendor_monsters);
     initial_mon = BADGE_ID % nmonsters;
+    current_monster = initial_mon;
     enable_monster(initial_mon);
 
     for (i = 0; i < ARRAYSIZE(monsters); i++)
