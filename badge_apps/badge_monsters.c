@@ -466,24 +466,25 @@ static void render_monster(void)
 {
     int npoints, color;
     const struct point *drawing = current_monster > 100 ? vendor_monsters[current_monster - 100].drawing : monsters[current_monster].drawing;
-    /* char *name; */
+    char *name;
 
     if(current_monster > 100)
     {
-        /* name = vendor_monsters[current_monster-100].name; */
+        name = vendor_monsters[current_monster-100].name;
         npoints = vendor_monsters[current_monster-100].npoints;
         color = vendor_monsters[current_monster-100].color;
     }
     else
     {
-        /* name = monsters[current_monster].name; */
+        name = monsters[current_monster].name;
         npoints = monsters[current_monster].npoints;
         color = monsters[current_monster].color;
     }
 
 
     FbClear();
-    /* FbWriteLine(name); */
+    FbMove(0,0);
+    FbWriteLine(name);
     FbWriteLine("\n");
     draw_object(drawing, npoints, 0, color, smiley_x, smiley_y);
 
