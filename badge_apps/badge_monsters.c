@@ -492,8 +492,14 @@ static void render_monster(void)
     FbWriteLine(name);
     draw_object(drawing, npoints, 0, color, smiley_x, smiley_y);
 
+    FbColor(WHITE);
+    FbMove(43,120);
+    FbWriteLine("|down|");
+    FbColor(GREEN);
+
     FbMove(5, 120);
     FbWriteLine("<Back");
+
 
     FbMove(90,120);
     FbWriteLine("desc>");
