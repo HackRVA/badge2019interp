@@ -445,7 +445,7 @@ void relay_ir_packet_to_usb_serial(union IRpacket_u p)
 			break;
 		USB_Out_Buffer[j] = c[i];
 	}
-#define DEBUG_IR_IN 1
+#define DEBUG_IR_IN 0
 #if DEBUG_IR_IN
 	/* To debug packets coming in IR and going out serial */
 	to_hex(p.v, buffer[line]);
