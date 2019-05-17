@@ -31,6 +31,22 @@ char username[NAMESIZE] = { 0 };
 extern char username[NAMESIZE];
 #endif
 
+/* Restore username from flash.  uname is a pointer to the memory
+ * in RAM to which the data should be stored. The user name is length
+ * characters, not necessarily NULL terminated.
+ */
+void restore_username_from_flash(char *uname, int length)
+{
+}
+
+/* Restore username from flash.  uname is a pointer to the memory
+ * in RAM to which the data should be stored. The user name is length
+ * characters, not necessarily NULL terminated.
+ */
+void save_username_to_flash(char *uname, int length)
+{
+}
+
 #define INIT_APP_STATE 0
 #define DRAW_SCREEN 1
 #define RENDER_SCREEN 2
@@ -219,12 +235,14 @@ static void check_the_buttons(void)
 
 static void exit_app(void)
 {
+	save_username_to_flash(username, sizeof(username));
 	app_state = INIT_APP_STATE;
 	returnToMenus();
 }
 
 static void app_init(void)
 {
+	restore_username_from_flash(username, sizeof(username));
 	FbInit();
 	FbClear();
 	FbColor(WHITE);
