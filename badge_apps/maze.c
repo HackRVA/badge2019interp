@@ -221,6 +221,27 @@ static struct scroll_t {
 		"JABBERWOCK,",
 		"MY SON!",
 	},
+	{
+		"GIVE STRONG",
+		"DRINK TO THOSE",
+		"WHO ARE DYING",
+	},
+	{
+		"WE CANNOT",
+		"ESCAPE! THEY",
+		"ARE COMING!",
+	},
+	{
+		"READ NOT THE",
+		"BOOK OF FACES!",
+		"IT READS YOU!",
+	},
+	{
+		"ROBERT MORRIS",
+		"WAS HERE",
+		"NOV. 1988",
+	},
+
 };
 #define NSCROLLS (ARRAYSIZE(scroll))
 
