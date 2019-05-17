@@ -295,87 +295,87 @@ static void draw_menu(void)
 
 
 	if (all_game_data_received()) {
-	title[0] = '\0';
-	timecode[0] = '\0';
-	color = WHITE;
-	if (seconds_until_game_starts == NO_GAME_START_TIME) {
-		suppress_further_hits_until = -1;
-		strcpy(title, "GAME OVER");
-		strcpy(timecode, "");
-		color = YELLOW;
-	} else {
-		if (seconds_until_game_starts > 0) {
-			strcpy(title, "GAME STARTS IN");
-			itoa(timecode, seconds_until_game_starts, 10);
-			strcat(timecode, " SECS");
+		title[0] = '\0';
+		timecode[0] = '\0';
+		color = WHITE;
+		if (seconds_until_game_starts == NO_GAME_START_TIME) {
+			suppress_further_hits_until = -1;
+			strcpy(title, "GAME OVER");
+			strcpy(timecode, "");
 			color = YELLOW;
 		} else {
-			if (seconds_until_game_starts > -game_duration) {
-				strcpy(title, "TIME LEFT:");
-				itoa(timecode, game_duration + seconds_until_game_starts, 10);
+			if (seconds_until_game_starts > 0) {
+				strcpy(title, "GAME STARTS IN");
+				itoa(timecode, seconds_until_game_starts, 10);
 				strcat(timecode, " SECS");
-				color = WHITE;
-			} else {
-				suppress_further_hits_until = -1;
-				strcpy(title, "GAME OVER");
-				strcpy(timecode, "");
-				game_duration = -1;
-				seconds_until_game_starts = NO_GAME_START_TIME;
-				screen_changed = 1;
 				color = YELLOW;
+			} else {
+				if (seconds_until_game_starts > -game_duration) {
+					strcpy(title, "TIME LEFT:");
+					itoa(timecode, game_duration + seconds_until_game_starts, 10);
+					strcat(timecode, " SECS");
+					color = WHITE;
+				} else {
+					suppress_further_hits_until = -1;
+					strcpy(title, "GAME OVER");
+					strcpy(timecode, "");
+					game_duration = -1;
+					seconds_until_game_starts = NO_GAME_START_TIME;
+					screen_changed = 1;
+					color = YELLOW;
+				}
 			}
 		}
-        }
-	if (suppress_further_hits_until > 0) { /* have been hit recently */
-		static int old_deadtime = 0;
-		color = RED;
-		FbColor(color);
-		FbMove(10, 40);
-		strcpy(str, "DEAD TIME:");
-		itoa(str2, suppress_further_hits_until - current_time, 10);
-		if (old_deadtime != suppress_further_hits_until - current_time) {
-			old_deadtime = suppress_further_hits_until - current_time;
-			screen_changed = 1;
+		if (suppress_further_hits_until > 0) { /* have been hit recently */
+			static int old_deadtime = 0;
+			color = RED;
+			FbColor(color);
+			FbMove(10, 40);
+			strcpy(str, "DEAD TIME:");
+			itoa(str2, suppress_further_hits_until - current_time, 10);
+			if (old_deadtime != suppress_further_hits_until - current_time) {
+				old_deadtime = suppress_further_hits_until - current_time;
+				screen_changed = 1;
+			}
+			strcat(str, str2);
+			FbWriteLine(str);
 		}
+		FbColor(color);
+		if (game_variant != GAME_VARIANT_NONE) {
+			FbMove(10, 10);
+			strcpy(str2, game_type[game_variant % ARRAYSIZE(game_type)]);
+			FbWriteLine(str2);
+		}
+		if (team >= 0) {
+			FbMove(10, 20);
+			itoa(str, team, 10);
+			strcpy(str2, "TEAM:");
+			strcat(str2, str);
+			FbWriteLine(str2);
+		}
+		FbMove(10, 30);
+		strcpy(str, "HITS:");
+		itoa(str2, nhits, 10);
 		strcat(str, str2);
 		FbWriteLine(str);
-	}
-	FbColor(color);
-	if (game_variant != GAME_VARIANT_NONE) {
-		FbMove(10, 10);
-		strcpy(str2, game_type[game_variant % ARRAYSIZE(game_type)]);
-		FbWriteLine(str2);
-	}
-	if (team >= 0) {
-		FbMove(10, 20);
-		itoa(str, team, 10);
-		strcpy(str2, "TEAM:");
-		strcat(str2, str);
-		FbWriteLine(str2);
-	}
-	FbMove(10, 30);
-	strcpy(str, "HITS:");
-	itoa(str2, nhits, 10);
-	strcat(str, str2);
-	FbWriteLine(str);
-	FbMove(10, 100);
-	FbWriteLine(title);
-	FbMove(10, 110);
-	FbWriteLine(timecode);
+		FbMove(10, 100);
+		FbWriteLine(title);
+		FbMove(10, 110);
+		FbWriteLine(timecode);
 
 #define LASERTAG_DISPLAY_CURRENT_TIME 0
 #if LASERTAG_DISPLAY_CURRENT_TIME
-	/* Draw the current time */
-	itoa(str2, wclock.hour, 10);
-	strcpy(timecode, str2);
-	strcat(timecode, ":");
-	itoa(str2, wclock.min, 10);
-	strcat(timecode, str2);
-	strcat(timecode, ":");
-	itoa(str2, wclock.sec, 10);
-	strcat(timecode, str2);
-	FbMove(10, 120);
-	FbWriteLine(timecode);
+		/* Draw the current time */
+		itoa(str2, wclock.hour, 10);
+		strcpy(timecode, str2);
+		strcat(timecode, ":");
+		itoa(str2, wclock.min, 10);
+		strcat(timecode, str2);
+		strcat(timecode, ":");
+		itoa(str2, wclock.sec, 10);
+		strcat(timecode, str2);
+		FbMove(10, 120);
+		FbWriteLine(timecode);
 #endif
 	} /* else not all game data received */
 	to_hex(G_sysData.badgeId, badgeidstr);
