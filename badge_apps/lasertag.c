@@ -254,6 +254,8 @@ static void to_hex(unsigned int n, char buf[])
 	buf[8] = '\0';
 }
 
+static int all_game_data_received(void);
+
 static void draw_menu(void)
 {
 	int i, y, first_item, last_item;
@@ -292,6 +294,7 @@ static void draw_menu(void)
 	FbVerticalLine(SCREEN_XDIM - 5, SCREEN_YDIM / 2 - 2, SCREEN_XDIM - 5, SCREEN_YDIM / 2 + 10);
 
 
+	if (all_game_data_received()) {
 	title[0] = '\0';
 	timecode[0] = '\0';
 	color = WHITE;
@@ -374,6 +377,7 @@ static void draw_menu(void)
 	FbMove(10, 120);
 	FbWriteLine(timecode);
 #endif
+	} /* else not all game data received */
 	to_hex(G_sysData.badgeId, badgeidstr);
 	FbMove(131 - 4 * 8, 131 - 10);
 	FbWriteLine(badgeidstr + 4); /* only print last 4 digits, it's a 16 bit number. */
@@ -811,6 +815,24 @@ static void game_stop_powerups(void)
 	game_state = GAME_MAIN_MENU;
 }
 
+static void clear_game_data(void)
+{
+	seconds_until_game_starts = NO_GAME_START_TIME;
+	game_duration = -1;
+	team = -1;
+	game_variant = GAME_VARIANT_NONE;
+	game_id = -1;
+}
+
+static int all_game_data_received(void)
+{
+	return (seconds_until_game_starts != NO_GAME_START_TIME &&
+		game_duration != -1 &&
+		team != -1 &&
+		game_variant != GAME_VARIANT_NONE &&
+		game_id != -1);
+}
+
 static void process_packet(unsigned int packet)
 {
 	unsigned int payload;
@@ -824,10 +846,12 @@ static void process_packet(unsigned int packet)
 	opcode = payload >> 12;
 	switch (opcode) {
 	case OPCODE_SET_GAME_START_TIME:
+		if (!all_game_data_received()) /* Don't clear if we get a stray GAME START TIME packet */
+			clear_game_data(); /* GAME START TIME is the first part of the game data... clear old game data */
 		/* time is a 12 bit signed number */
 		v = payload & 0x0fff;
 		if (payload & 0x0800)
-			v = -v;
+			v = v | 0xfffff800;
 		seconds_until_game_starts = v;
 		set_game_start_timestamp(seconds_until_game_starts);
 		if (seconds_until_game_starts > 0)
@@ -858,7 +882,10 @@ static void process_packet(unsigned int packet)
 		/* We happen to know this is the last bit of data for a game that the base
 		 * station sends us. So at this time, we beep to indicate all the data for
 		 * the game has been recieved. */
-		setNote(50, 4000);
+		if (all_game_data_received())
+			setNote(80, 4000);
+		else
+			clear_game_data();
 		break;
 	case OPCODE_VENDOR_POWER_UP:
 		process_vendor_powerup(packet);
