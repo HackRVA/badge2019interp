@@ -568,9 +568,18 @@ static void process_hit(unsigned int packet)
 		return;
 
 	switch (game_variant) {
-	case GAME_VARIANT_TEAM_BATTLE:
 	case GAME_VARIANT_ZOMBIE:
-	case GAME_VARIANT_CAPTURE_THE_BADGE:
+		if (team == shooter_team) /* exclude friendly fire */
+			return;
+		if (shooter_team == 0) { /* shooter is zombie? */
+			team = 0; /* we become zombie */
+			/* Note: we do not transfer this info to the base station */
+			/* Instead the base station must re-construct this data from */
+			/* the hit records (if it even needs to). */
+		}
+		break;
+	case GAME_VARIANT_TEAM_BATTLE:
+	case GAME_VARIANT_CAPTURE_THE_BADGE: /* TODO: implement capt the badge.  Too hard, not gonna. */
 		if (team == shooter_team) /* exclude friendly fire */
 			return;
 	case GAME_VARIANT_FREE_FOR_ALL:
