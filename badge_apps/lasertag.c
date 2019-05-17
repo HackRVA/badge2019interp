@@ -377,7 +377,15 @@ static void draw_menu(void)
 		FbMove(10, 120);
 		FbWriteLine(timecode);
 #endif
-	} /* else not all game data received */
+	} else {
+		/* else not all game data received */
+		FbMove(10, 20);
+		FbWriteLine("AWAITING DATA");
+		FbMove(10, 30);
+		FbWriteLine("FROM BASE");
+		FbMove(10, 40);
+		FbWriteLine("STATION");
+	}
 	to_hex(G_sysData.badgeId, badgeidstr);
 	FbMove(131 - 4 * 8, 131 - 10);
 	FbWriteLine(badgeidstr + 4); /* only print last 4 digits, it's a 16 bit number. */
