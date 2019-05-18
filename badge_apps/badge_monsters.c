@@ -138,18 +138,18 @@ struct monster
 };
 
 struct monster monsters[] = {
-    {"eddie", ARRAYSIZE(eddie_points), 0, WHITE, eddie_points, "eddie description"},
-    {"godzilla", ARRAYSIZE(godzilla_points), 0, WHITE, godzilla_points, "godzilla description"},
-    {"worm", ARRAYSIZE(worm_points), 0, WHITE, worm_points, "worm description"},
-    {"stacksmasher", ARRAYSIZE(stacksmasher_points), 0, WHITE, stacksmasher_points, "stacksmasher description"},
-    {"heartbleed", ARRAYSIZE(heartbleed_points), 0, WHITE, heartbleed_points, "heartbleed description"},
-    {"spectre", ARRAYSIZE(spectre_points), 0, WHITE, spectre_points, "spectre description"},
-    {"zombieload", ARRAYSIZE(zombieload_points), 0, WHITE, zombieload_points, "zombieload description"},
-    {"octomon", ARRAYSIZE(octomon_points), 0, WHITE, octomon_points, "octomon description"},
-    {"hrvamon", ARRAYSIZE(hrvamon_points), 0, WHITE, hrvamon_points, "hrvamon description"},
-    {"mcturtle", ARRAYSIZE(mcturtle_points), 0, WHITE, mcturtle_points, "mcturtle description"},
-    {"goat_mon", ARRAYSIZE(goat_mon_points), 0, WHITE, goat_mon_points, "goat mon description"},
-    {"freshmon", ARRAYSIZE(freshmon_points), 0, WHITE, freshmon_points, "this is freshmon, the freshest of all the mon"},
+    {"eddie", ARRAYSIZE(eddie_points), 0, WHITE, eddie_points, "Sometimes protective and Eddie is the perfect guy every girl wants to date"},
+    {"godzilla", ARRAYSIZE(godzilla_points), 0, WHITE, godzilla_points, "a cross between a gorilla and a whale"},
+    {"worm", ARRAYSIZE(worm_points), 0, WHITE, worm_points, "An earthworm is a tube-shaped, segmented worm found in the phylum Annelida."},
+    {"stacksmasher", ARRAYSIZE(stacksmasher_points), 0, WHITE, stacksmasher_points, "Stack smashing is a form of vulnerability where the stack of a computer application or OS is forced to overflow."},
+    {"heartbleed", ARRAYSIZE(heartbleed_points), 0, WHITE, heartbleed_points, "Heartbleed is a security bug in the OpenSSL cryptography library"},
+    {"spectre", ARRAYSIZE(spectre_points), 0, WHITE, spectre_points, "Spectre (security vulnerability) Spectre is a vulnerability that affects modern microprocessors that perform branch prediction."},
+    {"zombieload", ARRAYSIZE(zombieload_points), 0, WHITE, zombieload_points, "This one has the delightful name of ZombieLoad"},
+    {"octomon", ARRAYSIZE(octomon_points), 0, WHITE, octomon_points, "a monster made with 8 sides"},
+    {"hrvamon", ARRAYSIZE(hrvamon_points), 0, WHITE, hrvamon_points, "come check out hackrva maker space Thursday nights at 7. 1600 Roseneath Road Suite E Richmond, VA 23230"},
+    {"mcturtle", ARRAYSIZE(mcturtle_points), 0, WHITE, mcturtle_points, "McTerrible McTurtle"},
+    {"goat_mon", ARRAYSIZE(goat_mon_points), 0, WHITE, goat_mon_points, "this goat is scared because they are alone in the world"},
+    {"freshmon", ARRAYSIZE(freshmon_points), 0, WHITE, freshmon_points, "a fusion of smirkmon and grinmon. This badge monster likes to troll people really hard for fun"},
     {"othermon", ARRAYSIZE(othermon_points), 0, WHITE, othermon_points, "some nice words here"},
     {"smileymon", ARRAYSIZE(smiley_points), 0, RED, smiley_points, "some nice words here"},
     {"othermon", ARRAYSIZE(smiley_points), 0, WHITE, othermon_points, "some nice words here"},
@@ -167,7 +167,7 @@ struct monster vendor_monsters[] = {
     {"vothermon", ARRAYSIZE(smiley_points), 0, CYAN, othermon_points, "some nice words here"}
 };
 
-int initial_mon = 0;
+int initial_mon;
 
 #ifndef __linux__
 /* Use draw_object() from maze.c */
