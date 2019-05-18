@@ -256,6 +256,7 @@ static void enable_monster(int monster_id)
         return;
 
     monsters[monster_id].status = 1;
+    setNote(90, 4000);
     #ifdef __linux__
         printf("enabling monster: %d\n", monster_id);
     #endif
@@ -504,9 +505,10 @@ static void trade_monsters(void)
 	static counter = 0;
 
 	counter++;
-	if ((counter % 1000) == 0) { /* transmit our monster IR packet */
+	if ((counter % 10000) == 0) { /* transmit our monster IR packet */
 		send_ir_packet(build_packet(1,1,BADGE_IR_GAME_ADDRESS, BADGE_IR_BROADCAST_ID,
 			(OPCODE_XMIT_MONSTER << 12) | (initial_mon & 0x01ff)));
+	    setNote(50, 100);
 	}
 	if (!trading_monsters_enabled) {
 		FbClear();
