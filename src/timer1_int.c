@@ -41,7 +41,8 @@ unsigned char G_firstHalf = 0;
 unsigned char G_lastHalf = 0;
 unsigned char G_halfCount = 0;
 
-
+unsigned char packets_seen = 0; 
+unsigned char num_packets_seen = 0; 
 
 #define SYS_FREQ 		(40000000L)
 
@@ -173,6 +174,10 @@ void __ISR(_TIMER_2_VECTOR, IPL5SOFT) Timer2Handler(void)
 		   IRpacketsIn[IRpacketInNext].p.data = G_IRerror;
 		   G_IRerror = 0;
 		}
+		else { //track ir packets seen for screen saver/sleep mode
+            packets_seen = 1;
+            num_packets_seen++;
+        }
 
 		/* if packet is not for us don't keep it */
 		if ((IRpacketsIn[IRpacketInNext].p.badgeId == 0) 

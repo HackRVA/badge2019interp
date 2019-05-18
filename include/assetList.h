@@ -10,7 +10,8 @@
 */
 enum {
     DRBOB=0,
-//    HACKRVA4,
+    HACKRVA4,
+    RVASEC2016,
     FONT,
 
     LASTASSET,
