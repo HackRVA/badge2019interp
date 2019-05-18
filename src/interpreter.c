@@ -212,13 +212,13 @@ void IflashErase()
 unsigned int IflashWrite(unsigned int data, unsigned int loc) {
     //NVMWriteWord((void *)(G_flashstart + loc*4), data);
     G_sysData.badgeId = data;
-    flashWriteKeyValue(&G_sysData, &G_sysData, sizeof(struct sysData_t));
+    flashWriteKeyValue((unsigned int)&G_sysData, (char *)&G_sysData, sizeof(struct sysData_t));
 
     return (loc);
 }
 
 unsigned int IflashRead(unsigned int loc) {
-    flashReadKeyValue(&G_sysData, &G_sysData, sizeof(struct sysData_t));
+    flashReadKeyValue((unsigned int)&G_sysData, (char *)&G_sysData, sizeof(struct sysData_t));
 
     return(loc);
 }

@@ -25,9 +25,17 @@ int USB_Out_Buffer_Len = 0; /* For base station, USB buffers are not asciiz stri
 #endif
 
 /*
-  persistant (flash) system data 
+  inital system data, will be save/restored from flash
 */
-struct sysData_t G_sysData = { { 0 }, INITIAL_BADGE_ID, { 0 }, { 0 } };
+struct sysData_t G_sysData = {
+	.name={"               "}, 
+	.badgeId=INITIAL_BADGE_ID, 
+	.sekrits={ 0 }, 
+	.achievements={ 0 },
+	.ledBrightness=255,
+	.backlight=255
+};
+
 struct sysData_t G_sysData_tmp; /* for reading from flash */
 
 const char hextab[16]={"0123456789ABCDEF"};
@@ -100,11 +108,6 @@ void UserInit(void)
 
     //LCDBars();
 
-    /* if sysData exists in rom, read it */
-    if (flashReadKeyValue(&G_sysData, &G_sysData_tmp, sizeof(struct sysData_t)))
-	flashReadKeyValue(&G_sysData, &G_sysData, sizeof(struct sysData_t));
-
-    //for (i=0; i<10; i++) username[i] = G_sysData.name[i];
 
     FbInit();
     FbClear();
@@ -182,7 +185,6 @@ void UserInit(void)
 
       LATA9 ground/open drain
     */
-#ifdef PAULSHACKEDBADGE
     TRISCbits.TRISC5 = 0; // output
     CNPUCbits.CNPUC5 = 0; // pullup off
     CNPDCbits.CNPDC5 = 0; // pulldown off
@@ -203,7 +205,6 @@ void UserInit(void)
     CNPDAbits.CNPDA9 = 0; // pulldown off
     ODCAbits.ODCA9 = 1;   // open drain ON makes this effectively a ground pin
     LATAbits.LATA9 = 0;   // draining
-#endif
 
 
     /*
@@ -225,6 +226,10 @@ void UserInit(void)
     FbWriteLine("testing");
     FbMove(10,20);
     FbPushBuffer();
+
+    /* read sysData from flash fails if no data */
+    flashReadKeyValue((unsigned int)&G_sysData, (unsigned char *)&G_sysData, sizeof(struct sysData_t));
+    restore_username_from_flash(G_sysData.name, 10);
 
     timerInit();
     flareled(128, 64, 255);
