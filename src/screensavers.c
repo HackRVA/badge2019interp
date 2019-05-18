@@ -58,12 +58,12 @@ void hack_the_dragon(){
     red(100);
     FbMove(5, 20);
     FbColor(RED);
-    FbWriteLine(drag_hack);
+    FbWriteLine((unsigned char *)(drag_hack));
 
     unsigned int i = 0;
     for(i=0; i<(8 - popup_time%8); i++){
         FbMove(17, 35+ (i*10));
-        FbWriteLine(drag_hack_num);
+        FbWriteLine((unsigned char *)(drag_hack_num));
     }
 
     FbSwapBuffers();
@@ -239,10 +239,10 @@ void for_president(){
 
     FbMove(22, 17);
     FbColor(WHITE);
-    FbWriteLine(president1);
+    FbWriteLine((unsigned char *)(president1));
 
     FbMove(32, 35);
-    FbWriteLine(president2);
+    FbWriteLine((unsigned char *)(president2));
 
     if(popup_time > 30){
         unsigned char i = 0;
@@ -255,10 +255,10 @@ void for_president(){
     else{
         FbColor(WHITE);
         FbMove(32, 70);
-        FbWriteLine(president3);
+        FbWriteLine((unsigned char *)(president3));
 
         FbMove(12, 80);
-        FbWriteLine(president4);
+        FbWriteLine((unsigned char *)(president4));
     }
     anim_cnt++;
     FbSwapBuffers();
@@ -348,19 +348,19 @@ void bluescreen(){
     FbFilledRectangle(75, 10);
 
     FbMove(4, 40);
-    FbWriteLine(bs2);
+    FbWriteLine((unsigned char *)(bs2));
 
     if(popup_time < 40){
         FbMove(4, 60);
-        FbWriteLine(bs3);
+        FbWriteLine((unsigned char *)(bs3));
 
         FbMove(17, 70);
-        FbWriteLine(bs4);
+        FbWriteLine((unsigned char *)(bs4));
     }
 
     FbColor(BLUE);
     FbMove(27, 11);
-    FbWriteLine(bs1);
+    FbWriteLine((unsigned char *)(bs1));
     FbSwapBuffers();
 }
 
@@ -377,7 +377,7 @@ void just_the_badge_tips(){
     FbBackgroundColor(BLACK);
     FbColor(GREEN);
     FbMove(14, 4);
-    FbWriteLine(badgetips_header);
+    FbWriteLine((unsigned char *)(badgetips_header));
 
 
     FbColor(YELLOW);
