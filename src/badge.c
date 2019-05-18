@@ -608,7 +608,11 @@ void do_screen_save_popup(){
     
 }
 unsigned char is_dormant = 0;
+#if BASE_STATION_BADGE_BUILD
+unsigned char screen_save_lockout = 1;
+#else
 unsigned char screen_save_lockout = 0;
+#endif
 
 static unsigned char writeLOCK=0;
 void ProcessIO(void)
