@@ -49,14 +49,16 @@ extern char *strcat(char *dest, const char *src);
 #define GAME_MENU 1
 #define RENDER_SCREEN 2
 #define RENDER_MONSTER 3
-#define CHECK_THE_BUTTONS 4
-#define EXIT_APP 5
+#define TRADE_MONSTERS 4
+#define CHECK_THE_BUTTONS 5
+#define EXIT_APP 6
 
 static void app_init(void);
 static void game_menu(void);
 static void menu_clear(void);
 static void render_screen(void);
 static void render_monster(void);
+static void trade_monsters(void);
 static void check_the_buttons(void);
 static void setup_main_menu(void);
 static void setup_monster_menu(void);
@@ -69,6 +71,7 @@ static state_to_function_map_fn_type state_to_function_map[] = {
     game_menu,
     render_screen,
     render_monster,
+    trade_monsters,
     check_the_buttons,
     exit_app,
 };
@@ -92,6 +95,7 @@ static int current_monster;
 static int nmonsters = 0;
 static int nvendor_monsters = 0;
 static int app_state = INIT_APP_STATE;
+static int trading_monsters_enabled = 0;
 
 struct point
 {
@@ -449,12 +453,6 @@ static void show_message(char *message)
     screen_changed = 1;
 }
 
-/* stage_monster_trade -- should start listening and receiving IR */
-static void stage_monster_trade(void)
-{
-    show_message("Sync your badge with someone to collect more     monsters\n");
-}
-
 static void render_monster(void)
 {
     int npoints, color;
@@ -501,6 +499,27 @@ static void render_monster(void)
     app_state = RENDER_SCREEN;
 }
 
+static void trade_monsters(void)
+{
+	static counter = 0;
+
+	counter++;
+	if ((counter % 1000) == 0) { /* transmit our monster IR packet */
+		send_ir_packet(build_packet(1,1,BADGE_IR_GAME_ADDRESS, BADGE_IR_BROADCAST_ID,
+			(OPCODE_XMIT_MONSTER << 12) | (initial_mon & 0x01ff)));
+	}
+	if (!trading_monsters_enabled) {
+		FbClear();
+		FbMove(10, 60);
+		FbWriteLine("TRADING");
+		FbMove(10, 70);
+		FbWriteLine("MONSTERS!");
+		screen_changed = 1;
+		trading_monsters_enabled = 1;
+	}
+	app_state = RENDER_SCREEN;
+}
+
 void render_screen_save_monsters(void) {
     static unsigned char current_index = 0;
     int npoints, color;
@@ -541,6 +560,20 @@ static void print_menu_info(void)
 static void check_the_buttons(void)
 {
     int something_changed = 0;
+
+    /* If we are trading monsters, stop trading monsters on a button press */
+    if (trading_monsters_enabled) {
+		if (UP_BTN_AND_CONSUME ||
+			DOWN_BTN_AND_CONSUME ||
+			LEFT_BTN_AND_CONSUME ||
+			RIGHT_BTN_AND_CONSUME ||
+			BUTTON_PRESSED_AND_CONSUME) {
+			trading_monsters_enabled = 0;
+			app_state = GAME_MENU;
+			something_changed = 1;
+			return;
+		}
+    }
 
     if (UP_BTN_AND_CONSUME)
     {
@@ -631,7 +664,8 @@ static void check_the_buttons(void)
                     something_changed = 1;
                     break;
                 case 1:
-                    stage_monster_trade();
+		    app_state = TRADE_MONSTERS;
+		    something_changed = 1;
                     break;
                 case 2:
                     app_state = EXIT_APP;
@@ -642,6 +676,10 @@ static void check_the_buttons(void)
         /* if the back button is pressed we will return to the main menu */
         if(back || menu_level == DESCRIPTION)
             change_menu_level(MAIN_MENU);
+    }
+    if (trading_monsters_enabled && !something_changed) {
+	app_state = TRADE_MONSTERS;
+	return;
     }
 
     if (something_changed && app_state == CHECK_THE_BUTTONS)
@@ -677,7 +715,7 @@ static void setup_main_menu(void)
     menu_clear();
     strcpy(menu.title, "Badge Monsters");
     menu_add_item("Monsters", RENDER_SCREEN, 0);
-    menu_add_item("Trade Monsters", RENDER_SCREEN, 1);
+    menu_add_item("Trade Monsters", TRADE_MONSTERS, 1);
     menu_add_item("EXIT", EXIT_APP, 2);
     screen_changed = 1;
 }
@@ -686,8 +724,6 @@ static void game_menu(void)
 {
     draw_menu();
     check_for_incoming_packets();
-    send_ir_packet(build_packet(1,1,BADGE_IR_GAME_ADDRESS, BADGE_IR_BROADCAST_ID,
-    (OPCODE_XMIT_MONSTER << 12) | (initial_mon & 0x01ff)));
     app_state = RENDER_SCREEN;
 }
 
