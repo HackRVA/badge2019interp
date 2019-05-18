@@ -883,6 +883,10 @@ static void process_packet(unsigned int packet)
 	case OPCODE_SET_GAME_DURATION:
 		/* time is 12 unsigned number */
 		game_duration = payload & 0x0fff;
+		if (game_duration == 0) { /* duration == 0 means there is no scheduled game */
+			setNote(90, 8000);
+			clear_game_data();
+		}
 		screen_changed = 1;
 		break;
 	case OPCODE_HIT:
