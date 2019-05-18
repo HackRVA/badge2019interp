@@ -180,9 +180,23 @@ void rotate_cb(struct menu_t *h) {
     returnToMenus();
 };
 
+extern void S6B33_set_display_mode_inverted(void);
+extern void S6B33_set_display_mode_noninverted(void);
+
+static void invert_cb(struct menu_t *h) {
+	static int inverted = 0;
+	inverted = !inverted;
+	if (inverted)
+		S6B33_set_display_mode_inverted();
+	else
+		S6B33_set_display_mode_noninverted();
+	returnToMenus();
+}
+
 const struct menu_t rotate_m[] = {
     {"Default",   0|VERT_ITEM, FUNCTION, {(struct menu_t *)rotate_cb} },
     {"Rotated",   1|VERT_ITEM, FUNCTION, {(struct menu_t *)rotate_cb} },
+    {"Inverted",   1|VERT_ITEM, FUNCTION, {(struct menu_t *)invert_cb} },
     {"Back",      VERT_ITEM|LAST_ITEM|DEFAULT_ITEM, BACK, {NULL} },
 };
 
