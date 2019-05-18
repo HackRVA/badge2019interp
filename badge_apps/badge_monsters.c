@@ -102,8 +102,6 @@ static const struct point smiley_points[] =
 #include "smileymon.h"
 static const struct point freshmon_points[] =
 #include "freshmon.h"
-static const struct point othermon_points[] =
-#include "othermon.h"
 static const struct point mcturtle_points[] =
 #include "mcturtle.h"
 static const struct point goat_mon_points[] =
@@ -150,21 +148,15 @@ struct monster monsters[] = {
     {"mcturtle", ARRAYSIZE(mcturtle_points), 0, WHITE, mcturtle_points, "McTerrible McTurtle"},
     {"goat_mon", ARRAYSIZE(goat_mon_points), 0, WHITE, goat_mon_points, "this goat is scared because they are alone in the world"},
     {"freshmon", ARRAYSIZE(freshmon_points), 0, WHITE, freshmon_points, "a fusion of smirkmon and grinmon. This badge monster likes to troll people really hard for fun"},
-    {"othermon", ARRAYSIZE(othermon_points), 0, WHITE, othermon_points, "some nice words here"},
     {"smileymon", ARRAYSIZE(smiley_points), 0, RED, smiley_points, "some nice words here"},
-    {"othermon", ARRAYSIZE(smiley_points), 0, WHITE, othermon_points, "some nice words here"},
-    {"othermon", ARRAYSIZE(smiley_points), 0, GREEN, othermon_points, "some nice words here"},
     {"smileymon", ARRAYSIZE(smiley_points), 0, WHITE, smiley_points, "Othermon some nice words here Othermon some nice words hereOthermon some nice words here Othermon some nice words here"},
-    {"othermon", ARRAYSIZE(smiley_points), 0, BLUE, othermon_points, "some nice words here"},
-    {"othermon", ARRAYSIZE(smiley_points), 0, WHITE, othermon_points, "some nice words here"},
-    {"othermon", ARRAYSIZE(smiley_points), 0, WHITE, othermon_points, "some nice words here"},
 };
 
 struct monster vendor_monsters[] = {
-    {"vothermon", ARRAYSIZE(smiley_points), 0, CYAN, othermon_points, "some nice words here"},
-    {"vothermon", ARRAYSIZE(smiley_points), 0, CYAN, othermon_points, "some nice words here"},
+    {"vgoatmon", ARRAYSIZE(smiley_points), 0, CYAN, goat_mon_points, "some nice words here"},
+    {"vgoatmon", ARRAYSIZE(smiley_points), 0, CYAN, goat_mon_points, "some nice words here"},
     {"vsmileymon", ARRAYSIZE(smiley_points), 0, CYAN, smiley_points, "some nice words here"},
-    {"vothermon", ARRAYSIZE(smiley_points), 0, CYAN, othermon_points, "some nice words here"}
+    {"vgoatmon", ARRAYSIZE(smiley_points), 0, CYAN, goat_mon_points, "some nice words here"}
 };
 
 int initial_mon;
