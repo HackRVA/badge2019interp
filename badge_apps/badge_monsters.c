@@ -495,6 +495,24 @@ static void render_monster(void)
     app_state = RENDER_SCREEN;
 }
 
+void render_screen_save_monsters(void) {
+    static unsigned char current_index = 0;
+    int npoints, color;
+    if(current_index == ARRAYSIZE(monsters)) {
+        current_index = 0;    
+    }
+    else {
+        current_index++;
+    }
+    
+    const struct point *drawing = monsters[current_index].drawing;
+    npoints = monsters[current_index].npoints;
+    color = monsters[current_index].color;
+    FbClear();
+    FbColor(BLACK);
+    draw_object(drawing, npoints, 0, color, 64, 64);
+}
+
 static void render_screen(void)
 {
     app_state = CHECK_THE_BUTTONS;

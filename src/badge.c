@@ -563,21 +563,21 @@ void do_screen_save_popup(){
             }
         }
         else if(prob_val < HIGH_PROB_THRESH){
-            switch(current_screen_saver%4){
-                //case 0:
-                    //if(popup_time == POPUP_LENGTH)
-                    //    popup_time = POPUP_LENGTH/100;
-                    //disp_asset_saver();
-                    //break;
+            switch(current_screen_saver%5){
                 case 0:
-                    stupid_rects();
+                    if(popup_time == POPUP_LENGTH)
+                        popup_time = POPUP_LENGTH/100;
+                    disp_asset_saver();
                     break;
                 case 1:
+                    stupid_rects();
+                    break;
+                case 2:
                     if(popup_time == POPUP_LENGTH)
                         popup_time = POPUP_LENGTH/70;
                     dotty();
                     break;
-                case 2:
+                case 3:
                     carzy_tunnel_animator();
                     break;
                 //case 3:
@@ -585,7 +585,7 @@ void do_screen_save_popup(){
                       //  popup_time = POPUP_LENGTH/100;
                     //matrix();
                     //break;
-                case 3:
+                case 4:
                     if(popup_time == POPUP_LENGTH)
                         popup_time = POPUP_LENGTH/100;
                     just_the_badge_tips();

@@ -10,14 +10,16 @@
 extern unsigned int timestamp;
 extern unsigned int last_input_timestamp;
 extern unsigned short popup_time;
+extern void render_screen_save_monsters(void);
 
 unsigned short anim_cnt = 0;
+
 
 void disp_asset_saver(){
     unsigned char x, y;
     static unsigned char imgnum = 0;
     if(!anim_cnt){
-        imgnum = quick_rand(timestamp + popup_time) % 2;
+        imgnum = quick_rand(timestamp + popup_time) % 3;
         anim_cnt++;
     }
     //imgnum = 2;
@@ -28,18 +30,13 @@ void disp_asset_saver(){
             FbImage(HACKRVA4, 0);
             break;
 
-//        case 1:
-//            FbMove(0,20);
-//            FbImage(RVASEC2016, 0);
-//            break;
-
         case 1:
-            for(x=0; x<126; x+=20)
-                for(y=0; y<126; y+=8){
-                    FbColor(BLUE << ((x>>4) + (y>>4)));
-                    FbMove(x, y);
-                    //FbImage(BI_SPRITE, 0);
-                }
+            FbMove(0,20);
+            FbImage2bit(RVASEC2016, 0);
+            break;
+
+        case 2:
+            render_screen_save_monsters();
             break;
 //        case 2:
 //            for(x=0; x<126; x+=20)
