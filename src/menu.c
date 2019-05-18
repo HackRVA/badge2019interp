@@ -49,7 +49,11 @@ extern unsigned char num_packets_seen;
 #ifdef QC
  void (*runningApp)() = QC_cb;
 #else
+#if BASE_STATION_BADGE_BUILD
+ void (*runningApp)() = splash_cb;
+#else
  void (*runningApp)() = rvasec_splash_cb;
+#endif
 #endif
 
 

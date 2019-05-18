@@ -109,6 +109,8 @@ static struct rgbcolor {
 };
 
 extern char username[10];
+extern unsigned char screen_save_lockout;
+static unsigned char orig_screen_save_lockout;
 
 /* Builds up a 32 bit badge packet.
  * 1 bit for start
@@ -482,6 +484,8 @@ static void unregister_ir_packet_callback(void)
 
 static void initial_state(void)
 {
+	orig_screen_save_lockout = screen_save_lockout;
+	screen_save_lockout = 1; /* lock out the screen saver */
 	FbInit();
 	register_ir_packet_callback(ir_packet_callback);
 	queue_in = 0;
@@ -494,6 +498,7 @@ static void initial_state(void)
 static void game_exit(void)
 {
 	unregister_ir_packet_callback();
+	screen_save_lockout = orig_screen_save_lockout; /* restore screen saver lockout status */
 	returnToMenus();
 	game_state = INITIAL_STATE;
 }
@@ -878,6 +883,10 @@ static void process_packet(unsigned int packet)
 	case OPCODE_SET_GAME_DURATION:
 		/* time is 12 unsigned number */
 		game_duration = payload & 0x0fff;
+		if (game_duration == 0) { /* duration == 0 means there is no scheduled game */
+			setNote(90, 8000);
+			clear_game_data();
+		}
 		screen_changed = 1;
 		break;
 	case OPCODE_HIT:
