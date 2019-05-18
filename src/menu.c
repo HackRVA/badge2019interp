@@ -631,12 +631,27 @@ const unsigned char *splash_word_things[] = {"Cognition Module",
             FbMove(0, 2);
             FbImage2bit(RVASEC2016, 0);
             FbMove(10,SPLASH_SHIFT_DOWN);
-            
             FbColor(GREEN);
-            FbMove(1, 70);
+            FbLine(0,60,132,60);
+            FbLine(0,62,132,62);
+            FbLine(0,65,132,65);
+            FbLine(0,69,132,69);
+            FbLine(0,77,132,77);
+            
+            FbLine(105,60,145,77);
+            FbLine(95, 60,125,77);
+            FbLine(85, 60,105,77);
+            FbLine(75, 60,85,77);
+            FbLine(65, 60,65,77);
+            FbLine(55, 60,45,77);
+            FbLine(45, 60,25,77);
+            FbLine(35, 60,5,77);
+            FbLine(25, 60,0,65);
+            
+            FbMove(1, 90);
             FbWriteLine(splash_words_btn1);
             
-            FbMove(15, 80);
+            FbMove(15, 110);
             FbWriteLine(splash_words_btn2);
             
             // Hack, don't feel lik adjusting magice numbers
