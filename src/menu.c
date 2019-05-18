@@ -665,6 +665,10 @@ const unsigned char *splash_word_things[] = {"Cognition Module",
         
         wait++;
         
+        if(wait == (sizeof(unsigned short))-2) {
+            wait -= 1000;
+        }
+        
         if(BUTTON_PRESSED_AND_CONSUME){
             wait = 30000;
             buzzer = 1;
