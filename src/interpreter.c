@@ -207,32 +207,20 @@ char *getTime()
 
 void IflashErase()
 {
-    int i;
-
-    for (i=0; i<16; i++)
-       NVMErasePage((void *)G_flashstart+i*1024); // pic32mx2XX has 1024 bute pages
-
-
-    NVMWriteWord((void *)G_flashstart, (unsigned int)0xFACEBEEF);
 }
 
 unsigned int IflashWrite(unsigned int data, unsigned int loc) {
-    if (*G_flashstart == 0) IflashErase();
-
-    NVMWriteWord((void *)G_flashstart + loc*4, data);
-    if (loc == 1) G_sysData.badgeId = (G_flashstart[5] << 8 | G_flashstart[4]) ; /* update ram if badge id set */
+    //NVMWriteWord((void *)(G_flashstart + loc*4), data);
+    G_sysData.badgeId = data;
+    flashWriteKeyValue(&G_sysData, &G_sysData, sizeof(struct sysData_t));
 
     return (loc);
 }
 
 unsigned int IflashRead(unsigned int loc) {
-    unsigned int *r_addr;
+    flashReadKeyValue(&G_sysData, &G_sysData, sizeof(struct sysData_t));
 
-    if (*G_flashstart == 0) IflashErase();
-
-    r_addr = (unsigned int *)G_flashstart + loc*4;
-
-    return(*r_addr);
+    return(loc);
 }
 
 // function frame

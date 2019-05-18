@@ -2,36 +2,85 @@
 
 /*
 
+PEB 2018/05/18 
+  reworked to key/value pair
+
 PEB 2015/05/29
-
-simple usage case/POC:
-
-cc -g -O0 -o flash flash.c -DMAIN
-./flash
+  original
 
 */
 
-#ifdef MAIN
-#include "../include/flash.h"
-unsigned char G_flashstart[2048] = {0xFF, 0xFF};
-void NVMWriteWord(unsigned int *addr, unsigned int word) ;
-void NVMErasePage(unsigned int *addr);
-#else
+#ifndef MAIN
 #include "plib.h"
 #include "flash.h"
-#ifndef BADGE_FLASH_SECTION
-const unsigned char G_flashstart[2048] = {0x00, 0x00};
+#else
+#include <stdio.h>
+#include "flash.h"
 #endif
-#endif
-/*
-    not really a NV routine- used mostly for POC/MAIN testing 
-*/
-unsigned int NVMReadWord(unsigned int *addr) ;
 
+#define BLOCKSIG (unsigned int)0xFACEBEEF
+
+#ifdef MAIN
 /*
-    flashstart rounded to a 1024 boundary
+cc -m32 -DMAIN -O0 -g -I../include -o flash flash.c flash_addr.c
 */
-unsigned int *G_flashAddr = 0x0; 
+
+void NVMErasePage(void *addr)
+{
+    int i;
+    int *iaddr;
+
+    iaddr = (int *)addr;
+    for (i=0; i<1024; i++)
+	iaddr[i] = 0xFFFFFFFF;
+}
+
+int NVMWriteWord(unsigned int *addr, unsigned int val)
+{
+    printf("write addr %X val %X\n", addr, val);
+    *addr = val;
+}
+
+struct sysData_t G_sysData = { { 0 }, 42, { 0 }, { 0 } };
+struct sysData_t G_sysDataRom;
+int main(int argc, char** argv)
+{
+   char test[] = "tests";
+   char test2[] = "test2";
+   char derp[] = "derp";
+   char sysData[] = "the rain in spain stays mainly";
+   char sysOut[] =  "                              ";
+   char value2[8];
+   int i;
+
+   flashWriteKeyValue(&G_sysData, &G_sysData, sizeof(struct sysData_t));
+   flashReadKeyValue(&G_sysData, &G_sysDataRom, sizeof(struct sysData_t));
+   printf("sysData %d\n", G_sysDataRom.badgeId);
+/*
+   flashWriteKeyValue(12345, test, 5);
+   flashWriteKeyValue(9999, derp, 4);
+   flashWriteKeyValue(12345, test2, 5);
+
+
+   flashReadKeyValue(12345, value2, 5);
+   value2[5] = 0;
+   printf("value2 %s\n", value2);
+
+   flashReadKeyValue(9999, value2, 4);
+   value2[4] = 0;
+   printf("value2 %s\n", value2);
+
+   flashWriteKeyValue(sysData, sysData, sizeof(sysData));
+   flashReadKeyValue(sysData, sysOut, sizeof(sysOut));
+   printf("sysData %s\n", sysOut);
+
+   for (i=0; i<sizeof(sysOut); i++) sysOut[i]=0;
+
+   flashReadKeyValue(sysData, sysOut, 16);
+   printf("sysData %s\n", sysOut);
+*/
+}
+#endif
 
 // 
 // IMPORTANT NOTE FOR SELF WRITE FLASH
@@ -39,276 +88,151 @@ unsigned int *G_flashAddr = 0x0;
 // The flash can handle 10,000 writes and then it is worn out
 // do not put an Erase OR WriteWord in any kind of loop
 // 
-void flashInit()
+
+void flashEraseBlock()
 {
-   // align addr on a 1k boundary within the 2k block we allocated
-   // erase page first, don't have to erase if writing an area already erased
-   /* seems there should be a way to statically define this */
-#ifdef BADGE_FLASH_SECTION
-   G_flashAddr = (unsigned int *)G_flashstart;
-#else
-   G_flashAddr = (unsigned int *)(((unsigned long)(&G_flashstart)+1024) & 0b11111111111111111111110000000000); // 1k flash boundary
-#endif
+    int i;
+    unsigned int *faddr;
 
-#ifdef MAIN
-   {
-        unsigned int *fAddr;
-	int i;
+    for (i=0; i<16; i++)
+       NVMErasePage((void *)G_flashstart+i*1024); // pic32mx2XX has 1024 bute pages
 
-	fAddr = G_flashAddr;
-	for (i=0; i< FLASHSIZE/4; i++) *fAddr++ = 0xFF;
-   }
-#endif
-}
 
-void flashErasePage()
-{
-   if (!G_flashAddr) flashInit();
-
-   NVMErasePage(G_flashAddr);
+    faddr = (unsigned int *)G_flashstart;
+    NVMWriteWord((void *)faddr, BLOCKSIG); /* first key */
+    faddr++;
+    NVMWriteWord((void *)faddr, 0); /* len */
 }
 
 /*
-   write datasize bytes with appId and dataId identifiers
-   appId = unique < 255 Id => badge menu position
-   dataId = unique app assigned id so it can access data for read/write
+     20190518 flash block organization:
+
+     unsigned int key1
+     unsigned int len1
+     data of len1 rounded up to sizeof(unsigned int)
+     unsigned int key2
+     unsigned int len2
+     data of len2 rounded up to sizeof(unsigned int)
 */
-unsigned char NVwrite(unsigned char appId, unsigned char dataId, unsigned char *data, unsigned char dataSize)
+unsigned int *flashFindKey(unsigned int *faddr, unsigned int findkey)
 {
-   unsigned short i;
-   unsigned char *dAddr;
-   unsigned int *fAddr;
-   union flashWord_u hdr;
-   union flashWord_u fw;
-   unsigned char dataWordSize; /* datasize rounded up to closest 4 bytes */
+    unsigned int *found=0;
+    unsigned int key, len;
 
-   if (!G_flashAddr) flashInit();
+    //printf("flashFindKey faddr %X findkey %X\n", faddr, findkey);
+    key = *faddr++;
+    len = *faddr++;
+    faddr += ((len+3) & 0XFFFFFFFC); // round up by 4's
 
-   /*
-	find last data in block so we can 
-	write past it.
-   */
+    while (1) {
+	//printf("flashFindKey faddr %X key %X len %x\n", faddr, key, len);
 
-   fAddr = G_flashAddr;
-   while (1) {
-	hdr.l = *fAddr;
-	if (hdr.h.appId == 255) break; /* unwritten flash */
-	fAddr++; /* incr the read that already happen */
-        dataWordSize = (hdr.h.dataSize+3) & 0xFFFFFFFC; /* round datablock up to int/4bytes */
+        found = faddr;
+	key = *faddr++;
+	len = *faddr++;
 
-#ifdef MAIN
-	printf("skipover appId %d\n", hdr.h.appId);
-	printf("skipover dataId %d\n", hdr.h.dataId);
-	printf("skipover dataSize %d\n", hdr.h.dataSize);
-	printf("skipover dataWordSize %d\n", dataWordSize);
-#endif
-
-	fAddr += dataWordSize; /* skip over data block */
-
-	/* ran out of space? */
-	if (fAddr > (G_flashAddr+FLASHSIZE)) return 0;
-   }
-
-   hdr.h.appId = appId;
-   hdr.h.dataId = dataId;
-   hdr.h.dataSize = dataSize;
-   hdr.h.pad = 0; /* pad: write has to be int aligned */
-   NVMWriteWord(fAddr++, hdr.l);
-
-#ifdef MAIN
-	printf("write appId %d\n", hdr.h.appId);
-	printf("write dataId %d\n", hdr.h.dataId);
-	printf("write dataSize %d\n", hdr.h.dataSize);
-#endif
-
-   dAddr = data;
-   for (i=0; i<hdr.h.dataSize; i+=4) {
-	fw.b[0] = *dAddr++;
-	fw.b[1] = *dAddr++;
-	fw.b[2] = *dAddr++;
-	fw.b[3] = *dAddr++;
-	NVMWriteWord(fAddr++, fw.l);
-   }
-   return dataSize;
-}
-
-/*
-   read at most datasize bytes the have appId and dataId identifiers
-   appId = unique < 255 Id => badge menu position
-   dataId = unique app assigned id so it can access data for read/write
-*/
-unsigned char NVread(unsigned char appId, unsigned char dataId, unsigned char *data, unsigned char dataSize)
-{
-   unsigned short i;
-   unsigned int *fAddr;
-   union flashWord_u hdr;
-   union flashWord_u fw;
-   unsigned char dataWordSize; /* datasize rounded up to closest 4 bytes */
-
-   if (!G_flashAddr) flashInit();
-
-   fAddr = G_flashAddr;
-   while (1) {
-	hdr.l = NVMReadWord(fAddr);
-	fAddr++;
-
-	if (hdr.h.appId == 255) break; /* unwritten flash, done */
-
-#ifdef MAIN
-	printf("appId %d\n", hdr.h.appId);
-	printf("dataId %d\n", hdr.h.dataId);
-	printf("dataSize %d\n", hdr.h.dataSize);
-#endif
-
-	if (hdr.h.appId == appId) {
-	    if (hdr.h.dataId == dataId) {
-		unsigned char calcDataSize;
-
-		calcDataSize = (hdr.h.dataSize < dataSize) ? hdr.h.dataSize : dataSize;
-		/* first do full 4 byte reads */
-		//for (i=0; i<(hdr.h.dataSize/4); i++) {   -> this would not use user specfied data size it would use stored datasize
-		for (i=0; i<(calcDataSize/4); i++) {
-		    fw.l = NVMReadWord(fAddr++);
-		    *data++ = fw.b[0];
-		    *data++ = fw.b[1];
-		    *data++ = fw.b[2];
-		    *data++ = fw.b[3];
-		}
-		/* last partial read -> 0,1,2 bytes */
-		//if (hdr.h.dataSize & 0x3) {              -> this would not use user specfied data size it would use stored datasize
-		if (calcDataSize & 0x3) {
-		    unsigned char b;
-
-		    fw.l = NVMReadWord(fAddr++); /* partial read */
-		    //for (b=0; b<(hdr.h.dataSize & 0x3); b++)
-		    for (b=0; b<(calcDataSize & 0x3); b++)
-		        *data++ = fw.b[b];
-		}
-		return calcDataSize;
-		//return hdr.h.dataSize;
-	    }
+	//printf("flashFindKey AFTER faddr %X key %X len %x\n", faddr, key, len);
+	if (len == 0xFFFFFFFF) { /* end of block */
+	    found = 0;
+	    break; /* not valid, at end */
 	}
-        dataWordSize = (hdr.h.dataSize+3) & 0xFFFFFFFC; /* round datablock up to int/4bytes */
-#ifdef MAIN
-	printf("skip %d\n", dataWordSize);
-#endif
-	fAddr += dataWordSize;
+	if (key == findkey) break; 
+	faddr += ((len+3) & 0XFFFFFFFC); // round up by 4's
+    }
+/*
+    if (found == 0)
+	printf("flashFindKey not faddr %X findkey %X\n", faddr, findkey);
+    else
+	printf("flashFindKey found key %X len %X\n", found[0], found[1]);
+*/
 
-	if (fAddr > (G_flashAddr+FLASHSIZE)) break;
-   }
-   return 0;
+    return found;
 }
 
-#define SYSID 0
-#define DATAID 0
-unsigned char sysDataRead(struct sysData_t *sdata)
+int flashWriteKeyValue( unsigned int valuekey, char *value, unsigned int valuelen)
 {
-    return NVread(SYSID, DATAID, (unsigned char *)sdata, sizeof(struct sysData_t));
+    unsigned int *faddr, *end=0;
+    unsigned int v=0;
+    unsigned int d=0;
+    unsigned int key, flen=0;
+
+    faddr = (unsigned int *)G_flashstart;
+    key = *faddr++;
+    flen = *faddr++;
+
+    //printf("faddr %X key %X len %X\n", faddr, key, flen);
+    if (key != BLOCKSIG) flashEraseBlock();
+
+    faddr = (unsigned int *)G_flashstart;
+    key = *faddr++;
+    flen = *faddr++;
+    //printf("writeKey: faddr %X fkey %X flen %X\n", faddr, key, flen);
+
+    /* 
+       find end of block
+    */
+    while (1) {
+        end = faddr;
+	key = *faddr++;
+	flen = *faddr++;
+	if (flen == 0xFFFFFFFF) break; /* not valid, at end */
+	faddr += ((flen+3) & 0XFFFFFFFC); // round up by 4's
+    }
+    if (faddr == 0) return 0; // wtf
+
+    NVMWriteWord((void *)end++, valuekey);
+    NVMWriteWord((void *)end++, valuelen);
+
+    v=0;
+    while (v < valuelen) {
+	d = 0;
+	d = value[v] << 24;
+	if ((v+1) < valuelen) d |= (value[v+1] << 16);
+	if ((v+2) < valuelen) d |= (value[v+2] <<  8);
+	if ((v+3) < valuelen) d |= (value[v+3]      );
+
+	NVMWriteWord((void *)end++, d);
+	v += 4;
+    }
+    return 1;
 }
 
-unsigned char sysDataWrite(struct sysData_t *sdata)
+int flashReadKeyValue(unsigned int valuekey, char *value, unsigned int valuelen)
 {
-    return NVwrite(SYSID, DATAID, (unsigned char *)sdata, sizeof(struct sysData_t));
+    unsigned int *found, *next;
+    unsigned int key, flen, v, d;
+
+    //printf("ReadKey valuekey %X\n", valuekey);
+    if (*G_flashstart != BLOCKSIG) {
+//	avoid having this run when the badge first boots and reads user info
+//	flashEraseBlock();
+//	printf("not erased\n");
+	return 0;
+    }
+
+    next = found = flashFindKey((unsigned int *)G_flashstart, valuekey);
+    //printf("found %X valuekey %X\n", found, valuekey);
+    while (next) {
+	next = flashFindKey(found, valuekey);
+	if (next != 0) found = next;
+    }
+    if (found == 0) return 0;
+
+    key = *found++;
+    flen = *found++;
+    //printf("found %X %X len %X\n", found, key, flen);
+
+    // check for short buffer
+    flen = (flen > valuelen) ? valuelen : flen;
+    v=0;
+    while (v < flen) {
+	d = *found++;
+	value[v] = (d >> 24) & 0xFF;
+	if ((v+1) < flen) value[v+1] = (d >> 16) & 0xFF;
+	if ((v+2) < flen) value[v+2] = (d >>  8) & 0xFF;
+	if ((v+3) < flen) value[v+3] = d & 0xFF;
+
+	v += 4;
+    }
+    return (found != 0);
 }
-
-
-#ifndef MAIN
-
-unsigned int NVMReadWord(unsigned int *addr) 
-{
-    return *addr;
-}
-
-#else
-#include <stdio.h>
-#include <string.h>
-
-char buffer[128];
-FILE *flashRead_fd=0;
-FILE *flashWrite_fd=0;
-
-void dumpSys(struct sysData_t *sdata)
-{
-    printf("name %s \n", sdata->name);
-    printf("sekrits %s \n", sdata->sekrits);
-    printf("ach %s \n", sdata->achievements);
-}
-
-void NVMErasePage(unsigned int *addr)
-{
-    fprintf(flashWrite_fd, "erase addr %u\n", addr);
-}
-
-void NVMWriteWord(unsigned int *addr, unsigned int word) 
-{
-    fprintf(flashWrite_fd, "word addr %u, val %x\n", addr, word);
-//    sprintf(buffer, "word addr %u, val %x\n", addr, word);
-
-    *addr = word;
-
-    //printf("WRITE word addr %u, val %x\n", addr, word);
-}
-
-unsigned int NVMReadWord(unsigned int *addr) 
-{
-    fprintf(flashRead_fd, "read addr %u, val %x\n", addr, *addr);
-
-    return *addr;
-
-//    sscanf(buffer, "word addr %u, val %x\n", addr, *addr);
-
-    //printf("READ word addr %u, word %x val %x\n", addr, word, (unsigned int)*word);
-}
-
-void main(int argc, char **argv, char **envp)
-{
-    struct sysData_t sdata;
-    unsigned char data[16];
-
-    flashRead_fd = fopen("flashRead.txt", "w");
-    flashWrite_fd = fopen("flashWrite.txt", "w");
-
-    strcpy(sdata.name, "badge test 1");
-    strcpy(sdata.sekrits, "0123456");
-    strcpy(sdata.achievements, "0123456");
-
-    sysDataWrite(&sdata);
-
-    dumpSys(&sdata);
-
-    sysDataRead(&sdata);
-
-    strcpy(data, "D1TA1234X");
-    printf("	NVwrite %d\n", NVwrite(1, 0, data, 8));
-
-    strcpy(data, "D2TA123XX");
-    printf("	NVwrite %d\n", NVwrite(1, 1, data, 7));
-
-    strcpy(data, "D3TA1234X");
-    printf("	NVwrite %d\n", NVwrite(1, 2, data, 8));
-
-    strcpy(data, "4XXXXXXXX");
-    printf("	NVwrite %d\n", NVwrite(1, 3, data, 1));
-
-    strcpy(data, "D5TA1234X");
-    printf("	NVwrite %d\n", NVwrite(2, 2, data, 8));
-
-    bzero(data,16);
-    printf("	NVread appid %d id %d res %d data %s\n", 1, 0, NVread(1, 0, data, 8), data);
-
-    bzero(data,16);
-    printf("	NVread appid %d id %d res %d data %s\n", 1, 1, NVread(1, 1, data, 8), data);
-
-    bzero(data,16);
-    printf("	NVread appid %d id %d res %d data %s\n", 1, 2, NVread(1, 2, data, 8), data);
-
-    bzero(data,16);
-    printf("	NVread appid %d id %d res %d data %s\n", 1, 3, NVread(1, 3, data, 8), data);
-
-    bzero(data,16);
-    printf("	NVread appid %d id %d res %d data %s\n", 2, 2, NVread(2, 2, data, 8), data);
-
-    fclose(flashRead_fd);
-    fclose(flashWrite_fd);
-}
-#endif

@@ -28,6 +28,7 @@ int USB_Out_Buffer_Len = 0; /* For base station, USB buffers are not asciiz stri
   persistant (flash) system data 
 */
 struct sysData_t G_sysData = { { 0 }, INITIAL_BADGE_ID, { 0 }, { 0 } };
+struct sysData_t G_sysData_tmp; /* for reading from flash */
 
 const char hextab[16]={"0123456789ABCDEF"};
 
@@ -99,9 +100,11 @@ void UserInit(void)
 
     //LCDBars();
 
-    /* 1st 4 bytes of flash is magic, next 4 = badgeId */
-    if (*G_flashstart != 0) 
-	G_sysData.badgeId = (G_flashstart[5] << 8 | G_flashstart[4]); /* if flash is initial program value, set default */
+    /* if sysData exists in rom, read it */
+    if (flashReadKeyValue(&G_sysData, &G_sysData_tmp, sizeof(struct sysData_t)))
+	flashReadKeyValue(&G_sysData, &G_sysData, sizeof(struct sysData_t));
+
+    //for (i=0; i<10; i++) username[i] = G_sysData.name[i];
 
     FbInit();
     FbClear();
