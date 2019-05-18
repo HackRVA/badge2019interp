@@ -571,8 +571,8 @@ static void process_hit(unsigned int packet)
 	case GAME_VARIANT_ZOMBIE:
 		if (team == shooter_team) /* exclude friendly fire */
 			return;
-		if (shooter_team == 0) { /* shooter is zombie? */
-			team = 0; /* we become zombie */
+		if (shooter_team == 1) { /* shooter is zombie? */
+			team = 1; /* we become zombie */
 			/* Note: we do not transfer this info to the base station */
 			/* Instead the base station must re-construct this data from */
 			/* the hit records (if it even needs to). */
