@@ -801,9 +801,6 @@ static void app_init(void)
     current_monster = initial_mon;
     enable_monster(initial_mon);
     load_from_flash();
-
-    for (i = 0; i < ARRAYSIZE(monsters); i++)
-	    enable_monster(i);
 }
 
 int badge_monsters_cb(void)
