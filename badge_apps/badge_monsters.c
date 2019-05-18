@@ -20,7 +20,7 @@ Dustin Firebaugh <dafirebaugh@gmail.com>
 #define ENABLE_INTERRUPTS do { enable_interrupts(); } while (0)
 
 #else
-
+#include <plib.h> /* for strlen() */
 #include "colors.h"
 #include "menu.h"
 #include "buttons.h"
@@ -30,9 +30,6 @@ Dustin Firebaugh <dafirebaugh@gmail.com>
 /* TODO: I shouldn't have to declare these myself. */
 #define size_t int
 extern char *strcpy(char *dest, const char *src);
-extern char *strncpy(char *dest, const char *src, size_t n);
-extern void *memset(void *s, int c, size_t n);
-extern void *memcpy(void *dest, const void *src, size_t n);
 extern char *strcat(char *dest, const char *src);
 #ifndef NULL
 #define NULL 0
@@ -437,14 +434,32 @@ static void change_menu_level(enum menu_level_t level)
 
 static void show_message(char *message)
 {
+    char msg[16];
+    char *s;
+    int y, len;
     #ifdef __linux__
         printf("%s\n", message);
     #endif
 
     FbClear();
     FbColor(WHITE);
-    FbMove(8, 5);
-    FbWriteLine(message);
+    y = 5;
+
+    s = message;
+    do {
+	FbMove(8, y);
+	len = strlen(s);
+	if (len >= 15) {
+	    memcpy(msg, s, 15);
+	    msg[15] = '\0';
+	    FbWriteLine(msg);
+	    s += 15;
+	} else {
+	    FbWriteLine(s);
+	    break;
+	}
+	y += 10;
+    } while (1);
 
     FbMove(5, 120);
     FbWriteLine("<Back");
