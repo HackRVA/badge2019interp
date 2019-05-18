@@ -699,9 +699,28 @@ static void game_menu(void)
     app_state = RENDER_SCREEN;
 }
 
+static void load_from_flash(void){
+    /*
+    load from flash should load a list of monsterIDs that have been enabled
+    for each monsterID, it should run enable_monster() function
+    */
+   #if 0
+   int i;
+   for(i = 0; i < ARRAYSIZE(monstersIDs); i++)
+      enable_monster(monsterID);
+   #endif
+}
+
+static void save_to_flash(void){
+    /*
+    save to flash should save some form of a list of monsterIDs that have been unlocked
+    */
+}
+
 static void exit_app(void)
 {
     app_state = INIT_APP_STATE;
+    save_to_flash();
     unregister_ir_packet_callback();
     returnToMenus();
 }
@@ -720,7 +739,6 @@ static void ir_packet_callback(struct IRpacket_t packet)
 
 static void app_init(void)
 {
-    // int initial_mon;
     int i;
 
     FbInit();
@@ -737,9 +755,10 @@ static void app_init(void)
     initial_mon = BADGE_ID % nmonsters;
     current_monster = initial_mon;
     enable_monster(initial_mon);
+    load_from_flash();
 
     for (i = 0; i < ARRAYSIZE(monsters); i++)
-	    monsters[i].status = 1;
+	    enable_monster(i);
 }
 
 int badge_monsters_cb(void)
