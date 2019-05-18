@@ -42,11 +42,21 @@
 #define DATA_FORMAT_4K_RGBX  0x61
 #define OTP_MODEOFF          0xEA
 
+/* display mode settings for conditionals */
+#define DISPLAY_MODE_NORMAL 0b00000110
+#define DISPLAY_MODE_INVERTED 0b00000011
+
 /** set important internal registers for the LCD display */
 void S6B33_init_device(void);
 /** sets the current display region for calls to S6B33_pixel() */
 void S6B33_rect(int x, int y, int width, int height);
 /** updates current pixel to the data in `pixel`. */
 void S6B33_pixel(unsigned short pixel);
+/** invert display */
+void S6B33_set_display_mode_inverted(void);
+/** uninvert display */
+void S6B33_set_display_mode_noninverted(void);
+/** get current display mode variable setting */
+unsigned char S6B33_get_display_mode(void);
 
 #endif

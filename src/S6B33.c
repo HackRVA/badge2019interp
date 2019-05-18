@@ -169,8 +169,6 @@ unsigned char G_entry = 0b10000000; /* 0x80 */
 
 // PEB WAS 20150313 unsigned char G_outputMode = 0b00000010; /* 0x02 lines=132 SDIR=0 SWP=1 CDIR=0 */
 // unsigned char G_outputMode = 0b00000110; /* 0x02 lines=132 SDIR=0 SWP=1 CDIR=0 */
-#define DISPLAY_MODE_NORMAL 0b00000110
-#define DISPLAY_MODE_INVERTED 0b00000011
 
 unsigned char G_outputMode = DISPLAY_MODE_NORMAL; /* 0x02 lines=132 SDIR=0 SWP=1 CDIR=0 */
 

@@ -54,7 +54,7 @@ void disp_asset_saver(){
     FbSwapBuffers();
 }
 
-const unsigned char drag_hack[] = "For a good time goto";
+const unsigned char drag_hack[] = "Checkout HackRVA!";
 const unsigned char drag_hack_num[] = "HackRVA.org";
 void hack_the_dragon(){
 
@@ -240,11 +240,11 @@ const unsigned char president3[] = "Badge for";
 const unsigned char president4[] = "Vice President";
 void for_president(){
 
-    FbMove(20, 17);
+    FbMove(22, 17);
     FbColor(WHITE);
     FbWriteLine(president1);
 
-    FbMove(30, 35);
+    FbMove(32, 35);
     FbWriteLine(president2);
 
     if(popup_time > 30){
@@ -257,10 +257,10 @@ void for_president(){
     }
     else{
         FbColor(WHITE);
-        FbMove(30, 70);
+        FbMove(32, 70);
         FbWriteLine(president3);
 
-        FbMove(10, 80);
+        FbMove(12, 80);
         FbWriteLine(president4);
     }
     anim_cnt++;
@@ -347,22 +347,22 @@ void bluescreen(){
     FbFilledRectangle(132, 132);
 
     FbColor(WHITE);
-    FbMove(23, 10);
+    FbMove(25, 10);
     FbFilledRectangle(75, 10);
 
-    FbMove(2, 40);
+    FbMove(4, 40);
     FbWriteLine(bs2);
 
     if(popup_time < 40){
-        FbMove(2, 60);
+        FbMove(4, 60);
         FbWriteLine(bs3);
 
-        FbMove(15, 70);
+        FbMove(17, 70);
         FbWriteLine(bs4);
     }
 
     FbColor(BLUE);
-    FbMove(25, 11);
+    FbMove(27, 11);
     FbWriteLine(bs1);
     FbSwapBuffers();
 }
@@ -379,164 +379,164 @@ void just_the_badge_tips(){
 
     FbBackgroundColor(BLACK);
     FbColor(GREEN);
-    FbMove(12, 4);
+    FbMove(14, 4);
     FbWriteLine(badgetips_header);
 
 
     FbColor(YELLOW);
     switch(tipnum){
         case 0:
-            FbMove(2, 20);
+            FbMove(4, 20);
             FbWriteLine("Dont lick the");
-            FbMove(2, 30);
+            FbMove(4, 30);
             FbWriteLine("badge");
             break;
         case 1:
-            FbMove(2, 20);
+            FbMove(4, 20);
             FbWriteLine("These are land");
-            FbMove(2, 30);
+            FbMove(4, 30);
             FbWriteLine("dwelling badges.");
-            FbMove(2, 40);
+            FbMove(4, 40);
             FbWriteLine("Avoid water");
             break;
         case 2:
-            FbMove(2, 20);
+            FbMove(4, 20);
             FbWriteLine("Known to the");
-            FbMove(2, 30);
+            FbMove(4, 30);
             FbWriteLine("state of cancer to");
-            FbMove(2, 40);
+            FbMove(4, 40);
             FbWriteLine("cause california");
             break;
         case 3:
-            FbMove(2, 20);
+            FbMove(4, 20);
             FbWriteLine("Wash your hands");
-            FbMove(2, 30);
+            FbMove(4, 30);
             FbWriteLine("next time.");
             break;
         case 4:
-            FbMove(2, 20);
+            FbMove(4, 20);
             FbWriteLine("Say hi to");
-            FbMove(2, 30);
+            FbMove(4, 30);
             FbWriteLine("the creators");
-            FbMove(2, 40);
+            FbMove(4, 40);
             FbWriteLine("over at hackrva");
             break;
         case 5:
-            FbMove(2, 20);
+            FbMove(4, 20);
             FbWriteLine("Have another");
-            FbMove(2, 30);
+            FbMove(4, 30);
             FbWriteLine("beer.");
             break;
         case 6:
-            FbMove(2, 20);
+            FbMove(4, 20);
             FbWriteLine("This badge is");
-            FbMove(2, 30);
+            FbMove(4, 30);
             FbWriteLine("zombie load");
-            FbMove(2, 40);
+            FbMove(4, 40);
             FbWriteLine("Enabled");
             break;
         case 7:
-            FbMove(2, 20);
+            FbMove(4, 20);
             FbWriteLine("This badge is");
-            FbMove(2, 30);
+            FbMove(4, 30);
             FbWriteLine("loyal to Mark");
-            FbMove(2, 40);
+            FbMove(4, 40);
             FbWriteLine("ZuckyZuck");
             break;
         case 8:
-            FbMove(2, 20);
+            FbMove(4, 20);
             FbWriteLine("checkout the");
-            FbMove(2, 30);
+            FbMove(4, 30);
             FbWriteLine("   CTF!");
             break;
         case 9:
-            FbMove(2, 20);
+            FbMove(4, 20);
             FbWriteLine("Its impolite");
-            FbMove(2, 30);
+            FbMove(4, 30);
             FbWriteLine("to stare at");
-            FbMove(2, 40);
+            FbMove(4, 40);
             FbWriteLine("other peoples");
-            FbMove(2, 50);
+            FbMove(4, 50);
             FbWriteLine("badges.");
             break;
         case 10:
-            FbMove(2, 20);
+            FbMove(4, 20);
             FbWriteLine("Every badge is");
-            FbMove(2, 30);
+            FbMove(4, 30);
             FbWriteLine("different. Find");
-            FbMove(2, 40);
+            FbMove(4, 40);
             FbWriteLine("the bugs in");
-            FbMove(2, 50);
+            FbMove(4, 50);
             FbWriteLine("Yours!");
             break;
         case 11:
-            FbMove(2, 20);
+            FbMove(4, 20);
             FbWriteLine("Badges can be");
-            FbMove(2, 30);
+            FbMove(4, 30);
             FbWriteLine("very social.");
-            FbMove(2, 40);
+            FbMove(4, 40);
             FbWriteLine("Try playing");
-            FbMove(2, 50);
+            FbMove(4, 50);
             FbWriteLine("IR games.");
             break;
         case 12:
-            FbMove(2, 20);
+            FbMove(4, 20);
             FbWriteLine("Its a thin line");
-            FbMove(2, 30);
+            FbMove(4, 30);
             FbWriteLine("a badge and a");
-            FbMove(2, 40);
+            FbMove(4, 40);
             FbWriteLine("bodge.");
             break;
         case 13:
-            FbMove(2, 20);
+            FbMove(4, 20);
             FbWriteLine("If you cant");
-            FbMove(2, 30);
+            FbMove(4, 30);
             FbWriteLine("read this your");
-            FbMove(2, 40);
+            FbMove(4, 40);
             FbWriteLine("badge is broken");
             break;
         case 14:
-            FbMove(2, 20);
+            FbMove(4, 20);
             FbWriteLine("Youll find the");
-            FbMove(2, 30);
+            FbMove(4, 30);
             FbWriteLine("source code ");
-            FbMove(2, 40);
+            FbMove(4, 40);
             FbWriteLine("online after");
-            FbMove(2, 50);
+            FbMove(4, 50);
             FbWriteLine("the conference.");
             break;
         case 15:
-            FbMove(2, 20);
+            FbMove(4, 20);
             FbWriteLine("The badge is");
-            FbMove(2, 30);
+            FbMove(4, 30);
             FbWriteLine("not a touch");
-            FbMove(2, 40);
+            FbMove(4, 40);
             FbWriteLine("screen");
             break;
         case 16:
-            FbMove(2, 20);
+            FbMove(4, 20);
             FbWriteLine("Badges need");
-            FbMove(2, 30);
+            FbMove(4, 30);
             FbWriteLine("love. Pet");
-            FbMove(2, 40);
+            FbMove(4, 40);
             FbWriteLine("your badge");
-            FbMove(2, 50);
+            FbMove(4, 50);
             FbWriteLine("regularly.");
             break;
         case 17:
-            FbMove(2, 20);
+            FbMove(4, 20);
             FbWriteLine("These are");
-            FbMove(2, 30);
+            FbMove(4, 30);
             FbWriteLine("artisanal");
-            FbMove(2, 40);
+            FbMove(4, 40);
             FbWriteLine("badges.");
             break;
         case 18:
-            FbMove(2, 20);
+            FbMove(4, 20);
             FbWriteLine("Badges are");
-            FbMove(2, 30);
+            FbMove(4, 30);
             FbWriteLine("hand crafted");
-            FbMove(2, 40);
+            FbMove(4, 40);
             FbWriteLine("at hackrva");
             break;
     }

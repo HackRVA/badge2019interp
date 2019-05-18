@@ -11,6 +11,7 @@
 #include "bindings.h"
 #include "build_bug_on.h"
 #include "screensavers.h"
+#include "S6B33.h"
 
 #if BASE_STATION_BADGE_BUILD
 #include "ir.h"
@@ -614,6 +615,8 @@ unsigned char screen_save_lockout = 1;
 unsigned char screen_save_lockout = 0;
 #endif
 
+unsigned char screensaver_inverted = 0;
+
 static unsigned char writeLOCK=0;
 void ProcessIO(void)
 {
@@ -638,10 +641,25 @@ void ProcessIO(void)
 		//initialize assuming the badge is active (backlight is powered);
     brightScreen = 1;
     
-    if(dormant() && !is_dormant && !screen_save_lockout)
+    if(dormant() && !is_dormant && !screen_save_lockout) {
         is_dormant = 1;
+        FbClear();
+        FbColor(BLACK);
+        FbSwapBuffers();
+        if(!screensaver_inverted) {
+            if(S6B33_get_display_mode() == DISPLAY_MODE_NORMAL) {
+                S6B33_set_display_mode_inverted();
+            }
+            else {
+                S6B33_set_display_mode_noninverted();    
+            }
+        }
+    }
     
     if(is_dormant){
+        
+        
+        
         if(DOWN_BTN_AND_CONSUME
             || UP_BTN_AND_CONSUME
             || LEFT_BTN_AND_CONSUME
@@ -658,6 +676,16 @@ void ProcessIO(void)
             redraw_main_menu = 1;//hack
             //reset timer
             last_input_timestamp = timestamp;
+            
+            if(!screensaver_inverted) {
+                if(S6B33_get_display_mode() == DISPLAY_MODE_NORMAL) {
+                    S6B33_set_display_mode_inverted();
+                }
+                else {
+                    S6B33_set_display_mode_noninverted();    
+                }
+            }
+            
             return;
         }
         else if (brightScreen){

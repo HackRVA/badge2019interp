@@ -278,6 +278,7 @@ struct menu_t buzzer_m[] = {
 };
 
 extern unsigned char screen_save_lockout;
+extern unsigned char screensaver_inverted;
 
 void screen_save_lock_cb(struct menu_t *h) {
     struct menu_t *selectedMenu;
@@ -286,9 +287,15 @@ void screen_save_lock_cb(struct menu_t *h) {
     returnToMenus(); 
 }
 
+void screen_save_invert_cb() {
+    screensaver_inverted = !screensaver_inverted;
+    returnToMenus();
+}
+
 const struct menu_t screen_lock_m[] = {
-    {"ON",   0|VERT_ITEM, FUNCTION, {(struct menu_t *)screen_save_lock_cb} },
-    {"OFF",  1|VERT_ITEM, FUNCTION, {(struct menu_t *)screen_save_lock_cb} },
+    {"ON",       0|VERT_ITEM, FUNCTION, {(struct menu_t *)screen_save_lock_cb} },
+    {"OFF",      1|VERT_ITEM, FUNCTION, {(struct menu_t *)screen_save_lock_cb} },
+    {"INVERT", VERT_ITEM, FUNCTION, {(struct menu_t *)screen_save_invert_cb} },
     {"Back",   VERT_ITEM|LAST_ITEM|DEFAULT_ITEM, BACK, {NULL} },
 };
 
