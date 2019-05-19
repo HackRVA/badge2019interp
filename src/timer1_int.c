@@ -608,7 +608,6 @@ void flareled(unsigned char r_pwm, unsigned char g_pwm, unsigned char b_pwm)
 
 void flarePWM()
 {
-#ifdef PAULSHACKEDBADGE
     static int onled=0;
     /*
 	because of hardware design (shared ground)
@@ -650,5 +649,4 @@ void flarePWM()
     }
     onled++;
     onled %= 3;
-#endif
 }

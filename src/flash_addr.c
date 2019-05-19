@@ -1,10 +1,9 @@
-#ifdef BADGE_FLASH_SECTION
 /*
-   leave 256 bytes at the end of 16k/0x4000 block
+   16k block for flash writes
 */
-__attribute__ ((section (".badge"))) 
-const unsigned char G_flashstart[0x4000]  = {0x0, 0x0};
-
+#ifdef MAIN
+unsigned int G_flashstart[0x1000]  = {0x0, 0x0};
 #else
-
+__attribute__ ((section (".badge"))) 
+const unsigned int G_flashstart[0x1000]  = {0x0, 0x0};
 #endif

@@ -9,16 +9,32 @@ main()
 }
 run
 
+new
+main()
+{
+   flashErase();
+}
+run
+
 /*
    change badge id (loc==1)
 */
 new
 main()
 {
-   flashErase();
-   flashWrite(0x0000abcd, 1);
+   flashWrite(0x000000AB, 1);
 }
 run
+
+new
+main()
+{
+   int r;
+
+   r = flashRead(5); printx(r);
+}
+run
+
 
 new
 main()
@@ -85,16 +101,6 @@ main()
    r=flashRead(2); printx(r);
    r=flashRead(3); printx(r);
    r=flashRead(4); printx(r);
-}
-run
-
-new
-main()
-{
-   int r;
-
-   flashWrite(0x01234567, 6);
-   r = flashRead(5); printx(r);
 }
 run
 

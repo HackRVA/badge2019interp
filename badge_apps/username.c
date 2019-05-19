@@ -37,6 +37,9 @@ extern char username[NAMESIZE];
  */
 void restore_username_from_flash(char *uname, int length)
 {
+   int i;
+   for (i=0; i < length; i++)
+	username[i] = uname[i];
 }
 
 /* Restore username from flash.  uname is a pointer to the memory
@@ -45,6 +48,15 @@ void restore_username_from_flash(char *uname, int length)
  */
 void save_username_to_flash(char *uname, int length)
 {
+   int i;
+   for (i=0; i < length; i++)
+	G_sysData.name[i] = uname[i];
+
+   /*
+	valuekey can be anything, buts its address is unique, so...
+	int flashWriteKeyValue(unsigned int valuekey, char *value, unsigned int valuelen);
+   */
+   flashWriteKeyValue((unsigned int)&G_sysData, (char *)&G_sysData, sizeof(struct sysData_t));
 }
 
 #define INIT_APP_STATE 0
