@@ -169,7 +169,8 @@ unsigned char G_entry = 0b10000000; /* 0x80 */
 
 // PEB WAS 20150313 unsigned char G_outputMode = 0b00000010; /* 0x02 lines=132 SDIR=0 SWP=1 CDIR=0 */
 // unsigned char G_outputMode = 0b00000110; /* 0x02 lines=132 SDIR=0 SWP=1 CDIR=0 */
-unsigned char G_outputMode = 0b00000110; /* 0x02 lines=132 SDIR=0 SWP=1 CDIR=0 */
+
+unsigned char G_outputMode = DISPLAY_MODE_NORMAL; /* 0x02 lines=132 SDIR=0 SWP=1 CDIR=0 */
 
 /* 0x11 = fose/32 & fose/16 -> set clock fpck=fose/32(Normal)/fpck=fose/16(partial1)-------*/ 
 unsigned char G_clockDiv = 0b00010001; /* default = fose/32 & fose/64  normal and partial modes each */
@@ -335,8 +336,21 @@ void S6B33_pixel(unsigned short pixel)
     S6B33_send_data(pixel);
 }
 
-void S6B33_flip()
+void S6B33_set_display_mode_inverted(void)
 {
+    G_outputMode = DISPLAY_MODE_INVERTED; /* 0x02 lines=132 SDIR=0 SWP=1 CDIR=0 */
     S6B33_send_command(DRIVER_OUTPUT_MODE);
-    S6B33_send_command(0x07); /* 0b0111 SDIR/SWP/CDIR */
+    S6B33_send_command(DISPLAY_MODE_INVERTED);
+}
+
+void S6B33_set_display_mode_noninverted(void)
+{
+    G_outputMode = DISPLAY_MODE_NORMAL; /* 0x02 lines=132 SDIR=0 SWP=1 CDIR=0 */
+    S6B33_send_command(DRIVER_OUTPUT_MODE);
+    S6B33_send_command(DISPLAY_MODE_NORMAL);
+}
+
+unsigned char S6B33_get_display_mode(void)
+{
+	return G_outputMode;
 }

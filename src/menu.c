@@ -27,13 +27,20 @@
 
 #define MAIN_MENU_BKG_COLOR GREY2
 
+unsigned char redraw_main_menu = 0;
 
 void splash_cb();
+void rvasec_splash_cb();
 
 extern const struct menu_t games_m[];
 extern const struct menu_t main_m[] ;
 extern const struct menu_t settings_m[];
 extern const struct menu_t schedule_m[];
+
+extern unsigned int timestamp;
+extern unsigned int last_input_timestamp;
+extern unsigned char packets_seen;
+extern unsigned char num_packets_seen;
 
 #define NOTEDUR 4000
 
@@ -42,7 +49,11 @@ extern const struct menu_t schedule_m[];
 #ifdef QC
  void (*runningApp)() = QC_cb;
 #else
+#if BASE_STATION_BADGE_BUILD
  void (*runningApp)() = splash_cb;
+#else
+ void (*runningApp)() = rvasec_splash_cb;
+#endif
 #endif
 
 
@@ -85,7 +96,6 @@ struct menu_t *getSelectedMenuStack(unsigned char item)
 
    return G_menuStack[G_menuCnt-item].selectedMenu;
 }
-
 
 /*
   currently the char routine draws Y in decreasing (up), 
@@ -263,8 +273,14 @@ void menus()
             (*runningApp)();
             return;
     }
+    
+    if(!num_packets_seen)
+        packets_seen = 0;
 
-    if (G_currMenu == NULL) {
+    if (G_currMenu == NULL 
+        //|| (redraw_main_menu && G_menuStack[G_menuCnt].currMenu == main_m)) {
+        || (redraw_main_menu)){
+            redraw_main_menu = 0;
             G_menuStack[G_menuCnt].currMenu = (struct menu_t *)main_m;
             G_menuStack[G_menuCnt].selectedMenu = NULL;
             G_currMenu = (struct menu_t *)main_m;
@@ -501,11 +517,12 @@ const struct menu_t settings_m[] = {
    {"Buzzer",	VERT_ITEM|DEFAULT_ITEM, MENU, {(struct menu_t *)buzzer_m}},
    {"Rotate",   VERT_ITEM, MENU, {(struct menu_t *)rotate_m}},
    {"User Name",VERT_ITEM, FUNCTION, {(struct menu_t *)username_cb} },
+   {"Screensaver", VERT_ITEM, MENU, {(struct menu_t *)screen_lock_m} },
    {"Back",	VERT_ITEM|LAST_ITEM, BACK, {NULL}},
 };
 
 const struct menu_t main_m[] = {
-//   {"Schedule",    VERT_ITEM, MENU, {schedule_m}},
+   {"Schedule",    VERT_ITEM, MENU, {schedule_m}},
    {"Games",       VERT_ITEM|DEFAULT_ITEM, MENU, {games_m}},
    {"QC",          VERT_ITEM, FUNCTION, {(struct menu_t *)QC_cb}},
    {"Settings",    VERT_ITEM|LAST_ITEM, MENU, {settings_m}},
@@ -536,4 +553,144 @@ void splash_cb()
         returnToMenus();
     }
 }
+
+const unsigned char splash_words1[] = "Loading";
+#define NUM_WORD_THINGS 18
+const unsigned char *splash_word_things[] = {"Cognition Module",
+    "useless bits",
+    "backdoor.sh",
+    "exploit inside",
+    "sub-zero",
+    "lifting tables",
+    "personal data",
+    "important bits",
+    "bitcoin miner",
+    "GozNym",
+    "broken feature",
+    "NTFS", "Wall hacks",
+    "huawei 5G",
+    "Key logger",
+    "badgedows defender", "sshd", "cryptolocker", };
+    
+    const unsigned char splash_words_btn1[] = "Press the button";
+    const unsigned char splash_words_btn2[] = "to continue!";
+    
+    #define SPLASH_SHIFT_DOWN 85
+    void rvasec_splash_cb(){
+        static unsigned short wait = 0;
+        static unsigned char loading_txt_idx = 0,
+        load_bar = 0,
+        spkr_cnter=0, buzzer=0;
+        
+        if (wait == 0) {
+            load_bar = 10;
+            LCDblack();
+            LCDBars();
+            FbSwapBuffers();
+            //if(buzzer)
+            setNote(100, 4092);
+        }
+        else if(wait < 40){
+            drawLCD4(HACKRVA4, 0);
+            FbSwapBuffers();
+            //PowerSaveIdle();
+        }
+        else if(wait < 80){
+            FbMove(0, 2);
+            FbImage2bit(RVASEC2016, 0);
+            FbMove(10,SPLASH_SHIFT_DOWN);
+            
+            FbColor(WHITE);
+            FbRectangle(100, 20);
+            
+            FbMove(35, SPLASH_SHIFT_DOWN - 13);
+            FbColor(YELLOW);
+            FbWriteLine(splash_words1);
+            
+            FbMove(11, SPLASH_SHIFT_DOWN+1);
+            FbColor(GREEN);
+            FbFilledRectangle((load_bar++ << 1) + 1,19);
+            green(10);
+            
+            FbColor(WHITE);
+            FbMove(4, 113);
+            FbWriteLine(splash_word_things[loading_txt_idx%NUM_WORD_THINGS]);
+            if(!(wait%2))
+                loading_txt_idx++;
+            
+            // Hack, don't feel lik adjusting magice numbers
+            // to make slower timing. Not sure if making a difference
+            unsigned char i = 0;
+            for(i=0; i < 250; i++)
+           //     PowerSaveIdle();
+            
+            FbSwapBuffers();
+            
+        }
+        else if(wait <160){
+            FbMove(0, 2);
+            FbImage2bit(RVASEC2016, 0);
+            FbMove(10,SPLASH_SHIFT_DOWN);
+            FbColor(GREEN);
+            FbLine(0,60,132,60);
+            FbLine(0,62,132,62);
+            FbLine(0,65,132,65);
+            FbLine(0,69,132,69);
+            FbLine(0,77,132,77);
+            
+            FbLine(105,60,145,77);
+            FbLine(95, 60,125,77);
+            FbLine(85, 60,105,77);
+            FbLine(75, 60,85,77);
+            FbLine(65, 60,65,77);
+            FbLine(55, 60,45,77);
+            FbLine(45, 60,25,77);
+            FbLine(35, 60,5,77);
+            FbLine(25, 60,0,65);
+            
+            FbMove(1, 90);
+            FbWriteLine(splash_words_btn1);
+            
+            FbMove(15, 110);
+            FbWriteLine(splash_words_btn2);
+            
+            // Hack, don't feel lik adjusting magice numbers
+            // to make slower timing. Not sure if making a difference
+            unsigned char i = 0;
+            for(i=0; i < 250; i++)
+             //   PowerSaveIdle();
+            
+            FbSwapBuffers();
+        }
+        else if(buzzer && (wait < 50000)){
+            if(!(wait%1700)){
+                setNote(40 - (spkr_cnter++), 4048); //DO NOT EFFING CHANGE THIS
+                spkr_cnter += 25;
+            }
+            if(spkr_cnter > 100)
+                spkr_cnter = 0;
+            
+            //PowerSaveIdle();
+        }
+        else if(buzzer && (wait < 50050))
+            buzzer = 2;
+        else{
+            wait = 0 - 1;
+        }
+        
+        wait++;
+        
+        if(wait == (sizeof(unsigned short))-2) {
+            wait -= 1000;
+        }
+        
+        if(BUTTON_PRESSED_AND_CONSUME){
+            wait = 30000;
+            buzzer = 1;
+        }
+        if(buzzer == 2)
+            returnToMenus();
+    }
+    
+
 

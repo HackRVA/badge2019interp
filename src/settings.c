@@ -7,6 +7,7 @@
 #include "ir.h"
 #include "fb.h"
 
+
 void ping_cb(){
     static unsigned char num_pinged = 0;
 
@@ -179,9 +180,23 @@ void rotate_cb(struct menu_t *h) {
     returnToMenus();
 };
 
+extern void S6B33_set_display_mode_inverted(void);
+extern void S6B33_set_display_mode_noninverted(void);
+
+static void invert_cb(struct menu_t *h) {
+	static int inverted = 0;
+	inverted = !inverted;
+	if (inverted)
+		S6B33_set_display_mode_inverted();
+	else
+		S6B33_set_display_mode_noninverted();
+	returnToMenus();
+}
+
 const struct menu_t rotate_m[] = {
     {"Default",   0|VERT_ITEM, FUNCTION, {(struct menu_t *)rotate_cb} },
     {"Rotated",   1|VERT_ITEM, FUNCTION, {(struct menu_t *)rotate_cb} },
+    {"Inverted",   1|VERT_ITEM, FUNCTION, {(struct menu_t *)invert_cb} },
     {"Back",      VERT_ITEM|LAST_ITEM|DEFAULT_ITEM, BACK, {NULL} },
 };
 
@@ -260,6 +275,28 @@ const struct menu_t buzzer_config_m[] = {
 struct menu_t buzzer_m[] = {
     {"Buzzer: On",   VERT_ITEM,     MENU, {buzzer_config_m} },
     {"Back", VERT_ITEM|LAST_ITEM|DEFAULT_ITEM, BACK, {NULL} },
+};
+
+extern unsigned char screen_save_lockout;
+extern unsigned char screensaver_inverted;
+
+void screen_save_lock_cb(struct menu_t *h) {
+    struct menu_t *selectedMenu;
+    selectedMenu = getSelectedMenu();
+    screen_save_lockout = selectedMenu->attrib & 0x1FF;
+    returnToMenus(); 
+}
+
+void screen_save_invert_cb() {
+    screensaver_inverted = !screensaver_inverted;
+    returnToMenus();
+}
+
+const struct menu_t screen_lock_m[] = {
+    {"ON",       0|VERT_ITEM, FUNCTION, {(struct menu_t *)screen_save_lock_cb} },
+    {"OFF",      1|VERT_ITEM, FUNCTION, {(struct menu_t *)screen_save_lock_cb} },
+    {"INVERT", VERT_ITEM, FUNCTION, {(struct menu_t *)screen_save_invert_cb} },
+    {"Back",   VERT_ITEM|LAST_ITEM|DEFAULT_ITEM, BACK, {NULL} },
 };
 
 

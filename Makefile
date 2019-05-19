@@ -43,7 +43,8 @@ SRC_BADGE_C = \
 	src/timer1_int.c src/interpreter.c src/pic32config.c \
 	src/buttons.c src/settings.c src/menu.c src/adc_int.c \
         src/LCDcolor.c src/S6B33.c src/badge.c src/fb.c src/tinyalloc.c \
-	src/achievements.c src/flash.c src/flash_addr.c src/bindings.c
+	src/achievements.c src/flash.c src/flash_addr.c src/bindings.c \
+	src/prngs.c src/screensavers.c src/schedule.c
 
 SRC_APPS_C = \
 	badge_apps/adc.c badge_apps/maze.c badge_apps/xorshift.c \

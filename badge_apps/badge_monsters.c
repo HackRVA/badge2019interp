@@ -20,7 +20,7 @@ Dustin Firebaugh <dafirebaugh@gmail.com>
 #define ENABLE_INTERRUPTS do { enable_interrupts(); } while (0)
 
 #else
-
+#include <plib.h> /* for strlen() */
 #include "colors.h"
 #include "menu.h"
 #include "buttons.h"
@@ -30,9 +30,6 @@ Dustin Firebaugh <dafirebaugh@gmail.com>
 /* TODO: I shouldn't have to declare these myself. */
 #define size_t int
 extern char *strcpy(char *dest, const char *src);
-extern char *strncpy(char *dest, const char *src, size_t n);
-extern void *memset(void *s, int c, size_t n);
-extern void *memcpy(void *dest, const void *src, size_t n);
 extern char *strcat(char *dest, const char *src);
 #ifndef NULL
 #define NULL 0
@@ -49,17 +46,19 @@ extern char *strcat(char *dest, const char *src);
 #define GAME_MENU 1
 #define RENDER_SCREEN 2
 #define RENDER_MONSTER 3
-#define CHECK_THE_BUTTONS 4
-#define EXIT_APP 5
+#define TRADE_MONSTERS 4
+#define CHECK_THE_BUTTONS 5
+#define EXIT_APP 6
 
 static void app_init(void);
 static void game_menu(void);
 static void menu_clear(void);
 static void render_screen(void);
 static void render_monster(void);
+static void trade_monsters(void);
 static void check_the_buttons(void);
-static void setup_monster_menu(void);
 static void setup_main_menu(void);
+static void setup_monster_menu(void);
 static void exit_app(void);
 
 typedef void (*state_to_function_map_fn_type)(void);
@@ -69,6 +68,7 @@ static state_to_function_map_fn_type state_to_function_map[] = {
     game_menu,
     render_screen,
     render_monster,
+    trade_monsters,
     check_the_buttons,
     exit_app,
 };
@@ -88,10 +88,11 @@ static int packet_queue[QUEUE_SIZE] = { 0 };
 
 static int screen_changed = 0;
 static int smiley_x, smiley_y;
-static int current_monster = 0;
+static int current_monster;
 static int nmonsters = 0;
 static int nvendor_monsters = 0;
 static int app_state = INIT_APP_STATE;
+static int trading_monsters_enabled = 0;
 
 struct point
 {
@@ -102,8 +103,6 @@ static const struct point smiley_points[] =
 #include "smileymon.h"
 static const struct point freshmon_points[] =
 #include "freshmon.h"
-static const struct point othermon_points[] =
-#include "othermon.h"
 static const struct point mcturtle_points[] =
 #include "mcturtle.h"
 static const struct point goat_mon_points[] =
@@ -138,36 +137,30 @@ struct monster
 };
 
 struct monster monsters[] = {
-    {"eddie", ARRAYSIZE(eddie_points), 0, WHITE, eddie_points, "eddie description"},
-    {"godzilla", ARRAYSIZE(godzilla_points), 0, WHITE, godzilla_points, "godzilla description"},
-    {"worm", ARRAYSIZE(worm_points), 0, WHITE, worm_points, "worm description"},
-    {"stacksmasher", ARRAYSIZE(stacksmasher_points), 0, WHITE, stacksmasher_points, "stacksmasher description"},
-    {"heartbleed", ARRAYSIZE(heartbleed_points), 0, WHITE, heartbleed_points, "heartbleed description"},
-    {"spectre", ARRAYSIZE(spectre_points), 0, WHITE, spectre_points, "spectre description"},
-    {"zombieload", ARRAYSIZE(zombieload_points), 0, WHITE, zombieload_points, "zombieload description"},
-    {"octomon", ARRAYSIZE(octomon_points), 0, WHITE, octomon_points, "octomon description"},
-    {"hrvamon", ARRAYSIZE(hrvamon_points), 0, WHITE, hrvamon_points, "hrvamon description"},
-    {"mcturtle", ARRAYSIZE(mcturtle_points), 0, WHITE, mcturtle_points, "mcturtle description"},
-    {"goat_mon", ARRAYSIZE(goat_mon_points), 0, WHITE, goat_mon_points, "goat mon description"},
-    {"freshmon", ARRAYSIZE(freshmon_points), 0, WHITE, freshmon_points, "this is freshmon, the freshest of all the mon"},
-    {"othermon", ARRAYSIZE(othermon_points), 0, WHITE, othermon_points, "some nice words here"},
+    {"eddie", ARRAYSIZE(eddie_points), 0, WHITE, eddie_points, "Sometimes protective and Eddie is the perfect guy every girl wants to date"},
+    {"godzilla", ARRAYSIZE(godzilla_points), 0, WHITE, godzilla_points, "a cross between a gorilla and a whale"},
+    {"worm", ARRAYSIZE(worm_points), 0, WHITE, worm_points, "An earthworm is a tube-shaped, segmented worm found in the phylum Annelida."},
+    {"stacksmasher", ARRAYSIZE(stacksmasher_points), 0, WHITE, stacksmasher_points, "Stack smashing is a form of vulnerability where the stack of a computer application or OS is forced to overflow."},
+    {"heartbleed", ARRAYSIZE(heartbleed_points), 0, WHITE, heartbleed_points, "Heartbleed is a security bug in the OpenSSL cryptography library"},
+    {"spectre", ARRAYSIZE(spectre_points), 0, WHITE, spectre_points, "Spectre (security vulnerability) Spectre is a vulnerability that affects modern microprocessors that perform branch prediction."},
+    {"zombieload", ARRAYSIZE(zombieload_points), 0, WHITE, zombieload_points, "This one has the delightful name of ZombieLoad"},
+    {"octomon", ARRAYSIZE(octomon_points), 0, WHITE, octomon_points, "a monster made with 8 sides"},
+    {"hrvamon", ARRAYSIZE(hrvamon_points), 0, WHITE, hrvamon_points, "come check out hackrva maker space Thursday nights at 7. 1600 Roseneath Road Suite E Richmond, VA 23230"},
+    {"mcturtle", ARRAYSIZE(mcturtle_points), 0, WHITE, mcturtle_points, "McTerrible McTurtle"},
+    {"goat_mon", ARRAYSIZE(goat_mon_points), 0, WHITE, goat_mon_points, "this goat is scared because they are alone in the world"},
+    {"freshmon", ARRAYSIZE(freshmon_points), 0, WHITE, freshmon_points, "a fusion of smirkmon and grinmon. This badge monster likes to troll people really hard for fun"},
     {"smileymon", ARRAYSIZE(smiley_points), 0, RED, smiley_points, "some nice words here"},
-    {"othermon", ARRAYSIZE(smiley_points), 0, WHITE, othermon_points, "some nice words here"},
-    {"othermon", ARRAYSIZE(smiley_points), 0, GREEN, othermon_points, "some nice words here"},
     {"smileymon", ARRAYSIZE(smiley_points), 0, WHITE, smiley_points, "Othermon some nice words here Othermon some nice words hereOthermon some nice words here Othermon some nice words here"},
-    {"othermon", ARRAYSIZE(smiley_points), 0, BLUE, othermon_points, "some nice words here"},
-    {"othermon", ARRAYSIZE(smiley_points), 0, WHITE, othermon_points, "some nice words here"},
-    {"othermon", ARRAYSIZE(smiley_points), 0, WHITE, othermon_points, "some nice words here"},
 };
 
 struct monster vendor_monsters[] = {
-    {"vothermon", ARRAYSIZE(smiley_points), 0, CYAN, othermon_points, "some nice words here"},
-    {"vothermon", ARRAYSIZE(smiley_points), 0, CYAN, othermon_points, "some nice words here"},
+    {"vgoatmon", ARRAYSIZE(smiley_points), 0, CYAN, goat_mon_points, "some nice words here"},
+    {"vgoatmon", ARRAYSIZE(smiley_points), 0, CYAN, goat_mon_points, "some nice words here"},
     {"vsmileymon", ARRAYSIZE(smiley_points), 0, CYAN, smiley_points, "some nice words here"},
-    {"vothermon", ARRAYSIZE(smiley_points), 0, CYAN, othermon_points, "some nice words here"}
+    {"vgoatmon", ARRAYSIZE(smiley_points), 0, CYAN, goat_mon_points, "some nice words here"}
 };
 
-int initial_mon = 0;
+int initial_mon;
 
 #ifndef __linux__
 /* Use draw_object() from maze.c */
@@ -234,7 +227,7 @@ static void unregister_ir_packet_callback(void)
 enum menu_level_t {
     MAIN_MENU,
     MONSTER_MENU,
-    INACTIVE
+    DESCRIPTION
 } menu_level;
 
 struct menu_item
@@ -260,6 +253,7 @@ static void enable_monster(int monster_id)
         return;
 
     monsters[monster_id].status = 1;
+    setNote(90, 4000);
     #ifdef __linux__
         printf("enabling monster: %d\n", monster_id);
     #endif
@@ -359,12 +353,10 @@ static void draw_menu(void)
     FbColor(WHITE);
     FbMove(8, 5);
     FbWriteLine(menu.title);
-    if(menu_level == MONSTER_MENU){
+    if(menu_level != MONSTER_MENU){
         int nunlocked = 0;
         char available_monsters[3];
         char unlocked_monsters[3];
-        itoa(available_monsters, nmonsters + nvendor_monsters, 10);
-
         for(i = 0; i < nmonsters; i++)
         {
             if(monsters[i].status == 1)
@@ -380,12 +372,11 @@ static void draw_menu(void)
                 nunlocked++;
             }
         }
-
-
-
+        itoa(available_monsters, nmonsters + nvendor_monsters, 10);
         itoa(unlocked_monsters, nunlocked, 10);
 
-        FbMove(8,25);
+        FbMove(1,25);
+        FbWriteLine("Collected: ");
         FbWriteLine(unlocked_monsters);
         FbWriteLine("/");
         FbWriteLine(available_monsters);
@@ -431,68 +422,139 @@ static void change_menu_level(enum menu_level_t level)
     switch(level){
         case MAIN_MENU:
             setup_main_menu();
+            screen_changed = 1;
             break;
         case MONSTER_MENU:
             setup_monster_menu();
+            screen_changed = 1;
             break;
-        case INACTIVE:
+        case DESCRIPTION:
+            screen_changed = 1;
             return;
     }
 }
 
 static void show_message(char *message)
 {
+    char msg[16];
+    char *s;
+    int y, len;
     #ifdef __linux__
         printf("%s\n", message);
     #endif
 
     FbClear();
     FbColor(WHITE);
-    FbMove(8, 5);
-    FbWriteLine(message);
+    y = 5;
 
-    change_menu_level(INACTIVE);
+    s = message;
+    do {
+	FbMove(8, y);
+	len = strlen(s);
+	if (len >= 15) {
+	    memcpy(msg, s, 15);
+	    msg[15] = '\0';
+	    FbWriteLine(msg);
+	    s += 15;
+	} else {
+	    FbWriteLine(s);
+	    break;
+	}
+	y += 10;
+    } while (1);
+
+    FbMove(5, 120);
+    FbWriteLine("<Back");
+
+    change_menu_level(DESCRIPTION);
     app_state = RENDER_SCREEN;
     screen_changed = 1;
-}
-
-/* stage_monster_trade -- should start listening and receiving IR */
-static void stage_monster_trade(void)
-{
-    show_message("Sync your badge with someone to collect more     monsters\n");
 }
 
 static void render_monster(void)
 {
     int npoints, color;
     const struct point *drawing = current_monster > 100 ? vendor_monsters[current_monster - 100].drawing : monsters[current_monster].drawing;
-    /* char *name; */
+    char *name;
 
     if(current_monster > 100)
     {
-        /* name = vendor_monsters[current_monster-100].name; */
+        name = vendor_monsters[current_monster-100].name;
         npoints = vendor_monsters[current_monster-100].npoints;
         color = vendor_monsters[current_monster-100].color;
     }
     else
     {
-        /* name = monsters[current_monster].name; */
+        name = monsters[current_monster].name;
         npoints = monsters[current_monster].npoints;
         color = monsters[current_monster].color;
     }
 
-
     FbClear();
-    /* FbWriteLine(name); */
-    FbWriteLine("\n");
+    if(current_monster == initial_mon)
+    {
+        FbMove(0,10);
+        FbWriteLine("--starting-mon--");
+    }
+    FbMove(0,0);
+    FbWriteLine(name);
     draw_object(drawing, npoints, 0, color, smiley_x, smiley_y);
 
-    FbMove(120,120);
-    FbWriteLine(">");
+    FbColor(WHITE);
+    FbMove(43,120);
+    FbWriteLine("|down|");
+    FbColor(GREEN);
+
+    FbMove(5, 120);
+    FbWriteLine("<Back");
+
+
+    FbMove(90,120);
+    FbWriteLine("desc>");
+
     FbSwapBuffers();
-    change_menu_level(INACTIVE);
     screen_changed = 1;
     app_state = RENDER_SCREEN;
+}
+
+static void trade_monsters(void)
+{
+	static counter = 0;
+
+	counter++;
+	if ((counter % 10000) == 0) { /* transmit our monster IR packet */
+		send_ir_packet(build_packet(1,1,BADGE_IR_GAME_ADDRESS, BADGE_IR_BROADCAST_ID,
+			(OPCODE_XMIT_MONSTER << 12) | (initial_mon & 0x01ff)));
+	    setNote(50, 100);
+	}
+	if (!trading_monsters_enabled) {
+		FbClear();
+		FbMove(10, 60);
+		FbWriteLine("TRADING");
+		FbMove(10, 70);
+		FbWriteLine("MONSTERS!");
+		screen_changed = 1;
+		trading_monsters_enabled = 1;
+	}
+	app_state = RENDER_SCREEN;
+}
+
+void render_screen_save_monsters(void) {
+    static unsigned char current_index = 0;
+    int npoints, color;
+    if(current_index == ARRAYSIZE(monsters)) {
+        current_index = 0;    
+    }
+    else {
+        current_index++;
+    }
+    
+    const struct point *drawing = monsters[current_index].drawing;
+    npoints = monsters[current_index].npoints;
+    color = monsters[current_index].color;
+    FbClear();
+    FbColor(BLACK);
+    draw_object(drawing, npoints, 0, color, 64, 64);
 }
 
 static void render_screen(void)
@@ -518,39 +580,77 @@ static void check_the_buttons(void)
 {
     int something_changed = 0;
 
+    /* If we are trading monsters, stop trading monsters on a button press */
+    if (trading_monsters_enabled) {
+		if (UP_BTN_AND_CONSUME ||
+			DOWN_BTN_AND_CONSUME ||
+			LEFT_BTN_AND_CONSUME ||
+			RIGHT_BTN_AND_CONSUME ||
+			BUTTON_PRESSED_AND_CONSUME) {
+			trading_monsters_enabled = 0;
+			app_state = GAME_MENU;
+			something_changed = 1;
+			return;
+		}
+    }
+
     if (UP_BTN_AND_CONSUME)
     {
-        if(menu_level == INACTIVE)
-            change_menu_level(MONSTER_MENU);
+        switch(menu_level){
+            case MAIN_MENU:
+                menu_change_current_selection(-1);
+                break;
+            case MONSTER_MENU:
+                menu_change_current_selection(-1);
+                current_monster = menu.item[menu.current_item].cookie;
+                render_monster();
+                break;
+            case DESCRIPTION:
+                change_menu_level(MONSTER_MENU);
+                break;
+        }
         something_changed = 1;
-        menu_change_current_selection(-1);
-        if(menu_level == MONSTER_MENU)
-            current_monster = menu.item[menu.current_item].cookie;
         #ifdef __linux__
             print_menu_info();
         #endif
     }
     else if (DOWN_BTN_AND_CONSUME)
     {
-        if(menu_level == INACTIVE)
-            change_menu_level(MONSTER_MENU);
+        switch(menu_level){
+            case MAIN_MENU:
+                menu_change_current_selection(1);
+                break;
+            case MONSTER_MENU:
+                menu_change_current_selection(1);
+                current_monster = menu.item[menu.current_item].cookie;
+                render_monster();
+                break;
+            case DESCRIPTION:
+                change_menu_level(MONSTER_MENU);
+                break;
+        }
         something_changed = 1;
-        menu_change_current_selection(1);
-        if(menu_level == MONSTER_MENU)
-            current_monster = menu.item[menu.current_item].cookie;
         #ifdef __linux__
             print_menu_info();
         #endif
     }
     else if (LEFT_BTN_AND_CONSUME)
     {
-        if(menu_level == INACTIVE)
-            change_menu_level(MONSTER_MENU);
+        switch(menu_level){
+            case MAIN_MENU:
+                break;
+            case MONSTER_MENU:
+                change_menu_level(MAIN_MENU);
+                break;
+            case DESCRIPTION:
+                change_menu_level(MONSTER_MENU);
+                break;
+        }
         something_changed = 1;
     }
     else if (RIGHT_BTN_AND_CONSUME)
     {
-        if(menu_level == INACTIVE)
+        if(menu_level == MONSTER_MENU)
         {
             if(current_monster >= 100)
             {
@@ -585,7 +685,8 @@ static void check_the_buttons(void)
                     something_changed = 1;
                     break;
                 case 1:
-                    stage_monster_trade();
+		    app_state = TRADE_MONSTERS;
+		    something_changed = 1;
                     break;
                 case 2:
                     app_state = EXIT_APP;
@@ -594,8 +695,12 @@ static void check_the_buttons(void)
         }
 
         /* if the back button is pressed we will return to the main menu */
-        if(back || menu_level == INACTIVE)
+        if(back || menu_level == DESCRIPTION)
             change_menu_level(MAIN_MENU);
+    }
+    if (trading_monsters_enabled && !something_changed) {
+	app_state = TRADE_MONSTERS;
+	return;
     }
 
     if (something_changed && app_state == CHECK_THE_BUTTONS)
@@ -609,20 +714,21 @@ static void setup_monster_menu(void)
     menu_clear();
     menu.menu_active = 0;
     strcpy(menu.title, "Monsters");
-    current_monster = 0;
 
     for(i = 0; i < nmonsters; i++){
         if(monsters[i].status)
             menu_add_item(monsters[i].name, RENDER_MONSTER, i);
     }
 
+    #if 0
     for(i = 0; i < nvendor_monsters; i++){
         if(vendor_monsters[i].status)
             menu_add_item(vendor_monsters[i].name, RENDER_MONSTER, i+100);
     }
+    #endif
 
-    menu_add_item("back", RENDER_SCREEN, 0);
     screen_changed = 1;
+    render_monster();
 }
 
 static void setup_main_menu(void)
@@ -630,7 +736,7 @@ static void setup_main_menu(void)
     menu_clear();
     strcpy(menu.title, "Badge Monsters");
     menu_add_item("Monsters", RENDER_SCREEN, 0);
-    menu_add_item("Trade Monsters", RENDER_SCREEN, 1);
+    menu_add_item("Trade Monsters", TRADE_MONSTERS, 1);
     menu_add_item("EXIT", EXIT_APP, 2);
     screen_changed = 1;
 }
@@ -639,14 +745,31 @@ static void game_menu(void)
 {
     draw_menu();
     check_for_incoming_packets();
-    send_ir_packet(build_packet(1,1,BADGE_IR_GAME_ADDRESS, BADGE_IR_BROADCAST_ID,
-    (OPCODE_XMIT_MONSTER << 12) | (initial_mon & 0x01ff)));
     app_state = RENDER_SCREEN;
+}
+
+static void load_from_flash(void){
+    /*
+    load from flash should load a list of monsterIDs that have been enabled
+    for each monsterID, it should run enable_monster() function
+    */
+   #if 0
+   int i;
+   for(i = 0; i < ARRAYSIZE(monstersIDs); i++)
+      enable_monster(monsterID);
+   #endif
+}
+
+static void save_to_flash(void){
+    /*
+    save to flash should save some form of a list of monsterIDs that have been unlocked
+    */
 }
 
 static void exit_app(void)
 {
     app_state = INIT_APP_STATE;
+    save_to_flash();
     unregister_ir_packet_callback();
     returnToMenus();
 }
@@ -665,7 +788,6 @@ static void ir_packet_callback(struct IRpacket_t packet)
 
 static void app_init(void)
 {
-    int initial_mon;
     int i;
 
     FbInit();
@@ -680,10 +802,9 @@ static void app_init(void)
     nmonsters = ARRAYSIZE(monsters);
     nvendor_monsters = ARRAYSIZE(vendor_monsters);
     initial_mon = BADGE_ID % nmonsters;
+    current_monster = initial_mon;
     enable_monster(initial_mon);
-
-    for (i = 0; i < ARRAYSIZE(monsters); i++)
-	    monsters[i].status = 1;
+    load_from_flash();
 }
 
 int badge_monsters_cb(void)
