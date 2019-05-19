@@ -124,6 +124,7 @@ void backlight_cb(struct menu_t *h) {
 
    G_sysData.backlight = selectedMenu->attrib & 0x1FF;
    backlight(G_sysData.backlight);
+   flashWriteKeyValue((unsigned int)&G_sysData, (char *)&G_sysData, sizeof(struct sysData_t));
 
    returnToMenus();
 }
@@ -217,6 +218,8 @@ void LEDlight_cb(struct menu_t *h) {
 
     G_sysData.ledBrightness = selectedMenu->attrib & 0x1FF;
     led_brightness(G_sysData.ledBrightness);
+   flashWriteKeyValue((unsigned int)&G_sysData, (char *)&G_sysData, sizeof(struct sysData_t));
+
     /* because of calcs done on pwm, 
        have to reload the values for
        it to take effect. because of division, 
@@ -258,7 +261,8 @@ void buzzer_config_cb()
 
     strcpy(dstMenu->name, selectedMenu->name);
 
-    G_mute = selectedMenu->attrib & 0x1; /* low order bits of attrib can store values */
+    G_sysData.mute = G_mute = selectedMenu->attrib & 0x1; /* low order bits of attrib can store values */
+   flashWriteKeyValue((unsigned int)&G_sysData, (char *)&G_sysData, sizeof(struct sysData_t));
 
     returnToMenus();
 }

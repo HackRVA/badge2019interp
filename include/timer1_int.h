@@ -1,6 +1,9 @@
 #ifndef timer1_int_h
 #define timer1_int_h
 
+/* set led PWM */
+void led_brightness(unsigned char bright) ;
+
 struct wallclock_t {
    unsigned char hour;
    unsigned char sec;

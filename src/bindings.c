@@ -47,9 +47,6 @@ int returnVal(int val)
    return val;
 }
 
-void led_brightness(unsigned char bright) ;
-extern unsigned char G_mute;
-
 struct binding_t bindings[] = {
     {.vf.ucp       = &G_button_cnt},
     {.vf.ucp       = &G_up_button_cnt},

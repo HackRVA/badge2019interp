@@ -4,6 +4,9 @@
 #define NUM_AUDIO_CHANNELS 2
 #define BYTES_PER_LINE (NUM_AUDIO_CHANNELS * sizeof(float) + 1)
 
+/** Muze buzzer */
+extern unsigned char G_mute;
+
 /** Stops playback of the current audio asset */
 void haltPlayback(void);
 
