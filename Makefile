@@ -28,7 +28,7 @@ endif
 #BADGE_CFLAGS = $(INC) -S -c -mprocessor=32MX270F256D -O0 -g
 BASE_STATION_BADGE_BUILD ?= 0
 # Note VALID badge IDs must be in the range 0 - 511 decimal (0x0 to 0x01ff) Lasertag depends on this.
-INITIAL_BADGE_ID ?= 0xBEEF
+INITIAL_BADGE_ID ?= 0xEFBE
 BADGE_CFLAGS = $(INC) -c -mprocessor=32MX270F256D -O1 -DBASE_STATION_BADGE_BUILD=${BASE_STATION_BADGE_BUILD} -DINITIAL_BADGE_ID=${INITIAL_BADGE_ID}
 
 LIBS = /opt/microchip/xc32/v1.34/pic32mx/lib/libmchp_peripheral_32MX270F256D.a

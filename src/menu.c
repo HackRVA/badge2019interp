@@ -657,7 +657,7 @@ const unsigned char *splash_word_things[] = {"Cognition Module",
             // Hack, don't feel lik adjusting magice numbers
             // to make slower timing. Not sure if making a difference
             unsigned char i = 0;
-            for(i=0; i < 250; i++)
+            for(i=0; i < 250; i++);
              //   PowerSaveIdle();
             
             FbSwapBuffers();

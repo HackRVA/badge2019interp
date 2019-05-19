@@ -34,7 +34,7 @@ struct sysData_t G_sysData = {
 	.badgeId=INITIAL_BADGE_ID, 
 	.sekrits={ 0 }, 
 	.achievements={ 0 },
-	.ledBrightness=255,
+	.ledBrightness=0,
 	.backlight=255,
 	.mute=0
 };
