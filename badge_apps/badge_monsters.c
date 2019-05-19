@@ -125,6 +125,12 @@ static const struct point godzilla_points[] =
 #include "godzilla.h"
 static const struct point eddie_points[] =
 #include "eddie.h"
+static const struct point gopher_points[] =
+#include "gophermon.h"
+static const struct point tux_points[] =
+#include "tuxmon.h"
+static const struct point octocat_points[] =
+#include "octocat.h"
 
 struct monster
 {
@@ -146,11 +152,13 @@ struct monster monsters[] = {
     {"zombieload", ARRAYSIZE(zombieload_points), 0, WHITE, zombieload_points, "This one has the delightful name of ZombieLoad"},
     {"octomon", ARRAYSIZE(octomon_points), 0, WHITE, octomon_points, "a monster made with 8 sides"},
     {"hrvamon", ARRAYSIZE(hrvamon_points), 0, WHITE, hrvamon_points, "come check out hackrva maker space Thursday nights at 7. 1600 Roseneath Road Suite E Richmond, VA 23230"},
-    {"mcturtle", ARRAYSIZE(mcturtle_points), 0, WHITE, mcturtle_points, "McTerrible McTurtle"},
+    {"mcturtle", ARRAYSIZE(mcturtle_points), 0, WHITE, mcturtle_points, "Turtles are reptiles with hard shells that protect them from predators"},
     {"goat_mon", ARRAYSIZE(goat_mon_points), 0, WHITE, goat_mon_points, "this goat is scared because they are alone in the world"},
     {"freshmon", ARRAYSIZE(freshmon_points), 0, WHITE, freshmon_points, "a fusion of smirkmon and grinmon. This badge monster likes to troll people really hard for fun"},
-    {"smileymon", ARRAYSIZE(smiley_points), 0, RED, smiley_points, "some nice words here"},
-    {"smileymon", ARRAYSIZE(smiley_points), 0, WHITE, smiley_points, "Othermon some nice words here Othermon some nice words hereOthermon some nice words here Othermon some nice words here"},
+    {"smileymon", ARRAYSIZE(smiley_points), 0, WHITE, smiley_points, "some nice words here"},
+    {"gophermon", ARRAYSIZE(gopher_points), 0, WHITE, gopher_points, "Gophers are small, furry rodents that burrow tunnels through yards of North America and Central America."},
+    {"tuxmon", ARRAYSIZE(tux_points), 0, CYAN, tux_points, "Tux is a penguin character and the official brand character of the Linux kernel."},
+    {"octocat", ARRAYSIZE(octocat_points), 0, WHITE, octocat_points, "GitHub's mascot is an anthropomorphized 'octocat' with five octopus-like arms."},
 };
 
 struct monster vendor_monsters[] = {
@@ -543,12 +551,12 @@ void render_screen_save_monsters(void) {
     static unsigned char current_index = 0;
     int npoints, color;
     if(current_index == ARRAYSIZE(monsters)) {
-        current_index = 0;    
+        current_index = 0;
     }
     else {
         current_index++;
     }
-    
+
     const struct point *drawing = monsters[current_index].drawing;
     npoints = monsters[current_index].npoints;
     color = monsters[current_index].color;
