@@ -22,6 +22,13 @@ run
 new
 main()
 {
+   flashWrite(0x0000001B, 1);
+}
+run
+
+new
+main()
+{
    flashWrite(0x000000AB, 1);
 }
 run

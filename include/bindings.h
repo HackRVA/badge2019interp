@@ -55,12 +55,19 @@ struct param_t {
 /*
    4 bytes
 */
+
 union var_fun {
-    int *(*ifn)();
+    void (*vfn_uc_i)(unsigned char , int);
+    int (*ifni)(int);
+    void (*vfnuc)(unsigned char);
     char *(*cfn)();
-    void *(*vfn)();
+    void (*vfn)();
+    void (*vfni)(int);
+    const unsigned int *cuip;
     int *ip;
+    unsigned short *usp;
     int i;
+    unsigned char *ucp;
     char *cp;
     char c;
 };
