@@ -422,12 +422,14 @@ static void change_menu_level(enum menu_level_t level)
     switch(level){
         case MAIN_MENU:
             setup_main_menu();
+            screen_changed = 1;
             break;
         case MONSTER_MENU:
             setup_monster_menu();
             screen_changed = 1;
             break;
         case DESCRIPTION:
+            screen_changed = 1;
             return;
     }
 }
@@ -604,6 +606,7 @@ static void check_the_buttons(void)
                 render_monster();
                 break;
             case DESCRIPTION:
+                change_menu_level(MONSTER_MENU);
                 break;
         }
         something_changed = 1;
@@ -623,6 +626,7 @@ static void check_the_buttons(void)
                 render_monster();
                 break;
             case DESCRIPTION:
+                change_menu_level(MONSTER_MENU);
                 break;
         }
         something_changed = 1;
