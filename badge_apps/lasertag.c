@@ -945,6 +945,9 @@ static void lasertag_flareled(unsigned char r, unsigned char g, unsigned char b)
 	throttler++;
 	if (throttler == 100) {
 		flareled(r, g, b);
+		red(100 * r / 256);
+		green(100 * g / 256);
+		blue(100 * b / 256);
 		throttler = 0;
 	}
 }
