@@ -15,9 +15,9 @@ struct sysData_t {
    /*
       prefs
    */
-   char ledBrightness;  /* 1 byte */
-   char backlight;      /* 1 byte */
-   char mute;      /* buzzer 1 byte */
+   unsigned char ledBrightness;  /* 1 byte */
+   unsigned char backlight;      /* 1 byte */
+   unsigned char mute;      /* buzzer 1 byte */
 };
 
 extern struct sysData_t G_sysData;

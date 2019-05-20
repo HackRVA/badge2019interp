@@ -228,14 +228,15 @@ void UserInit(void)
     FbMove(10,20);
     FbPushBuffer();
 
-    /* read sysData from flash fails if no data */
+    /* read sysData from flash */
     flashReadKeyValue((unsigned int)&G_sysData, (unsigned char *)&G_sysData, sizeof(struct sysData_t));
     restore_username_from_flash(G_sysData.name, 10);
+
+    timerInit();
     backlight(G_sysData.backlight);
     led_brightness(G_sysData.ledBrightness);
     G_mute = G_sysData.mute;
 
-    timerInit();
     flareled(128, 64, 255);
 }
 

@@ -216,7 +216,7 @@ void LEDlight_cb(struct menu_t *h) {
 
     strcpy(dstMenu->name, selectedMenu->name);
 
-    G_sysData.ledBrightness = selectedMenu->attrib & 0x1FF;
+    G_sysData.ledBrightness = selectedMenu->attrib & 0x7;
     led_brightness(G_sysData.ledBrightness);
    flashWriteKeyValue((unsigned int)&G_sysData, (char *)&G_sysData, sizeof(struct sysData_t));
 

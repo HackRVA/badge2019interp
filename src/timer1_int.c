@@ -41,8 +41,8 @@ unsigned char G_firstHalf = 0;
 unsigned char G_lastHalf = 0;
 unsigned char G_halfCount = 0;
 
-unsigned char packets_seen = 0; 
-unsigned char num_packets_seen = 0; 
+volatile unsigned char packets_seen = 0; 
+volatile unsigned char num_packets_seen = 0; 
 
 #define SYS_FREQ 		(40000000L)
 
@@ -530,6 +530,10 @@ void no_LED_PWM(unsigned char trueFalse) {
 
 void led_brightness(unsigned char bright) {
    G_bright = bright;
+
+   red(G_red_pwm);
+   green(G_green_pwm);
+   blue(G_blue_pwm);
 }
 
 void red(unsigned char onPWM) {

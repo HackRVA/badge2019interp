@@ -41,8 +41,18 @@ int NVMWriteWord(unsigned int *addr, unsigned int val)
     *addr = val;
 }
 
-struct sysData_t G_sysData = { { 0 }, 42, { 0 }, { 0 } };
+struct sysData_t G_sysData = {
+	.name={"               "}, 
+	.badgeId=INITIAL_BADGE_ID, 
+	.sekrits={ "0123456" }, 
+	.achievements={ "0123456" },
+	.ledBrightness=0,
+	.backlight=123,
+	.mute=0
+};
+
 struct sysData_t G_sysDataRom;
+
 int main(int argc, char** argv)
 {
    char test[] = "tests";
@@ -53,9 +63,16 @@ int main(int argc, char** argv)
    char value2[8];
    int i;
 
-   flashWriteKeyValue(&G_sysData, &G_sysData, sizeof(struct sysData_t));
-   flashReadKeyValue(&G_sysData, &G_sysDataRom, sizeof(struct sysData_t));
+   printf("sizeof %d\n", sizeof(G_sysData));
+   printf("sizeof %d\n", sizeof(struct sysData_t));
+   flashWriteKeyValue((unsigned int)&G_sysData, (char *)&G_sysData, sizeof(struct sysData_t));
+   flashWriteKeyValue((unsigned int)&G_sysData, (char *)&G_sysData, sizeof(struct sysData_t));
+
+   flashReadKeyValue((unsigned int)&G_sysData, (char *)&G_sysDataRom, sizeof(struct sysData_t));
    printf("sysData %d\n", G_sysDataRom.badgeId);
+   printf("sysData %d\n", G_sysDataRom.ledBrightness);
+   printf("sysData %d\n", G_sysDataRom.backlight);
+   printf("sysData %d\n", G_sysDataRom.mute);
 /*
    flashWriteKeyValue(12345, test, 5);
    flashWriteKeyValue(9999, derp, 4);
@@ -186,10 +203,10 @@ int flashWriteKeyValue( unsigned int valuekey, char *value, unsigned int valuele
     v=0;
     while (v < valuelen) {
 	d = 0;
-	d = value[v] << 24;
-	if ((v+1) < valuelen) d |= (value[v+1] << 16);
-	if ((v+2) < valuelen) d |= (value[v+2] <<  8);
-	if ((v+3) < valuelen) d |= (value[v+3]      );
+	d = (value[v] & 0xFF) << 24;
+	if ((v+1) < valuelen) d |= ((value[v+1] & 0xFF) << 16);
+	if ((v+2) < valuelen) d |= ((value[v+2] & 0xFF) <<  8);
+	if ((v+3) < valuelen) d |= ((value[v+3] & 0xFF)      );
 
 	NVMWriteWord((void *)end++, d);
 	v += 4;
