@@ -234,7 +234,7 @@ void UserInit(void)
 
     timerInit();
     backlight(G_sysData.backlight);
-    led_brightness(G_sysData.ledBrightness);
+    // led_brightness(G_sysData.ledBrightness);
     G_mute = G_sysData.mute;
 
     flareled(128, 64, 255);
