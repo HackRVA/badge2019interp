@@ -587,6 +587,7 @@ const unsigned char *splash_word_things[] = {"Cognition Module",
             LCDblack();
             LCDBars();
             FbSwapBuffers();
+            green(50);
             //if(buzzer)
             setNote(100, 4092);
         }
