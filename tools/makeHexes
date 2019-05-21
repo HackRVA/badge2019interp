@@ -1,0 +1,14 @@
+#!/bin/csh -f
+
+set HEX = "../build/firmware.hex"
+
+set i = 1
+while ($i < 400)
+   set badgeId = `echo $i | awk '{printf "%04x", $1 }'`
+
+   cat $HEX \
+   | ./badgeId.awk badgeId=$badgeId \
+   > badge_ID_$i.hex
+
+    @ i++
+end

@@ -29,9 +29,14 @@ int USB_Out_Buffer_Len = 0; /* For base station, USB buffers are not asciiz stri
 /*
   inital system data, will be save/restored from flash
 */
+const char hextab[16]={"0123456789ABCDEF"};
+
+/* use only for final script has to be CONST to be found in hex */
+const unsigned short finalBadgeId = INITIAL_BADGE_ID; 
+
 struct sysData_t G_sysData = {
 	.name={"               "}, 
-	.badgeId=INITIAL_BADGE_ID, 
+	.badgeId=0, 
 	.sekrits={ 0 }, 
 	.achievements={ 0 },
 	.ledBrightness=0,
@@ -39,7 +44,6 @@ struct sysData_t G_sysData = {
 	.mute=0
 };
 
-const char hextab[16]={"0123456789ABCDEF"};
 
 // in used in S6B33 samsung controller
 extern unsigned char G_contrast1;
@@ -228,8 +232,10 @@ void UserInit(void)
     FbMove(10,20);
     FbPushBuffer();
 
-    /* read sysData from flash */
+    /* if not in flash, use the default assigned by make */
+    G_sysData.badgeId = finalBadgeId;
     flashReadKeyValue((unsigned int)&G_sysData, (unsigned char *)&G_sysData, sizeof(struct sysData_t));
+
     restore_username_from_flash(G_sysData.name, 10);
 
     timerInit();
